@@ -1,21 +1,21 @@
 ----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 
--- 
+-- Company:
+-- Engineer:
+--
 -- Create Date: 19.08.2017 21:02:54
--- Design Name: 
+-- Design Name:
 -- Module Name: sweep_timer - Behavioral
--- Project Name: 
--- Target Devices: 
--- Tool Versions: 
--- Description: 
--- 
--- Dependencies: 
--- 
+-- Project Name:
+-- Target Devices:
+-- Tool Versions:
+-- Description:
+--
+-- Dependencies:
+--
 -- Revision:
 -- Revision 0.01 - File Created
 -- Additional Comments:
--- 
+--
 ----------------------------------------------------------------------------------
 
 
@@ -73,7 +73,7 @@ begin
 
 if rst = '1' then
     count <= to_unsigned(0, 32);
-    
+
 elsif rising_edge(clk) then
 
     if write_timer = '1' then
@@ -86,10 +86,10 @@ elsif rising_edge(clk) then
     elsif write_pa_off = '1' then
         pa_off_top <= unsigned(write_data);
     end if;
-    
+
     count <= count + 1;
     adf_done_prev <= adf_done;
-    
+
     if count_delay = '0' then
         if count = sweep_top then
             count <= to_unsigned(0, 32);
@@ -115,19 +115,19 @@ elsif rising_edge(clk) then
     end if;
 
     -- When sweep is done start counting delay
-    if adf_done = '1' and adf_done_prev = '0' then
+    if adf_done= '1' and adf_done_prev = '0' then
         count <= to_unsigned(0, 32);
         count_delay <= '1'; -- Delay
         pa_off_delay <= '1';
-        
+
         if sweep_count /= decimate_sweeps then
             sweep_count <= sweep_count + 1;
         else
             sweep_count <= (others => '0');
         end if;
-                    
+
     end if;
-    
+
 end if;
 
 end process;
@@ -145,11 +145,11 @@ begin
 if rising_edge(clk) then
 
     valid_pipe(0) <= (not count_delay) and (not decimate_block);
-    
+
     for i in 1 to VALID_DELAY - 1 loop
         valid_pipe(i) <= valid_pipe(i-1);
     end loop;
-    
+
 end if;
 
 end process;

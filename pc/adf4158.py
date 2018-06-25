@@ -7,24 +7,24 @@ class ADF4158():
         #Register definitions:
         # (Register: name: (First bit, Length, [value]))
         self.register_def = {
-                0:{'ramp_on':(31, 1), 'muxout':(27, 4), 'n':(15,12), 'frac_msb':(3, 12)},
-                1:{'reserved1':(28,4), 'frac_lsb':(15, 12), 'reserved2':(3, 12)},
-                2:{'reserved3':(29, 3), 'csr_en':(28, 1), 'cp_current':(24, 4), 'reserved4':(23, 1),
-                    'prescaler':(22, 1), 'rdiv2':(21, 1), 'reference_doubler':(20, 1),
-                    'r_counter':(15, 5), 'clk1_divider':(3, 12)},
-                3:{'reserved5':(16, 16), 'n_sel':(15, 1), 'sd_reset':(14, 1), 'reserved6':(12, 2),
-                    'ramp_mode':(10, 2), 'psk_enable':(9, 1), 'fsk_enable':(8,1),
-                    'ldp':(7,1), 'pd_polarity':(6, 1), 'power_down':(5, 1),
-                    'cp_threestate':(4, 1), 'counter_reset':(3, 1)},
-                4:{'le_sel':(31, 1), 'sd_mod_mode':(26, 5), 'reserved7':(25, 1),
-                    'neg_bleed_current': (23, 2), 'readback_to_muxout': (21, 2),
-                    'clk_div_mode':(19, 2), 'clk2_divider':(7, 12), 'reserved8':(3, 4)},
-                5:{'reserved9':(30, 2), 'tx_ramp_clk':(29, 1), 'par_ramp':(28, 1),
-                    'interrupt':(26, 2), 'fsk_ramp_en':(25, 1), 'ramp2_en':(24, 1),
-                    'dev_sel':(23, 1), 'dev_offset':(19, 4), 'deviation':(3, 16)},
-                6:{'reserved10':(24, 8), 'step_sel':(23, 1), 'step':(3, 20)},
-                7:{'reserved11':(19, 13), 'ramp_del_fl':(18, 1), 'ramp_del':(17, 1),
-                    'del_clk_sel':(16, 1), 'del_start_en':(15, 1), 'delay_start_divider':(3, 12)}
+            0:{'ramp_on':(31, 1), 'muxout':(27, 4), 'n':(15,12), 'frac_msb':(3, 12)},
+            1:{'reserved1':(28,4), 'frac_lsb':(15, 12), 'reserved2':(3, 12)},
+            2:{'reserved3':(29, 3), 'csr_en':(28, 1), 'cp_current':(24, 4), 'reserved4':(23, 1),
+               'prescaler':(22, 1), 'rdiv2':(21, 1), 'reference_doubler':(20, 1),
+               'r_counter':(15, 5), 'clk1_divider':(3, 12)},
+            3:{'reserved5':(16, 16), 'n_sel':(15, 1), 'sd_reset':(14, 1), 'reserved6':(12, 2),
+               'ramp_mode':(10, 2), 'psk_enable':(9, 1), 'fsk_enable':(8,1),
+               'ldp':(7,1), 'pd_polarity':(6, 1), 'power_down':(5, 1),
+               'cp_threestate':(4, 1), 'counter_reset':(3, 1)},
+            4:{'le_sel':(31, 1), 'sd_mod_mode':(26, 5), 'reserved7':(25, 1),
+               'neg_bleed_current': (23, 2), 'readback_to_muxout': (21, 2),
+               'clk_div_mode':(19, 2), 'clk2_divider':(7, 12), 'reserved8':(3, 4)},
+            5:{'reserved9':(30, 2), 'tx_ramp_clk':(29, 1), 'par_ramp':(28, 1),
+               'interrupt':(26, 2), 'fsk_ramp_en':(25, 1), 'ramp2_en':(24, 1),
+               'dev_sel':(23, 1), 'dev_offset':(19, 4), 'deviation':(3, 16)},
+            6:{'reserved10':(24, 8), 'step_sel':(23, 1), 'step':(3, 20)},
+            7:{'reserved11':(19, 13), 'ramp_del_fl':(18, 1), 'ramp_del':(17, 1),
+               'del_clk_sel':(16, 1), 'del_start_en':(15, 1), 'delay_start_divider':(3, 12)}
         }
         self.registers = [0]*8
         self.modified = [False]*8
