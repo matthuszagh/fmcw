@@ -40,7 +40,7 @@ def read_settings(f):
     if len(settings) != ls:
         raise ValueError('Too short read when reading settings')
     header = settings[:6]
-    if header != 'fmcw3;':
+    if header != 'fmcw;':
         raise ValueError('Missing header')
     settings = ast.literal_eval(settings[7:])
     return settings

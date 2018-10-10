@@ -18,6 +18,9 @@ ultimately the main focus of these months).
 
 \section{Power}
 
+\subsection{Barrel Jack / Power Input}
+\label{sec:power-input}
+
 The power sheet receives a 12V input via a barrel jack (Figure~\ref{fig:barrel-jack}) and then
 outputs various voltages and currents to feed other components in the circuit.
 
@@ -33,6 +36,17 @@ AC components of the input voltage and prevents both external RF signals from in
 operation and internally generated RF signals from radiating from it and affecting the operation of
 other components in the circuit.
 
+\subsection{L7980 Buck Converter}
+\label{sec:l7980-buck}
+
+The 12V input feeds into several buck converters that output several different voltages. One such
+buck converter is shown in Figure~\ref{fig:buck-converter}. The input 10 $\si{\mu F}$ capacitor is
+specified by the data sheet. The EN pin is connected to the power source because a voltage higher
+than 1.2V powers on the device (ours is 12V) and a voltage lower than 0.3V powers it off. The
+$F_{\text{SW}}$ pin is used to set the switching frequency of the buck converter. If it is left
+free-floating, the switching frequency will be 250kHz. However, we can adjust the switching
+frequency by attaching it to a resistor to ground. The equation for doing so is:
+
 \begin{figure}[h]
   \centering
   \includegraphics[width=1\textwidth]{data/buck-converter.png}
@@ -40,14 +54,6 @@ other components in the circuit.
     voltage.}
   \label{fig:buck-converter}
 \end{figure}
-
-The 12V input feeds into several buck converters that output several different voltages. One such
-buck converter is shown in Figure~\ref{fig:buck-converter}. The input 10 $\mu F$ capacitor is
-specified by the data sheet. The EN pin is connected to the power source because a voltage higher
-than 1.2V powers on the device (ours is 12V) and a voltage lower than 0.3V powers it off. The
-$F_{\text{SW}}$ pin is used to set the switching frequency of the buck converter. If it is left
-free-floating, the switching frequency will be 250kHz. However, we can adjust the switching
-frequency by attaching it to a resistor to ground. The equation for doing so is:
 
 \begin{equation}
   R_{\text{SW}}=\frac{28.5\times 10^9}{F_{\text{SW}}-250\times 10^3}-3.23\times 10^3
@@ -65,14 +71,14 @@ Equation~\ref{eq:L-select-eqn}.
 
 The duty cycle is given by Equation~\ref{eq:duty-cycle-eqn}. Since $V_{\text{IN}} = 12V$ and
 $V_{\text{OUT}} = 5.6V$, $D = 47\%$. We already found that the switching frequency is 708kHz, which
-gives a total period of $1. 41\mu \text{s}$ and therefore $t_{\text{ON}} = 0.659\mu \text{s}$. The
-inductor value used is $33\mu \text{H}$ which gives a current ripple of 128mA. The max current draw
-is expected to be about 300mA, given the max power (1.6W) of
+gives a total period of $1. 41\si{\mu s}$ and therefore $T_{\text{ON}} = 0.659\si{\mu s}$. The
+inductor value used is $33\si{\mu H}$ which gives a current ripple of 128mA. The max current draw is
+expected to be about 300mA, given the max power (1.6W) of
 \href{http://www.analog.com/media/en/technical-documentation/data-sheets/ADL5802.pdf}{ADL5802} for
 an operation at 5.5V (ours will actually operate at 5V and I expect the power dissipation to go down
-proportionally). This puts the ripple current at just over 40\% of the max current draw, which seems
-high. I would have expected the current ripple to be contained to about 10\% of max current draw,
-which would put the inductor value at $211\mu\text{H}$.
+proportionally). This puts the ripple current at just over 40\% of the max current draw. This is
+roughly in line with the data sheet recommendation to fix the ripple at 20\% to 40\% of the current
+draw.
 
 \begin{equation} DV_{\text{IN}} = V_{\text{OUT}}
   \label{eq:duty-cycle-eqn}
@@ -86,7 +92,7 @@ the inductor, which will cause it to lose stored energy less quickly.
 
 This device uses a voltage-mode PWM comparator to stabilize the output voltage at the desired output
 voltage. This is a bit technical, but all we need to know to operate the device is that the
-comparison voltage is 0.6V. So, we create a voltage divider to generate a output voltage to feed
+comparison voltage is 0.6V. So, we create a voltage divider to generate an output voltage to feed
 back into the FB pin which will be 0.6V when we have our desired output voltage, which is 5.6V. From
 the voltage divider equation and using the resistors in the schematic (Equation~\ref{eq:fb-in}), we
 see that the voltage input to FB is indeed close to 0.6V.
@@ -200,6 +206,8 @@ tied to BYPASS to decrease the output noise.
 
 \section{Top Level Schematic}
 
+\includepdf[pages=1, landscape=true, angle=-90]{data/fmcw-schematic.pdf}
+
 The top level sheet instantiates the various subcomponents of the design. Additionally, it generates
 a 40MHz clock signal that feeds into a clock buffer and is output to various components, as shown in
 Figure~\ref{fig:clock-generator}. The LP5907 is a voltage regulator that takes a 3.6V input signal
@@ -243,8 +251,8 @@ Figure~\ref{fig:adf4158-block-diagram}.
   \label{fig:adf4158-block-diagram}
 \end{figure}
 
-The ADF4158 relies on an external VCO, described in \cref{sec:hmc431lp4} whose output frequency is
-given by Equation~\ref{eq:adf4158-rfout}. The output resolution is
+The ADF4158 relies on an external VCO, described in \cref{sec:hmc431lp4rf}, whose output frequency
+is given by Equation~\ref{eq:adf4158-rfout}. The output resolution is
 $f_{\text{RES}} = f_{\text{PFD}}/2^{25}$ (see Equation~\ref{eq:adf4158-rfout} and its corresponding
 parameter table for an explanation of $f_{\text{PFD}}$). The $2^{25}$ arises from the FRAC value
 (set in registers 0 and 1) which is given 25 bits.
@@ -268,15 +276,15 @@ parameter table for an explanation of $f_{\text{PFD}}$). The $2^{25}$ arises fro
   $f_{\text{PFD}}$ & The input frequency to the PFD post prescaling. In our case this is 20MHz. \\
   INT & The N counter that has a multiplicative effect on the VCO output frequency. \\
   FRAC & FRAC is the numerator of the fractional number added to INT. This is what distinguishes
-  fractional-n synthesis from integer-n synthesis. It allows greater precision for the VCO
-  output frequency without significantly increasing the prescalers and N counter. \\
+         fractional-n synthesis from integer-n synthesis. It allows greater precision for the VCO
+         output frequency without significantly increasing the prescalers and N counter. \\
   $\text{REF}_{\text{IN}} $ & The reference input frequency, which in our case is a 40MHz clock
-  signal from the fanout buffer on the top level of the schematic. \\
+                              signal from the fanout buffer on the top level of the schematic. \\
   D & The doubler bit, which can be 0 or 1. If set to 1, the $\text{REF}_{\text{IN}}$ frequency is
-  doubled before arriving at the R counter. \\
+      doubled before arriving at the R counter. \\
   R & The input prescaler. \\
   T & The divide- by-2 bit, which can be 0 or 1 and divides the frequency by 2 between the R
-  prescaler and PFD. \\
+      prescaler and PFD. \\
 
   \bottomrule
 \end{tabularx}
@@ -285,15 +293,16 @@ parameter table for an explanation of $f_{\text{PFD}}$). The $2^{25}$ arises fro
 \label{sec:adf4158-waveform-generation}
 
 The ADF4158 is capable of producing several different waveforms. The one used in this design is a
-sawtooth ramp in frequency as a function of time, shown in Figure~\ref{fig:adf4158-sawtooth-ramp}
-. There are 3 different parameters that determine the shape of a ramp:(1)frequency deviation(the
-amount the frequency increases at each time step), (2) timeout interval(the amount of time between
-each time step) and (3) the number of time steps. This is shown diagrammatically in
-Figure~\ref{fig:adf4158-waveform-timing}. The equations governing these parameters are given in
-Equation~\ref{eq:adf4158-waveform}. The number of steps is set directly in register 6. In our
-configuration $f_{\text{DEV}} = 300\si{kHz}$ and $\text{Timer} = 0.5\si{\mu s}$, which given that
-the number of steps is equal to 2000 and the starting frequency is 5.3GHz, the sawtooth will ramp
-from 5.3GHz to 5.9GHz in 1ms before repeating.
+sawtooth ramp in frequency as a function of time, shown in
+Figure~\ref{fig:adf4158-sawtooth-ramp}. There are 3 different parameters that determine the shape of
+a ramp: (1) frequency deviation (the amount the frequency increases at each time step), (2) timeout
+interval (the amount of time between each time step) and (3) the number of time steps. This is shown
+diagrammatically in Figure~\ref{fig:adf4158-waveform-timing}. The equations governing these
+parameters are given in Equation~\ref{eq:adf4158-waveform}. The number of steps is set directly in
+register 6. In our configuration $f_{\text{DEV}} = 300\si{kHz}$ and $\text{Timer} = 0.5\si{\mu s}$,
+which given that the number of steps is equal to 2000 and the starting frequency is 5.3GHz, the
+sawtooth will ramp from 5.3GHz to 5.9GHz in 1ms. We also use a delay between bursts of
+2ms. Equation~\ref{eq:adf4158-delay} is used to derive this.
 
 \begin{align}
   f_{\text{DEV}} &= \left(f_{\text{PFD}}/2^{25}\right) \times \left(\text{DEV}\times
@@ -306,7 +315,8 @@ from 5.3GHz to 5.9GHz in 1ms before repeating.
   \toprule
   \textbf{Parameter/Variable} & \textbf{Description} \\
   \midrule
-  \endhead
+
+  \endhead{}
 
   $f_{\text{DEV}}$ & The frequency deviation for each frequency jump during ramp. \\
   $f_{\text{PFD}}$ & The input frequency to the PFD post prescaling. In our case this is 20MHz. \\
@@ -315,6 +325,27 @@ from 5.3GHz to 5.9GHz in 1ms before repeating.
   Timer & The time between each frequency hop. \\
   CLK\textsubscript{1} & A 12-bit clock divider set in register 2. \\
   CLK\textsubscript{2} & Another 12-bit clock divider set in register 4. \\
+
+  \bottomrule
+\end{tabularx}
+
+\begin{equation}
+  \label{eq:adf4158-delay}
+  \text{Delay} = t_{\text{PFD}} \times \text{CLK}_1 \times \text{Delay Start Word}
+\end{equation}
+
+\label{tab:adf4158-delay-equation-vars}
+\begin{tabularx}{\textwidth}{l X>{\raggedright\arraybackslash}X}
+  \toprule
+  \textbf{Parameter/Variable} & \textbf{Description} \\
+  \midrule
+
+  \endhead{}
+
+  Delay & The delay between bursts. This is shown graphically in Figure~\ref{fig:adf4158-delay}. \\
+  $f_{\text{PFD}}$ & The input frequency to the PFD post prescaling. In our case this is 20MHz. \\
+  CLK\textsubscript{1} & A 12-bit clock divider set in register 2. \\
+  Delay Start Word & A 12-bit value set in register 7. \\
 
   \bottomrule
 \end{tabularx}
@@ -329,7 +360,15 @@ from 5.3GHz to 5.9GHz in 1ms before repeating.
   \centering
   \includegraphics[width=0.5\textwidth]{data/adf4158-waveform-timing.png}
   \caption{Waveform timing.}
-  \label{fig:adf4158-waveform-timing}\end{figure}
+  \label{fig:adf4158-waveform-timing}
+\end{figure}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.5\textwidth]{data/adf4158-delay.png}
+  \caption{Delay between ramps for sawtooth mode.}
+  \label{fig:adf4158-delay}
+\end{figure}
 
 \subsubsection{Configuration Registers}
 \label{sec:adf4158-config-regs}
@@ -346,15 +385,16 @@ register 1 is 001). I've left these out of the tables because their values are o
   \textbf{Bits} & \textbf{Mnemonic} & \textbf{Value} & \textbf{DESCRIPTION} \\
   \midrule
 
-  \endhead
+  \endhead{}
 
-  3-14 & FRAC(MSB) & 0 & This sets the 12 most significant bits of FRAC. We leave the fractional
-  value at 0. \\
-  15-26 & INT & 265 & This is the feedback, or N, counter. \\
-  27-30 & MUXOUT Control & 15 & This enables ``readback to muxout'' which allows interrupting
-  waveform generation and reading back the frequency at the time of interrupt. The functionality is
-  not fully setup on the board(muxout connects to a DNP NMOS) and TX\_DATA, which can trigger the
-  interrupt, is set to 0 by the FPGA HDL and left there. \\
+  3--14 & FRAC(MSB) & 0 & This sets the 12 most significant bits of FRAC. We leave the fractional
+                          value at 0. \\
+  15--26 & INT & 265 & This is the feedback, or N, counter. \\
+  27--30 & MUXOUT Control & 15 & This enables ``readback to muxout'' which allows interrupting
+                                 waveform generation and reading back the frequency at the time of
+                                 interrupt. The functionality is not fully setup on the board(muxout
+                                 connects to a DNP NMOS) and TX\_DATA, which can trigger the
+                                 interrupt, is set to 0 by the FPGA HDL and left there. \\
   31 & Ramp On & 1 & This bit enables the ramp. \\
 
   \bottomrule
@@ -371,7 +411,7 @@ register 1 is 001). I've left these out of the tables because their values are o
 
   3-14 & Reserved & 0 & All reserved bits set to 0. \\
   15-27 & FRAC(LSB) & 0 & This sets the 13 least significant bits of FRAC. We leave the fractional
-  value at 0. \\
+                          value at 0. \\
   28-31 & Reserved & 0 & All reserved bits set to 0. \\
 
   \bottomrule
@@ -386,24 +426,30 @@ register 1 is 001). I've left these out of the tables because their values are o
 
   \endhead
 
-  3-14 & CLK\textsubscript{1} Divider & 10 & One of the determinants of the duration of a timestep in
-  waveform generation. See \cref{sec:adf4158-waveform-generation} for more details. \\
-  15-19 & R-Counter & 1 & This 5-bit segment is used to divide the frequency of the reference signal
-  before it enters the PFD. We leave it at 1 and thus do not use it to divide the frequency. \\
+  3--14 & CLK\textsubscript{1} Divider & 10 & One of the determinants of the duration of a timestep in
+                                              waveform generation. See
+                                              \cref{sec:adf4158-waveform-generation} for more
+                                              details. \\
+  15--19 & R-Counter & 1 & This 5-bit segment is used to divide the frequency of the reference signal
+                           before it enters the PFD. We leave it at 1 and thus do not use it to
+                           divide the frequency. \\
   20 & Reference Doubler & 0 & We leave this at 0 and thus do not use the doubler to double the
-  reference signal frequency before input to the PFD. The maximum input frequency for the PFD is
-  30MHz and so doubling our 20MHz signal (we used the divider to divide the 40MHz signal by 2) would
-  violate this condition. \\
+                               reference signal frequency before input to the PFD. The maximum input
+                               frequency for the PFD is 30MHz and so doubling our 20MHz signal (we
+                               used the divider to divide the 40MHz signal by 2) would violate this
+                               condition. \\
   21 & RDIV2 & 1 & Inserts a divide-by-2 toggle flip-flop between the R-counter and PFD. This
-  provides a 50\% duty cycle that allows cycle slip reduction to be used which improves lock times. \\
+                   provides a 50\% duty cycle that allows cycle slip reduction to be used which
+                   improves lock times. \\
   22 & Prescaler & 1 & The prescaler limits the INT value and through that the maximum frequency to
-  3GHz. Since we have an INT value of 265 and our maximum frequency is almost double 3GHz we set
-  this to 1. \\
+                       3GHz. Since we have an INT value of 265 and our maximum frequency is almost
+                       double 3GHz we set this to 1. \\
   23 & Reserved & 0 & All reserved bits set to 0. \\
-  24-27 & Charge Pump Current Setting & 0 & Sets the current to the minimum value which is 0.31mA
-  and is the level necessary to use cycle slip reduction which we are. \\
+  24--27 & Charge Pump Current Setting & 0 & Sets the current to the minimum value which is 0.31mA
+                                             and is the level necessary to use cycle slip reduction
+                                             which we are. \\
   28 & CSR Enable & 1 & Enables cycle slip reduction which provides better lock times. \\
-  29-31 & Reserved & 0 & All reserved bits are set to 0. \\
+  29--31 & Reserved & 0 & All reserved bits are set to 0. \\
 
   \bottomrule
 \end{tabularx}
@@ -415,27 +461,28 @@ register 1 is 001). I've left these out of the tables because their values are o
   \textbf{Bits} & \textbf{Mnemonic} & \textbf{Value} & \textbf{DESCRIPTION} \\
   \midrule
 
-  \endhead
+  \endhead{}
 
   3 & Counter Reset & 0 & When this is set to 1, the synthesizer counters are held in reset. For
-  normal operation we set this to 0. \\
+                          normal operation we set this to 0. \\
   4 & Charge Pump Three-State & 0 & Holds the charge pump in three-state mode if set to 1. For
-  normal operation it must be set to 0. \\
+                                    normal operation it must be set to 0. \\
   5 & Power-Down & 0 & Setting this to 1 powers down the device. Setting it to 0 allows normal
-  operation. \\
+                       operation. \\
   6 & PD Polarity & 1 & Set to 1 for positive VCO characteristics. Set to 0 for negative VCO
-  characteristics. Since our VCO outputs a positive voltage signal we set this to 1. \\
+                        characteristics. Since our VCO outputs a positive voltage signal we set this
+                        to 1. \\
   7 & LDP & 0 & Sets the minimum number of PFD cycles before a lock detect can be set. \\
   8 & FSK Enable & 0 & Disables FSK modulation. \\
   9 & PSK Enable & 0 & Disables PSK modulation. \\
   10-11 & Ramp Mode & 0 & Sets the waveform as a continuous sawtooth. \\
   12-13 & Reserved & 0 & All reserve bits are set to 0. \\
   14 & SD Reset & 0 & Setting this to 0 resets the $\Sigma-\Delta$ modulator on each write to
-  register 0, which is the recommended operation. Setting this to 1 disables resetting the
-  modulator. \\
+                      register 0, which is the recommended operation. Setting this to 1 disables
+                      resetting the modulator. \\
   15 & N SEL & 0 & When set to 1, this creates an additional delay in setting INT and FRAC which can
-  prevent the PLL overshooting. Since we set INT once and do not update it, this is not necessary
-  and we leave it as 0. \\
+                   prevent the PLL overshooting. Since we set INT once and do not update it, this is
+                   not necessary and we leave it as 0. \\
   16-31 & Reserved & 0 & All reserve bits are set to 0. \\
 
   \bottomrule
@@ -448,29 +495,36 @@ register 1 is 001). I've left these out of the tables because their values are o
   \textbf{Bits} & \textbf{Mnemonic} & \textbf{Value} & \textbf{DESCRIPTION} \\
   \midrule
 
-  \endhead
+  \endhead{}
 
-  3-6 & Reserved & 0 & All reserved bits are set to 0. \\
+  3--6 & Reserved & 0 & All reserved bits are set to 0. \\
   7-18 & CLK\textsubscript{2} Divider & 1 & This is used to set the timeout interval in ramp
-  generation. See \cref{sec:adf4158-waveform-generation}for more information. \\
+                                            generation. See
+                                            \cref{sec:adf4158-waveform-generation}for more
+                                            information. \\
   19-20 & CLK DIV Mode & 3 & This enables ramp divider mode, which specifies that
-  CLK\textsubscript{1} and CLK\textsubscript{2} are used for ramp generation. \\
+                             CLK\textsubscript{1} and CLK\textsubscript{2} are used for ramp
+                             generation. \\
   21-22 & Readback to MUXOUT & 3 & Confusingly, this has been set to 3, which corresponds to neither
   of the supported values. Since we don't actually use the MUXOUT, this seems to be fine. If, at
-  some point in the future, we do use the MUXOUT we will probably need to fix this. \\
+                                   some point in the future, we do use the MUXOUT we will probably
+                                   need to fix this. \\
   23-24 & Negative Bleed Current & 0 & This setting can help improve performance in the dead
-  zone. We've disabled it. Note that this setting and readback to MUXOUT cannot simultaneously be
-  enabled. To understand this setting better refer to
-  \href{http://www.analog.com/media/en/technical-documentation/application-notes/AN-1154.pdf?doc=ADF4158.pdf}{AN-1154
-    Application Note}. \\
+                                       zone. We've disabled it. Note that this setting and readback
+                                       to MUXOUT cannot simultaneously be enabled. To understand
+                                       this setting better refer to \href{http://www.analog.com/media/en/technical-documentation/application-notes/AN-1154.pdf?doc=ADF4158.pdf}{AN-1154
+                                       Application Note}. \\
   25 & Reserved & 0 & All reserved bits are set to 0. \\
   26-30 & $\Sigma-\Delta$ modulator mode & 0 & 0 enables this during normal operation. We can set it
-  to 14 when FRAC=0. Even though we've set FRAC to 0, we have left this as 0 which seems strange. It
-  shouldn't cause anything to malfunction, but may cause the ADF4158 to draw more power. We should
-  experiment with setting this to 14 when using the actual board. \\
+                                               to 14 when FRAC=0. Even though we've set FRAC to 0,
+                                               we have left this as 0 which seems strange. It
+                                               shouldn't cause anything to malfunction, but may
+                                               cause the ADF4158 to draw more power. We should
+                                               experiment with setting this to 14 when using the
+                                               actual board. \\
   31 & LE SEL & 0 & LE is the load enable pin which we use to load data onto the ADF4158's internal
-  registers. Setting this to 0 enables the default operation of using the pin to set LE. Setting it
-  to 1 would synchronize it with the reference signal. \\
+                    registers. Setting this to 0 enables the default operation of using the pin to
+                    set LE. Setting it to 1 would synchronize it with the reference signal. \\
 
   \bottomrule
 \end{tabularx}
@@ -482,12 +536,27 @@ register 1 is 001). I've left these out of the tables because their values are o
   \textbf{Bits} & \textbf{Mnemonic} & \textbf{Value} & \textbf{DESCRIPTION} \\
   \midrule
 
-  \endhead
+  \endhead{}
 
-  3-18 & DEVIATION WORD & 31457 & This is used to set the size of successive frequency jumps during
-  ramp. See \cref{sec:adf4158-waveform-generation} for more information. \\
-  19-22 & DEVIATION OFFSET & 4 & This is also used to set the size of successive frequency jumps during
-  ramp. See \cref{sec:adf4158-waveform-generation} for more information. \\
+  3--18 & Deviation Word & 31457 & This is used to set the size of successive frequency jumps during
+                                   ramp. See \cref{sec:adf4158-waveform-generation} for more
+                                   information. \\
+  19--22 & Deviation Offset Word & 4 & This is also used to set the size of successive frequency
+                                       jumps during ramp. See \cref{sec:adf4158-waveform-generation}
+                                       for more information. \\
+  23 & Deviation Select & 0 & Setting this bit to 1 is used for FSK as described on page 28 of the
+                              datasheet. Since we do not use FSK we leave this as 0. \\
+  24 & Ramp 2 Enable & 0 & Setting this bit to 1 allows a second ramp with different settings than
+                           the first. We only need the first ramp. \\
+  25 & FSK Ramp Enable & 0 & Setting this bit to 1 uses FSK. Again, we do not use FSK and so leave
+                             this bit as 0. \\
+  26--27 & Interrupt & 0 & Sets the type of interrupt used to read the value of INT and FRAC of the
+                           ramp at a given moment. We don't read these values and therefore leave
+                           this as 0, which corresponds to interrupt off. \\
+  28 & PAR Ramp & 0 & Setting this bit to 1 allows a parabolic ramp which we don't use. \\
+  29 & Tx Ramp CLK & 0 & Setting this to 0 uses the clock divider (instead of the TX data clock) for
+                         clocking the ramp. \\
+  30--31 & Reserved & 0 & \\
 
   \bottomrule
 \end{tabularx}
@@ -500,10 +569,13 @@ register 1 is 001). I've left these out of the tables because their values are o
   \textbf{Bits} & \textbf{Mnemonic} & \textbf{Value} & \textbf{DESCRIPTION} \\
   \midrule
 
-  \endhead
+  \endhead{}
 
-  3-22 & STEP WORD & 2000 & This determines the number of steps in a ramp. To understand this see
-  \cref{sec:adf4158-waveform-generation} on waveform generation. \\
+  3--22 & Step Word & 2000 & This determines the number of steps in a ramp. To understand this see
+                             \cref{sec:adf4158-waveform-generation} on waveform generation. \\
+  23 & Step SEL & 0 & This bit is used when 2 different ramps are needed (for instance with FSK). As
+                      we don't need this functionality we leave it off and set this bit to 0. \\
+  24--31 & Reserved & 0 & \\
 
   \bottomrule
 \end{tabularx}
@@ -516,9 +588,17 @@ register 1 is 001). I've left these out of the tables because their values are o
   \textbf{Bits} & \textbf{Mnemonic} & \textbf{Value} & \textbf{DESCRIPTION} \\
   \midrule
 
-  \endhead
+  \endhead{}
 
-  19-31 & Reserved & 0 All reserve bits are set to 0. \\
+  3--14 & Delayed Start Word & 4000 & Sets the ramp start delay. We do not use a start delay, but we
+                                      do use this to delay between ramps. \\
+  15 & Delayed Start Enable & 0 & We do not use a start delay. \\
+  16 & Delay Clock Select & 1 & Increases the period of the delay clock by multiplying the period of
+                                the PFD clock by CLK\textsubscript{1}. This creates an effective
+                                period of 500ns. \\
+  17 & Ramp Delay & 1 & We enable a delay between ramp bursts. \\
+  18 & Ramp Delay Fast Lock & 0 & Disables the ramp delay fast lock function. \\
+  19--31 & Reserved & 0 & \\
 
   \bottomrule
 \end{tabularx}
@@ -534,38 +614,78 @@ sheet.
   \textbf{PIN} & \textbf{Mnemonic} & \textbf{DESCRIPTION} \\
   \midrule
 
-  \endhead
+  \endhead{}
 
-  1 & CPGND & \\
-  2, 3 & AGND &\\
-  4 & RF\textsubscript{IN} B & \\
-  5 & RF\textsubscript{IN} A & \\
-  6, 7, 8 & AV\textsubscript{DD} & \\
-  9 & REF\textsubscript{IN} & \\
-  10 & DGND & \\
-  11 & SDGND & \\
-  12 & TX\textsubscript{DATA} & \\
-  13 & CE & \\
-  14 & CLK & \\
-  15 & DATA & \\
-  16 & LE & \\
-  17 & MUXOUT & \\
-  18 & SDV\textsubscript{DD} & \\
-  19 & DV\textsubscript{DD} & \\
-  20, 21 & SW1, SW2 & \\
-  22 & V\textsubscript{P} & \\
-  23 & R\textsubscript{SET} & \\
-  24 & CP & \\
-  25 & EPAD &\\
+  1 & CPGND & The charge pump ground, which we set to the same ground as the rest of the circuit. \\
+  2, 3 & AGND & Prescaler ground; also set to common ground. \\
+  4 & RF\textsubscript{IN} B & The complement to the VCO output. We couple this to ground with a
+                               small capacitor: in this case, 10pF. \\
+  5 & RF\textsubscript{IN} A & The VCO output. This goes through prescaling and then becomes the PLL
+                               input signal. \\
+  6, 7, 8 & AV\textsubscript{DD} & The positive power supply for the RF part of the PLL. This takes
+                                   3.3V. \\
+  9 & REF\textsubscript{IN} & The reference input, which is our 40MHz clock signal. \\
+  10 & DGND & Digital ground. This uses the common ground. \\
+  11 & SDGND & $\Sigma-\Delta$ modulator ground. \\
+  12 & TX\textsubscript{DATA} & This pin can be used when employing FSK or PSK to transmit
+                                data. Since we are not using this we connect this pin to the FPGA
+                                but just set the value to GND. \\
+  13 & CE & We must set this pin to high in order to enable the device. \\
+  14 & CLK & A clock used to synchronize register configuration. \\
+  15 & DATA & Serial data input to set the configuration registers. \\
+  16 & LE & This pin is brought high in order to load data into the configuration registers. \\
+  17 & MUXOUT & This allows internal parameters of the ADF4158 to be read externally. We don't
+                currently use this in our design. \\
+  18 & SDV\textsubscript{DD} & Power supply pin for the $\Sigma-\Delta$ modulator. We also set this
+                               to 3.3V. \\
+  19 & DV\textsubscript{DD} & Power supply pin for the digital circuitry. Also 3.3V. \\
+  20, 21 & SW1, SW2 & FIXME: These pins are used for the fast-locking feature, which we use in our
+                      design. The typical topologies for this are shown in
+                      Figure~\ref{fig:adf4158-fast-lock}. However, our design does not use either of
+                      these topologies. \\
+  22 & V\textsubscript{P} & The charge pump power supply, which we set to 5V. \\
+  23 & R\textsubscript{SET} & This pin sets the maximum charge pump current according to the
+                              equation $I_{\text{CPmax}}=25.5/R_{\text{SET}}$. We use
+                              5.49$\si{k\Omega}$ for the resistor which gives a charge pump current
+                              of 4.6mA. \\
+  24 & CP & The charge pump output that is amplified and feeds into the VCO. Obviously, because this
+            is a charge pump we need to place a bypass capacitor to ground before the
+            amplifier. Here we use 51pF. \\
+  25 & EPAD & This is connected to GND. \\
 
   \bottomrule
 \end{tabularx}
 
-\subsection{HMC431LP4RF VCO}
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.5\textwidth]{data/adf4158-fast-lock.png}
+  \caption{Fast lock topologies.}
+  \label{fig:adf4158-fast-lock}
+\end{figure}
 
+\subsubsection{TLV2172 Operational Amplifier}
+\label{sec:tlv2172-op-amp}
+
+The \href{http://www.ti.com/lit/ds/symlink/tlv172.pdf}{TLV2172} op-amp is used to produce a gain of
+2 to match the CP output of the ADF4158 to the VTUNE input of the VCO. This is necessary since the
+charge pump supports a tune voltage of up to 5.5V but the VCO has a tune range of 0V to 10V. A
+non-inverting amplifier configuration is used to produce the necessary gain.
+
+\subsection{HMC431LP4RF VCO}
 \label{sec:hmc431lp4rf}
+
 The
-\href{http://www.analog.com/media/en/technical_documentation/data_sheets/hmc431.pdf}{HMC431LP4RF} is a radio-frequency VCO.
+\href{http://www.analog.com/media/en/technical_documentation/data_sheets/hmc431.pdf}{HMC431LP4RF} is
+a radio-frequency VCO.
+
+\subsection{SE2567L Power Amplifier}
+\label{sec:se2567l-power-amp}
+
+\subsection{Notes}
+\label{sec:notes}
+
+\subsubsection{MGA25203 $\rightarrow$ SE2567L Substitution}
+\label{sec:mga25203-se2567l-sub}
 
 The MGA-25203 power amplifier is now obsolete and there are no alternatives with an identical
 interface. Therefore the design will need to be modified. The alternative I will use is the
@@ -721,31 +841,31 @@ their connections.
   A04 & Connected to same pin header as A03. Also unused. \\
   A05 & Same. \\
   A06 & One of the voltage supplies for bank 35. It uses 3.3V as with all the other voltage supplies
-  to the main banks of the FPGA. \\
+        to the main banks of the FPGA. \\
   A07 & Connected to same pin header as A03. Unused. \\
   A08 & A different 2x4 pin header. Unused. \\
   A09 & Connected to the same pin header as A08. Unused. \\
   A10 & Floating. \\
   A11 & GND. \\
   A12 & Connected as an output to the FT2232H USB-JTAG converter. Pulling this low allows the
-  FT2232H device to output data to the FPGA through the ADBUS pins. Driving it high sets the ADBUS
-  pins as inputs. Remember, the ADBUS pins serve as the bidirectional translation between JTAG data
-  and USB data. \\
+        FT2232H device to output data to the FPGA through the ADBUS pins. Driving it high sets the ADBUS
+        pins as inputs. Remember, the ADBUS pins serve as the bidirectional translation between JTAG data
+        and USB data. \\
   A13 & SIWU (channel A). This pin is output to the FT2232H device and can be used to optimize USB
-  data transfers (more info in the FT2232H datasheet). It is not currently used by the FPGA
-  logic. \\
+        data transfers (more info in the FT2232H datasheet). It is not currently used by the FPGA
+        logic. \\
   A14 & Write output pin to the FT2232H device. When this is driven low, the FPGA writes data to the
-  FT2232H. When it's driven high, the FPGA can perform a read from the FT2232H. \\
+        FT2232H. When it's driven high, the FPGA can perform a read from the FT2232H. \\
   A15 & Inputs a 60MHz clock signal that originated at the FT2232H. This clock is used to
-  synchronize all data transfers between the FPGA and the FT2232H. \\
+        synchronize all data transfers between the FPGA and the FT2232H. \\
   A16 & A 3.3V input to bank 15. \\
 
   \midrule
 
   B01 & ADC\_SHDN1. One of two ADC\_SHDN outputs that, together with OEA (B02), controls the
-  shutdown mode selection of the ADC. It is used by the digital FPGA logic. When both SHDN and OE
-  are grounded, the ADC performs normally. When they are both pulled high, the ADC goes into sleep
-  mode. There are two other states but they are not used by the FPGA logic. \\
+        shutdown mode selection of the ADC. It is used by the digital FPGA logic. When both SHDN and OE
+        are grounded, the ADC performs normally. When they are both pulled high, the ADC goes into sleep
+        mode. There are two other states but they are not used by the FPGA logic. \\
   B02 & ADC\_OE1. See pin B01. This is used for channel A. \\
   B03 & 3.3V input for bank 35. \\
   B04 & Floating. \\
@@ -759,17 +879,17 @@ their connections.
   B12 & Floating. \\
   B13 & 3.3V input for bank 15. \\
   B14 & RD\#. A read active-low output pin to the FT2232H device. When this is driven low, the FPGA
-  reads data from the FT2232H. \\
+        reads data from the FT2232H. \\
   B15 & TXE\#. An active-low input from the FT2232H. FT2232H drives this pin low to signal sending
-  data to the FPGA (i.e. a read for the FPGA). \\
+        data to the FPGA (i.e. a read for the FPGA). \\
   B16 & RXF\#. An active-low input from the FT2232H. FT2232H drives this pin low to signal that it
-  should read data. To the FPGA, this signals that it should write data. \\
+        should read data. To the FPGA, this signals that it should write data. \\
 
   \midrule
 
   C01 & Floating. \\
   C02 & OF1. An input from the ADC. It is pulled high when an overflow or underflow occurs at
-  channel A. It is currently unused by the FPGA logic. \\
+        channel A. It is currently unused by the FPGA logic. \\
   C03 & Floating. \\
   C04 & Floating. \\
   C05 & GND. \\
@@ -784,7 +904,7 @@ their connections.
   C14 & Floating. \\
   C15 & GND. \\
   C16 & FT\_SUSPEND. An active-low input to the FPGA. FT223H drives this low when the USB is in
-  suspend mode. It is currently unused by the FPGA logic. \\
+        suspend mode. It is currently unused by the FPGA logic. \\
 
   \midrule
   D01 & LED. Connects to an LED that is used by the FPGA to signal data processing. \\
@@ -806,18 +926,18 @@ their connections.
 
   \midrule
   E01 & D10. Input pin 10/11 of the ADC's channel A digital outputs. It is used to transmit data
-  from the ADC to FPGA. \\
+        from the ADC to FPGA. \\
   E02 & D11. Input pin 11/11 of the ADC's channel A digital outputs. It is used to transmit data
-  from the ADC to FPGA. \\
+        from the ADC to FPGA. \\
   E03 & Floating. \\
   E04 & 3.3V input to bank 35. \\
   E05 & Floating. \\
   E06 & Floating. \\
   E07 & CFGPVS\_0. A dedicated pin that is part of the configuration logic of the FPGA. It is used
-  to specify the voltage level used for all banks. Since we use 3.3V, we connect this pin to the
-  same 3.3V voltage level. \\
+        to specify the voltage level used for all banks. Since we use 3.3V, we connect this pin to the
+        same 3.3V voltage level. \\
   E08 & CCLK\_0. An output pin exported from the FPGA to the flash memory device, W25Q32JV, to drive
-  its operation and coordinate writes and reads to and from the device. \\
+        its operation and coordinate writes and reads to and from the device. \\
   E09 & GND. \\
   E10 & VCCBRAM. One of the two power supply pins to the FPGA's internal RAM. It requires 1.0V. \\
   E11 & Floating. \\
@@ -825,15 +945,15 @@ their connections.
   E13 & Floating. \\
   E14 & 3.3V power supply to bank 15. \\
   E15 & FT\_D5. Bidirectional pin 5/7 of ADBUS, used to transmit data between the FPGA and
-  FT2232H. \\
+        FT2232H. \\
   E16 & FT\_D4. Bidirectional pin 4/7 of ADBUS, used to transmit data between the FPGA and
-  FT2232H. \\
+        FT2232H. \\
 
   \midrule
 
   F01 & VCC0\_35. 3.3V power supply to bank 35. \\
   F02 & D9. Input pin 9/11 of the ADC's channel A digital outputs. It is used to transmit data from
-  the ADC to FPGA. \\
+        the ADC to FPGA. \\
   F03 & Floating. \\
   F04 & Floating. \\
   F05 & Floating. \\
@@ -846,17 +966,17 @@ their connections.
   F12 & Floating. \\
   F13 & Floating. \\
   F14 & FT\_D3. Bidirectional pin 3/7 of ADBUS, used to transmit data between the FPGA and
-  FT2232H. \\
+        FT2232H. \\
   F15 & FT\_D0. Bidirectional pin 0/7 of ADBUS, used to transmit data between the FPGA and
-  FT2232H. \\
+        FT2232H. \\
   F16 & GND. \\
 
   \midrule
 
   G01 & D10. Input pin 10/11 of the ADC's channel A digital outputs. It is used to transmit data
-  from the ADC to FPGA. \\
+        from the ADC to FPGA. \\
   G02 & D7. Input pin 7/11 of the ADC's channel A digital outputs. It is used to transmit data from
-  the ADC to FPGA. \\
+        the ADC to FPGA. \\
   G03 & GND. \\
   G04 & Floating. \\
   G05 & Floating. \\
@@ -870,28 +990,28 @@ their connections.
   G13 & GND. \\
   G14 & Floating. \\
   G15 & FT\_D2. Bidirectional pin 2/7 of ADBUS, used to transmit data between the FPGA and
-  FT2232H. \\
+        FT2232H. \\
   G16 & FT\_D1. Bidirectional pin 1/7 of ADBUS, used to transmit data between the FPGA and
-  FT2232H. \\
+        FT2232H. \\
 
   \midrule
 
   H01 & D4. Input pin 4/11 of the ADC's channel A digital outputs. It is used to transmit data from
-  the ADC to FPGA. \\
+        the ADC to FPGA. \\
 
   H02 & D5. Input pin 5/11 of the ADC's channel A digital outputs. It is used to transmit data from
-  the ADC to FPGA. \\
+        the ADC to FPGA. \\
   H03 & D6. Input pin 6/11 of the ADC's channel A digital outputs. It is used to transmit data from
-  the ADC to FPGA. \\
+        the ADC to FPGA. \\
   H04 & Floating. \\
   H05 & Floating. \\
   H06 & GND. \\
   H07 & VREFN\_0. A dedicated pin that is used as a 1.25V reference GND voltage. Tied to GND. \\
   H08 & VP\_0. A dedicated pin that is used as the XADC differential analog input (positive side). It
-  is left floating and is unused. \\
+        is left floating and is unused. \\
   H09 & VCCINT. 1.0V power supply for the internal core logic of the FPGA. \\
   H10 & DONE\_0. A bidirectional dedicated pin. It is pulled high when configuration is done. It
-  is connected to a pull-up resistor and an external connector, presumably for debugging purposes. \\
+        is connected to a pull-up resistor and an external connector, presumably for debugging purposes. \\
   H11 & Floating. \\
   H12 & Floating. \\
   H13 & Floating. \\
@@ -904,15 +1024,15 @@ their connections.
   J01 & Floating. \\
   J02 & VCC0\_35. 3.3V power supply for bank 35. \\
   J03 & D3. Input pin 3/11 of the ADC's channel A digital outputs. It is used to transmit data from
-  the ADC to FPGA. \\
+        the ADC to FPGA. \\
   J04 & MIX\_ENBL. An enable pin that is output to the ADL5802 mixer. It is pulled low to enable
-  the mixer and pulled high to disable it. \\
+        the mixer and pulled high to disable it. \\
   J05 & Floating. \\
   J06 & VCCINT. 1.0V power supply for the internal core logic of the FPGA. \\
   J07 & VN\_0. A dedicated pin that is used as the XADC differential analog input (negative
-  side). It is tied to GND and is unused. \\
+        side). It is tied to GND and is unused. \\
   J08 & VREFP\_0. A dedicated pin that is used as a 1.25V reference input. It is tied to GND and
-  unused. \\
+        unused. \\
   J09 & GND. \\
   J10 & VCCAUX. A 1.8V power supply for auxiliary circuits in the FPGA IC. \\
   J11 & GND. \\
@@ -925,17 +1045,17 @@ their connections.
   \midrule
 
   K01 & D2. Input pin 2/11 of the ADC's channel A digital outputs. It is used to transmit data from
-  the ADC to FPGA. \\
+        the ADC to FPGA. \\
   K02 & D1. Input pin 1/11 of the ADC's channel A digital outputs. It is used to transmit data from
-  the ADC to FPGA. \\
+        the ADC to FPGA. \\
   K03 & ADF\_MUXOUT. Input from the frequency synthesizer. It indicates that a sweep is done. \\
   K04 & GND. \\
   K05 & Floating. \\
   K06 & GND. \\
   K07 & DXN\_0. The cathode of two temperature-monitoring diode pins. It is not used and is
-  therefore tied to GND. \\
+        therefore tied to GND. \\
   K08 & DXP\_0. The anode of two temperature-monitoring diode pins. It is not used and is therefore
-  tied to GND. \\
+        tied to GND. \\
   K09 & VCCINT. 1.0V power supply for the internal core logic of the FPGA. \\
   K10 & INIT\_B. Indicates initialization of configuration memory. It is pulled high and is unused. \\
   K11 & VCCAUX. A 1.8V power supply for auxiliary circuits in the FPGA IC. \\
@@ -949,44 +1069,44 @@ their connections.
 
   L01 & GND. \\
   L02 & D0. Input pin 0/11 of the ADC's channel A digital outputs. It is used to transmit data from
-  the ADC to FPGA. \\
+        the ADC to FPGA. \\
   L03 & Floating. \\
   L04 & Floating. \\
   L05 & Floating. \\
   L06 & VCC0\_0. 3.3V power supply for bank 0 (i.e. the bank for dedicated configuration pins). \\
   L07 & TCK. An input pin originating at the output of FT2232H and is used to transmit the
-  JTAG clock. It is not used by the FPGA logic. \\
+        JTAG clock. It is not used by the FPGA logic. \\
   L08 & VCCINT. 1.0V power supply for the internal core logic of the FPGA. \\
   L09 & PROGRAM\_B. Connected to a pushbutton switch and can be used to perform an asynchronous
-  reset of the configuration logic. \\
+        reset of the configuration logic. \\
   L10 & VCCAUX. A 1.8V power supply for auxiliary circuits in the FPGA IC. \\
   L11 & GND. \\
   L12 & SPI\_CS. An output pin that can be brought low to indicate that a transmission will take
-  place between the FPGA and flash storage device. It is currently left in the high-impedance
-  state in FPGA logic, seemingly indicating that the flash storage device is not yet used. \\
+        place between the FPGA and flash storage device. It is currently left in the high-impedance
+        state in FPGA logic, seemingly indicating that the flash storage device is not yet used. \\
   L13 & Floating. \\
   L14 & Floating. \\
   L15 & PUDC\_B. Pulled low, which configures all I/O pins to enable their internal pull-up
-  resistors. \\
+        resistors. \\
   L16 & VCC0\_14. 3.3V power supply to bank 14. \\
 
   \midrule
 
   M01 & OF2. An input from the ADC. It is pulled high when an overflow or underflow occurs at
-  channel
-  B. It is currently unused by the FPGA logic. \\
+        channel
+        B. It is currently unused by the FPGA logic. \\
   M02 & ADF\_DATA. A serial data output pin the frequency synthesizer. \\
   M03 & VCC0\_34. 3.3V power supply to bank 34. \\
   M04 & Floating. \\
   M05 & Floating. \\
   M06 & Floating. \\
   M07 & TMS. Output pin that is fed into the FT223H as a mode select pin. It is unused by the
-  current FPGA logic. \\
+        current FPGA logic. \\
   M08 & GND. \\
   M09 & M0. Along with M1 and M2, this specifies the configuration mode of the FPGA. M[2:0] =
-  001 which indicates the FPGA acts as a master in an SPI interface. Because a DNP resistor is
-  placed between M0 and 3.3V, it is not actually connected to the power supply. However, since all
-  pull-up resistors should be enabled by pulling PUDC\_B low, it should register a logic 1. \\
+        001 which indicates the FPGA acts as a master in an SPI interface. Because a DNP resistor is
+        placed between M0 and 3.3V, it is not actually connected to the power supply. However, since all
+        pull-up resistors should be enabled by pulling PUDC\_B low, it should register a logic 1. \\
   M10 & M1. See M09. \\
   M11 & M2. See M09. \\
   M12 & Floating. \\
@@ -998,7 +1118,7 @@ their connections.
   \midrule
 
   N01 & ADF\_LE. An output that connects to the ADF4158 frequency synthesizer. When it is
-  pulled high, data stored in the ADF4158 shift registers is loaded into one of the 8 latches. \\
+        pulled high, data stored in the ADF4158 shift registers is loaded into one of the 8 latches. \\
   N02 & ADC\_SHDN2. See B01. \\
   N03 & Floating. \\
   N04 & Floating. \\
@@ -1009,11 +1129,11 @@ their connections.
   N09 & Floating. \\
   N10 & VCC0\_14. 3.3V power supply for bank 14. \\
   N11 & CLK\_REF. An input pin that takes the main 40MHz reference clock used by the FPGA. It is
-  one of the outputs of the clock fanout buffer. \\
+        one of the outputs of the clock fanout buffer. \\
   N12 & Floating. \\
   N13 & Floating. \\
   N14 & SD\_CLK. A clock that synchronizes activity with the SD card reader. It is not currently used
-  by the FPGA logic. \\
+        by the FPGA logic. \\
   N15 & GND. \\
   N16 & SD\_DAT0. A data line to the SD card reader. Not currently used by the FPGA logic. \\
 
@@ -1022,7 +1142,7 @@ their connections.
   P01 & ADC\_OE2. See pin B01. This is used for channel B. \\
   P02 & GND. \\
   P03 & ADF\_TXDATA. Output pin that transmits data to be used by the ADF4158 frequency
-  synthesizer for FSK or PSK transmission. This is unused by the FPGA logic. \\
+        synthesizer for FSK or PSK transmission. This is unused by the FPGA logic. \\
   P04 & Floating. \\
   P05 & Floating. \\
   P06 & Floating. \\
@@ -1036,15 +1156,15 @@ their connections.
   P14 & Floating. \\
   P15 & Floating. \\
   P16 & SD\_CMD. A pin used to communicate with the SD card reader. Currently unused by the FPGA
-  logic. \\
+        logic. \\
 
   \midrule
 
   R01 & ADF\_CLK. An output clock used to synchronize the operation of the ADF4158 frequency
-  synthesizer. \\
+        synthesizer. \\
   R02 & Floating. \\
   R03 & ADF\_CE. An output pin to the ADF4158. When this pin is driven low, it powers down
-  the frequency synthesizer. \\
+        the frequency synthesizer. \\
   R04 & VCC0\_34. 3.3V power supply for bank 34. \\
   R05 & Floating. \\
   R06 & Floating. \\
@@ -1063,7 +1183,7 @@ their connections.
 
   T01 & VCC0\_34. 3.3V power supply for bank 34. \\
   T02 & PA\_OFF. Output pin that connects to the base of a transistor and can be used to
-  enable (high) or disable (low) the operation of the power amplifier, SE2567L. \\
+        enable (high) or disable (low) the operation of the power amplifier, SE2567L. \\
   T03 & Floating. \\
   T04 & ADF\_DONE. Input pin that that is unused by the FPGA logic. \\
   T05 & Floating. \\
@@ -1133,47 +1253,61 @@ pins and their connections.
   \endhead
 
   VDD & 7, 10, 18, 63 & The power supply required is 3.0V and each pin requires its own 0.1$\mu$F
-  capacitor. When designing the PCB, ensure that each capacitor is placed as close to its
-  corresponding pin as possible to minimize the trace inductance. The 3.0V signal itself
-  is generated by using an LP5907 LDO regulator that takes in a 3.6V signal.\\
+                        capacitor. When designing the PCB, ensure that each capacitor is placed as close to its
+                        corresponding pin as possible to minimize the trace inductance. The 3.0V signal itself
+                        is generated by using an LP5907 LDO regulator that takes in a 3.6V signal.\\
   OVDD & 39, 42 & The power supply for the output that the ADC feeds to, which is the FPGA and takes
-  a 3.3V power supply. So, we connect this to the 3.3V power rail and bypass it with two 0.1$\mu$F
-  capacitors, one for each pin. Again, each should be placed adjacent to their corresponding pins
-  (39 and 42). \\
+                  a 3.3V power supply. So, we connect this to the 3.3V power rail and bypass it with
+                  two 0.1$\mu$F capacitors, one for each pin. Again, each should be placed adjacent
+                  to their corresponding pins (39 and 42). \\
   CLKA, CLKB, MUX & 8, 9, 21 & Feeds a 40MHz clock signal to the device and specifies that the
-  digitized channel A and B data should be multiplexed and pass through both output buses A and
-  B. We leave B unconnected, so only bus A matters. \\
+                               digitized channel A and B data should be multiplexed and pass through
+                               both output buses A and B. We leave B unconnected, so only bus A
+                               matters. \\
   DA0-DA11 & 43-48, 51-56 & The digitized output data that contains the input data from both
-  channels A and B, multiplexed. This is fed into the FPGA for processing. \\
+                            channels A and B, multiplexed. This is fed into the FPGA for
+                            processing. \\
   OFA & 57 & This pin is driven high when overflow or underflow occurs. Otherwise it is kept low. We
-  export this to the FPGA, although it is not currently used by the FPGA logic. \\
+             export this to the FPGA, although it is not currently used by the FPGA logic. \\
   DB0-DB11 & 26-30, 33-39 & The channel B data bus. Since we multiplex everything through the
-  channel A data bus, this data bus is redundant and therefore left unconnected. \\
+                            channel A data bus, this data bus is redundant and therefore left unconnected. \\
   OFB & 40 & Similar to OFA, but for channel B. This is exported to the FPGA, but is also unused. \\
   VCMA, VCMB & 61, 20 & A 1.5V signal that is used to set the common-mode voltage of the IF
-  differential amplifiers, whose outputs are sent to this ADC. They are each bypassed to GND with a
-  2.2$\mu$F capacitor, which should be placed directly next to their respective pins. \\
+                        differential amplifiers, whose outputs are sent to this ADC. They are each
+                        bypassed to GND with a 2.2$\mu$F capacitor, which should be placed directly
+                        next to their respective pins. \\
   GND, OGND & 17, 64, 65, 31, 50 & The ADC power ground and output power ground, respectively. These
-  can all be routed to the same ground plane. \\
+                                   can all be routed to the same ground plane. \\
   NC & 24-25, 41-42 & No connect. \\
   SHDNA, SHDNB, OEA, OEB & 59, 22, 58, 23 & These are input pins that are connected to the FPGA. The
-  FPGA logic can ground both SHDNA and OEA to allow channel A to operate normally or bring them both
-  high to put channel A in sleep mode. Channel B works the same way. \\
+                                            FPGA logic can ground both SHDNA and OEA to allow
+                                            channel A to operate normally or bring them both high to
+                                            put channel A in sleep mode. Channel B works the same
+                                            way. \\
   SENSEA, SENSEB & 62, 19 & These are connected to VDD, which specifies that the input voltage range
-  of the differential signals for both channels A and B is 1.5V $\pm$ 1V. 1.5V is the common-mode
-  voltage and the channels allow a 2V range around that. \\
-  MODE & 60 & Connecting mode to VDD specifies the output format as 2s complement and turns of the clock duty stabilizer, which is unnecessary because the input clock has a 50\% duty cycle. \\
+                            of the differential signals for both channels A and B is 1.5V $\pm$
+                            1V. 1.5V is the common-mode voltage and the channels allow a 2V range
+                            around that. \\
+  MODE & 60 & Connecting mode to VDD specifies the output format as 2s complement and turns of the
+              clock duty stabilizer, which is unnecessary because the input clock has a 50\% duty
+              cycle. \\
   REFHA, REFLA, REFLB, REFHB & 3-6, 11-14 & These are the high and low reference for channels A and
-  B, respectively. Their connection is specified exactly by the datasheet. It is critical that the
-  0.1$\mu$F capacitor is placed as close to the pins as possible. \\
+                                            B, respectively. Their connection is specified exactly
+                                            by the datasheet. It is critical that the 0.1$\mu$F
+                                            capacitor is placed as close to the pins as possible. \\
   AINA+, AINA-, AINB-, AINB+ & 1-2, 15-16 & The positive and negative differential inputs for
-  channels A and B. \textbf{\{STARTINCOMPLETE\}} These lines have a capacitor between the positive
-  and negative analog inputs, as well as capacitors connecting each line to GND. The capacitor value
-  between the lines of 0.1$\mu$F is different from the suggested value of 12pF and the capacitors
-  connecting the lines to GND are not suggested from the datasheet (see page 18 of the
-  datasheet). Additionally, the resistance value of 49.9$\Omega$ differs from the suggested
-  resistance of 25$\Omega$. Lastly, the negative output of the differential amplifier for channel
-  Ais feeding into the positive input line \textbf{\{END INCOMPLETE\}}. \\
+                                            channels A and B. \textbf{\{STARTINCOMPLETE\}} These
+                                            lines have a capacitor between the positive and negative
+                                            analog inputs, as well as capacitors connecting each
+                                            line to GND. The capacitor value between the lines of
+                                            0.1$\mu$F is different from the suggested value of 12pF
+                                            and the capacitors connecting the lines to GND are not
+                                            suggested from the datasheet (see page 18 of the
+                                            datasheet). Additionally, the resistance value of
+                                            49.9$\Omega$ differs from the suggested resistance of
+                                            25$\Omega$. Lastly, the negative output of the
+                                            differential amplifier for channel A is feeding into the
+                                            positive input line \textbf{\{END INCOMPLETE\}}. \\
 
   \bottomrule
 \end{tabularx}
@@ -1393,7 +1527,7 @@ components (Figures~\ref{fig:fmcw-layer1-layout}, ~\ref{fig:fmcw-layer1-gnd},
   at most, and preferably closer to the pins.
 \end{itemize}
 
-\subsection{RX1 \ RX2}
+\subsection{RX1 / RX2}
 
 \begin{itemize}
 \item The 100pF capacitor used to bypass TRF37A73 should be place as close as possible to VCC.
