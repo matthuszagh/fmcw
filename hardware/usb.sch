@@ -1,6 +1,6 @@
 EESchema Schematic File Version 4
 LIBS:fmcw-cache
-EELAYER 26 0
+EELAYER 29 0
 EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
@@ -955,7 +955,7 @@ U 1 1 63293618
 P 1250 2950
 F 0 "J2" H 1305 3417 50  0000 C CNN
 F 1 "USB_B_Micro" H 1305 3326 50  0000 C CNN
-F 2 "fmcw:USB_MICRO" H 1400 2900 50  0001 C CNN
+F 2 "Connector_USB:USB_Micro-B_Amphenol_10103594-0001LF_Horizontal" H 1400 2900 50  0001 C CNN
 F 3 "~" H 1400 2900 50  0001 C CNN
 	1    1250 2950
 	1    0    0    -1  

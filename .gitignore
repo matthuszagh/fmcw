@@ -24,3 +24,5 @@ documentation/data/
 /hardware/fmcw.csv
 /hardware/fmcw.xml
 /hardware/_saved_power.sch
+doc/auto
+/hardware/_saved_fpga.sch
