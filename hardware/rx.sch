@@ -1,10 +1,10 @@
 EESchema Schematic File Version 4
 LIBS:fmcw-cache
-EELAYER 29 0
+EELAYER 26 0
 EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
-Sheet 6 10
+Sheet 7 10
 Title ""
 Date ""
 Rev ""

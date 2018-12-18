@@ -1,6 +1,6 @@
 EESchema Schematic File Version 4
 LIBS:fmcw-cache
-EELAYER 29 0
+EELAYER 26 0
 EELAYER END
 $Descr A3 16535 11693
 encoding utf-8
@@ -893,16 +893,16 @@ Wire Wire Line
 	1700 6350 1700 6450
 Wire Wire Line
 	11650 8950 11600 8950
-Text Notes 2000 5500 0    60   ~ 0
-Quiescent current\n1V0: 97 mA\n1V8: 22 mA\n3V3: 2 mA
-Text Notes 2950 5500 0    60   ~ 0
-Power-on current\n1V0: Iq + 180 mA\n1V8: Iq + 40 mA\n3V3: Iq + 40 mA
+Text Notes 2000 5600 0    60   ~ 0
+Quiescent current\n1V0: 97 mA\n1V8: 22 mA\n3V3: 71 mA\n3V6: 78 mA
+Text Notes 2950 5600 0    60   ~ 0
+Power-on current\n1V0: 277 mA\n1V8: 62 mA\n3V3: 296 mA\n3V6: 78 mA
 Text Notes 2000 5050 0    60   ~ 0
 Power supply ramp time: 0.2 ms - 50 ms
 Wire Wire Line
 	8350 5700 8450 5700
-Text Notes 1700 3100 0    60   ~ 0
-80 mA
+Text Notes 1700 3100 0    50   ~ 0
+78 mA
 Wire Wire Line
 	1400 3050 1150 3050
 Text HLabel 1150 3050 0    60   Input ~ 0
@@ -1352,8 +1352,8 @@ Wire Wire Line
 	10250 2450 10200 2450
 Text Notes 1650 800  0    60   ~ 0
 70 mA
-Text Notes 1700 3000 0    60   ~ 0
-1 mA
+Text Notes 1750 3000 0    50   ~ 0
+5 mA
 Wire Wire Line
 	9150 10700 9050 10700
 Text Label 9050 10700 2    60   ~ 0
@@ -2818,4 +2818,14 @@ Wire Wire Line
 Connection ~ 14150 8100
 Wire Wire Line
 	14150 8100 13900 8100
+Text Notes 4100 6750 0    50   ~ 0
+Iq: 95 mA\nIon: 215 mA
+Text Notes 1600 7450 0    50   ~ 0
+Iq: 2 mA\nIon: 62 mA
+Text Notes 1100 6550 0    50   ~ 0
+Iq: 22 mA\nIon: 62 mA
+Text Notes 8250 850  0    50   ~ 0
+Iq: 1 mA\nIon: 201 mA
+Text Notes 6950 10000 0    50   ~ 0
+Iq: 10 uA\nIon: 20 mA
 $EndSCHEMATC

@@ -1,6 +1,6 @@
 EESchema Schematic File Version 4
 LIBS:fmcw-cache
-EELAYER 29 0
+EELAYER 26 0
 EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
@@ -58,7 +58,6 @@ F11 "3V3" I L 8800 2050 60
 F12 "TX_COUPLED" O R 10150 1850 60 
 F13 "3V0" I L 8800 2150 60 
 F14 "PA_OFF" I R 10150 2250 60 
-F15 "4V5" I R 10150 2550 60 
 $EndSheet
 $Sheet
 S 8850 3500 1200 850 
@@ -89,7 +88,6 @@ F6 "3V3A" O R 3000 4300 60
 F7 "3V0" O R 3000 4700 60 
 F8 "3V6" O R 3000 4800 60 
 F9 "10V" O R 3000 4500 60 
-F10 "4V5" O R 3000 4900 60 
 $EndSheet
 $Sheet
 S 4750 2500 1100 850 
@@ -821,18 +819,16 @@ F 4 "LP5907MFX-1.8/NOPB" H 2050 5900 50  0001 C CNN "manf#"
 	1    2050 5900
 	1    0    0    -1  
 $EndComp
-Text Notes 3500 4850 0    60   ~ 0
-1V0: 100 mA\n1V8: 30 mA\n3V0: 170 mA\n5V: 200 mA\n3.3VA: 540 mA\n3.3VD: 100 mA\n3V6: 80 mA\n10V: 5 mA
+Text Notes 4550 4850 0    60   ~ 0
+Current (max):\n1V0:  277 mA\n1V8:  62 mA\n3V0:  170 mA\n3V3A: 540 mA\n3V3D: 336 mA\n3V6:  78 mA\n5V:   1,100 mA\n10V:  5 mA
 Text Notes 9300 1500 0    60   ~ 0
 3V0: 27 mA\n3V3A: 500 mA\n5V: 5 mA\n10V: 5 mA
 Text Notes 6700 3650 0    60   ~ 0
 3V3A: 5 mA
-Text Notes 2150 1600 0    60   ~ 0
-1V0: 100 mA\n1V8: 30 mA\n3V6: 80 mA\n3V3D: 70 mA
-Text Notes 4900 5250 0    60   ~ 0
-20 mA
-Text Notes 4400 4850 0    60   ~ 0
-Power:\nTX: 1.65 W\nLNA: 0.45 W\nDigital: 0.7 W\nMixer: 1.0 W\nIF: 0.01 W\nClock: 0.1 W\n= 4 W
+Text Notes 5200 5800 0    60   ~ 0
+I_typ: 20 mA\nI_max: 40 mA
+Text Notes 5500 4750 0    60   ~ 0
+Power (max):\nTX: 1.65 W\nLNA: 0.45 W\nDigital: 0.7 W\nMixer: 1.0 W\nIF: 0.01 W\nClock: 0.1 W\n= 4 W
 Text Notes 8900 3400 0    60   ~ 0
 3V0: 70 mA
 Wire Wire Line
@@ -864,17 +860,15 @@ Wire Wire Line
 Wire Wire Line
 	5800 6850 5800 7000
 Wire Wire Line
-	10150 2550 10200 2550
-Text Label 10200 2550 0    60   ~ 0
-4V5
-Wire Wire Line
-	3000 4900 3100 4900
-Text Label 3100 4900 0    60   ~ 0
-4V5
-Wire Wire Line
 	4500 5300 4800 5300
 Wire Wire Line
 	3850 5300 4200 5300
 Wire Wire Line
 	3450 6500 3450 6550
+Text Notes 1650 1550 0    60   ~ 0
+Quiescent current\n1V0:  97 mA\n1V8:  22 mA\n3V3D: 71 mA\n3V6:  78 mA
+Text Notes 2600 1550 0    60   ~ 0
+Power-on current\n1V0:  277 mA\n1V8:  62 mA\n3V3D: 296 mA\n3V6:  78 mA
+Text Notes 3650 4850 0    60   ~ 0
+Current (min):\n1V0:  97 mA\n1V8:  22 mA\n3V0:  170 mA\n3V3A: 540 mA\n3V3D: 91 mA\n3V6:  78 mA\n5V:   500 mA\n10V:  5 mA
 $EndSCHEMATC

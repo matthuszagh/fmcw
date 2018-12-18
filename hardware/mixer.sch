@@ -1,6 +1,6 @@
 EESchema Schematic File Version 4
 LIBS:fmcw-cache
-EELAYER 29 0
+EELAYER 26 0
 EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
@@ -739,8 +739,8 @@ Wire Wire Line
 	6950 4800 6950 4750
 Text Label 6950 4750 0    60   ~ 0
 5VF
-Text Notes 4250 2250 0    60   ~ 0
-300 mA
+Text Notes 4300 2350 0    50   ~ 0
+I_max: 300mA\nI_typ: 220mA
 $Comp
 L Device:Ferrite_Bead FB13
 U 1 1 59754A66

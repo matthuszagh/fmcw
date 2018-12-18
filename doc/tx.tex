@@ -84,7 +84,7 @@ sawtooth will ramp from 5.3GHz to 5.9GHz in 1ms. We also use a delay between bur
   \textbf{Parameter/Variable} & \textbf{Description} \\
   \midrule
 
-  \endhead{}
+  \endhead
 
   $f_{\text{DEV}}$ & The frequency deviation for each frequency jump during ramp. \\
   $f_{\text{PFD}}$ & The input frequency to the PFD post prescaling. In our case this is 20MHz. \\
@@ -449,6 +449,9 @@ a radio-frequency VCO.
 \subsection{SE2567L Power Amplifier}
 \label{sec:se2567l-power-amp}
 
+\fxnote{I've changed this component with the SE5004L, which has higher power output. Everything
+  from this section forward (within the TX section) will need to be changed.}
+
 \subsection{Notes}
 \label{sec:notes}
 
@@ -490,13 +493,4 @@ the correct resistors. Ideally, we want resistors with a higher-value so that le
 dissipated, and are commonly used to reduce cost and make them easier to replace if
 necessary. Lastly, I'd like to keep the values in the ballpark of those specified in the datasheet
 in case there are any other reasons I'm not thinking of. The values $R_2 = 1.47\si{k\Omega}$ and
-$R_1 = 6.8\si{k\Omega}$ should work well. The modified schematic for this is shown in
-Figure~\ref{fig:se2567l}.
-
-\begin{figure}[h]
-  \centering
-  \includegraphics[width=\textwidth]{data/se2567l.png}
-  \caption{The SE2567L power amplifier. This has been modified from the original design due to the
-    old power amplifier having been discontinued.}
-  \label{fig:se2567l}
-\end{figure}
+$R_1 = 6.8\si{k\Omega}$ should work well.

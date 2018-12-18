@@ -30,6 +30,9 @@ floating. SUSPEND\# is similar to PWREN\#; it is low when the USB is in suspend 
 an input to the FPGA. BDBUS0-3 are used for the JTAG interface to configure the FPGA. In order, they
 are TCK, TDI, TDO and TMS.
 
+\subsection{FT2232H}
+\label{sec:ft2232h}
+
 \paragraph{FIXME} The FT2232H device also communicates with the FPGA using a synchronous FIFO
 interface as described
 \href{http://www.ftdichip.com/Support/Documents/AppNotes/AN_130_FT2232H_Used_In_FT245\%20Synchronous\%20FIFO\%20Mode.pdf}{here}. This
@@ -48,3 +51,6 @@ why this interface requires additional, external memory.
   \caption{The configuration bit stream is loaded onto the FPGA using a USB-JTAG interface.}
   \label{fig:usb_ft2232}
 \end{figure}
+
+\subsection{93LC46B 1k EEPROM}
+\label{sec:93lc46b}

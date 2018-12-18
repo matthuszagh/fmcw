@@ -4,38 +4,155 @@
 
 \label{tab:power-schematic-components}
 \begin{tabularx}{\textwidth}{l l X>{\raggedright\arraybackslash}X}
-  \toprule
-  \textbf{Component} & \textbf{MFN} & \textbf{Links} \\
-  \midrule
-  \endhead
+        \toprule
+        \textbf{Component} & \textbf{MFN} & \textbf{Links} \\
+        \midrule
+        \endhead
 
-  Ferrite bead & CIC21P101NE &
-  \href{http://www.samsungsem.com/kr/support/product-search/bead/__icsFiles/afieldfile/2014/11/13/S_CIC21P101NE.pdf}{Datasheet},
-  \href{https://www.digikey.com/product-detail/en/mpd-memory-protection-devices/EJ508A/EJ508A-ND/2439547}{Digi-Key}
-  \\
-  Buck Converter & L7980TR &
-  \href{https://www.st.com/content/ccc/resource/technical/document/datasheet/19/f6/ef/53/6a/98/4f/36/CD00217462.pdf/files/CD00217462.pdf/jcr:content/translations/en.CD00217462.pdf}{Datasheet},
-  \href{https://www.digikey.com/product-detail/en/stmicroelectronics/L7980TR/497-10813-1-ND/2469161}{Digi-Key}
-  \\
+        Ferrite bead & CIC21P101NE &
+        \href{http://www.samsungsem.com/kr/support/product-search/bead/__icsFiles/afieldfile/2014/11/13/S_CIC21P101NE.pdf}{Datasheet},
+        \href{https://www.digikey.com/product-detail/en/mpd-memory-protection-devices/EJ508A/EJ508A-ND/2439547}{Digi-Key}
+        \\
+        Buck Converter & \hyperlink{sec:tps5420d}{TPS5420D} &
+        \href{http://www.ti.com/lit/ds/symlink/tps5420.pdf}{Datasheet},
+        \href{https://www.digikey.com/product-detail/en/texas-instruments/TPS5420DR/296-31984-1-ND/3505318}{Digi-Key}
+        \\
 
-  \bottomrule
+        \bottomrule
 \end{tabularx}
 
 \subsection{Overall Layout}
 \label{sec:power-overall-layout}
 
-A barrel jack is used to feed a 12V input to the board which is then fed into several buck
-converters that each output different voltages for use by linear regulators. The linear regulators
-then produce the final voltage levels used by the various digital ICs on the PCB. An LED is
-connected to the output of one of the converters and is used to indicate that power is being
-administered to the board.
+A barrel jack is used to feed a 12V input to the board which is then fed into several buck converters that each output
+different voltages for use by linear regulators. The linear regulators then produce the final voltage levels used by the
+various digital ICs on the PCB. An LED is connected to the output of one of the converters and is used to indicate that
+power is being administered to the board. Switching converters are used in several cases as intermediaries between the
+12V input and linear regulators in order to increase energy efficiency and the amount of current that can be drawn by
+the ICs. Using linear regulators downstream from the switching converters produces less noise in the power supply
+lines. For the 10V power supply the switching converter is unnecessary and a linear regulator is used directly.
 
 \subsection{Barrel Jack / Power Input}
 \label{sec:power-input}
 
-A ferrite bead pi filter is placed at the output of the barrel jack connection. The ferrite bead
-used is specifically designed for high current and power line noise suppression. The barrel
-connector is a switched jack, but we do not use a battery on this PCB so the 3rd pin is grounded.
+A ferrite bead pi filter is placed at the output of the barrel jack connection. The ferrite bead used is specifically
+designed for high current and power line noise suppression. The barrel connector is a switched jack, but we do not use a
+battery on this PCB so the 3rd pin is grounded.
+
+\subsection{TPS5420D Buck Converter}
+\label{sec:tps5420d}
+
+The design uses 2 buck converters to bring the 12V input down to 5.6V and 3.6V intermediates. The block diagram for the
+TPS5420D is shown in Figure~\ref{fig:tps5420d-block}.
+
+\begin{figure}[h]
+        \centering
+        \includegraphics[width=0.9\textwidth]{data/tps5420d-block-diagram}
+        \caption{TPS5420D Block Diagram}
+        \label{fig:tps5420d-block}
+\end{figure}
+
+\subsubsection{Downstream Current Draw}
+
+\label{tab:buck-5.6-downstream}
+\begin{tabularx}{\textwidth}{l c c X>{\raggedright\arraybackslash}X}
+        \caption{The current draw of components downstream from the 5.6V buck converter. Where the datasheet is
+          ambiguous, I've assumed worst-case current draw.} \\
+        \toprule
+        \textbf{MFN} & \textbf{I\textsubscript{Q}} & \textbf{I\textsubscript{max}} & \textbf{Notes} \\
+        \midrule
+        \endhead
+        \hyperlink{sec:adl5802}{ADL5802} & $170\si{mA}$ & $300\si{mA}$ & 5V \\
+        \hyperlink{sec:adf4158}{ADF4158} & $312.5\si{\mu A}$ & $5\si{mA}$ & 5V (VP) \\
+        \hyperlink{sec:se5004l}{SE5004L} & $300\si{mA}$ & $800\si{mA}$ & 5V (VCC1, VCC2, VCC3) \\
+        \midrule
+        Total & $470\si{mA}$ & $1.105\si{A}$ & - \\
+        \bottomrule
+\end{tabularx}
+
+\label{tab:buck-3.6-downstream}
+\begin{tabularx}{\textwidth}{l c c X>{\raggedright\arraybackslash}X}
+        \caption{Components downstream from the 3.6V buck converter.} \\
+        \toprule
+        \textbf{MFN} & \textbf{I\textsubscript{Q}} & \textbf{I\textsubscript{max}} & \textbf{Notes} \\
+        \midrule
+        \endhead
+        \hyperlink{sec:kt2520k}{KT2520K}  & - & $2\si{mA}$ & 1.8V \\
+        \hyperlink{sec:nc7s04}{NC7S04} & $1\si{\mu A}$ & $12.5\si{mA}$ & 3.3V \\
+        \hyperlink{sec:nb3n551}{NB3N551} & - & $40\si{mA}$ & 3.3V \\
+        \midrule
+        \hyperlink{sec:xc7a15t-ftg256}{XC7A15T-FTG256} & $97\si{mA}$ & $277\si{mA}$ & 1V (VCCINT, VCCBRAM) \\
+        XC7A15T-FTG256 & $22\si{mA}$ & $87\si{mA}$ & 1.8V (VCCADC, VCCAUX) \\
+        XC7A15T-FTG256 & $1\si{mA}$ & $201\si{mA}$ & 3.3V (VCC0) \\
+        \hyperlink{sec:w25q32jv}{W25Q32JV} & $10\si{\mu A}$ & $25\si{mA}$ & 3.3V \\
+        \midrule
+        \hyperlink{sec:ft2232h}{FT2232H} & $510\si{\mu A}$ & $280\si{mA}$ & 3.3V (VPHY, VPLL, VCORE, VCCIO) \\
+        \hyperlink{sec:93lc46b}{93LC46B} & - & $2\si{mA}$ & 3.3V \\
+        \midrule
+        \hyperlink{sec:ltc2292}{LTC2292} & $5\si{mA}$ & $95\si{mA}$ & 3.3V (OVDD), 3V (VDD) \\
+        \midrule
+        \hyperlink{sec:ada4940-2}{ADA4940-2} & $4.2\si{mA}$ & $5.52\si{mA}$ & 3.3V \\
+        \midrule
+        \hyperlink{sec:adf4158}{ADF4158} & - & $32\si{mA}$ & 3.3V (AVDD, DVDD) \\
+        \midrule
+        \hyperlink{sec:hmc431lp4}{HMC431LP4} & $19\si{mA}$ & $27\si{mA}$ & 3V \\
+        \midrule
+        \hyperlink{sec:trf37a73}{TRF37A73} & $250\si{\mu A}$ & $130\si{mA}$ & 3V \\
+        \hyperlink{sec:sky65404}{SKY65404} & $20\si{mA}$ & $36\si{mA}$ & 3V (VENABLE, VCC) \\
+        \midrule
+        Total & $169\si{mA}$ & $1.252\si{A}$ & - \\
+        \bottomrule
+\end{tabularx}
+
+\subsubsection{Pinout}
+\label{sec:tps5420d-pinout}
+
+\fixme{What is the point of BOOT?}
+\label{tab:tps5420d-pinout}
+\begin{tabularx}{\textwidth}{l X>{\raggedright\arraybackslash}X}
+        \caption{TPS5420D pinout.} \\
+        \toprule
+        \textbf{Pin} & \textbf{Description} \\
+        \midrule
+        \endhead
+        BOOT & \\
+        VSENSE & Feedback voltage for the regulator. This compares the divided output with a 1.221V reference. \\
+        ENA & Enable pin. This can be left floating to enable the device. \\
+        VIN & Input supply voltage. \\
+        PH & Output voltage. \\
+        \bottomrule
+\end{tabularx}
+
+\subsubsection{Component Selection}
+\label{sec:tps5420d-component-selection}
+
+We will choose an inductor such that it satisfies the following 3 requirements:
+\begin{enumerate}
+\item The inductance is given by Equation~\ref{eq:buck-inductance}.
+\item The current rating is 2x the maximum load current.
+\item The self-resonant frequency is at least 10x the switching frequency.
+\end{enumerate}
+
+\begin{equation}
+        \label{eq:buck-inductance}
+        L_{\text{min}} = \frac{T}{2} \frac{V_{\text{out}}}{I_{\text{out(min)}}} \left(1 -
+                \frac{V_{\text{out}}}{V_{\text{in}}}\right)
+\end{equation}
+
+The requirements are given in Table~\ref{tab:buck-inductor-reqs}. All of these requirements are satisfied by the
+\href{https://www.bourns.com/docs/Product-Datasheets/SRR1210A.pdf}{SRR1210A-330M} $33\si{\mu H}$ ferrite bead by Bourns.
+
+\label{tab:buck-inductor-reqs}
+\begin{tabularx}{\textwidth}{c c c c}
+        \caption{TPS5420D inductor requirements. I've assumed an input ripple of $300\si{mV}$.} \\
+        \toprule
+        \textbf{Buck Vout} & \textbf{Lmin} & \textbf{Current Rating} & \textbf{SRF min} \\
+        \midrule
+        \endhead
+        $5.6\si{V}$ & $6.5\si{\mu H}$ & $2.21\si{A}$ & $5\si{MHz}$ \\
+        $3.6\si{V}$ & $15.1\si{\mu H}$ & $2.50\si{A}$ & $5\si{MHz}$ \\
+        \bottomrule
+\end{tabularx}
 
 \subsection{L7980 Buck Converter}
 \label{sec:l7980-buck}
@@ -44,41 +161,41 @@ The L7980's block diagram is shown in Figure~\ref{fig:l7980-block-diagram} and i
 are described in Table~\ref{tab:l7980-pins}.
 
 \begin{figure}[h]
-  \centering
-  \includegraphics[width=0.75\textwidth]{data/l7980-block-diagram}
-  \caption{L7980 buck converter block diagram.}
-  \label{fig:l7980-block-diagram}
+        \centering
+        \includegraphics[width=0.75\textwidth]{data/l7980-block-diagram}
+        \caption{L7980 buck converter block diagram.}
+        \label{fig:l7980-block-diagram}
 \end{figure}
 
 \label{tab:l7980-pins}
 \begin{tabularx}{\textwidth}{c X>{\raggedright\arraybackslash}X}
-  \caption{L7980 pin connections.} \\
-  \toprule
-  \textbf{Pin} & \textbf{Description} \\
-  \midrule
-  \endhead
+        \caption{L7980 pin connections.} \\
+        \toprule
+        \textbf{Pin} & \textbf{Description} \\
+        \midrule
+        \endhead
 
-  OUT & Regulated output voltage. \\
-  SYNCH & Synchronization pin that can be used when multiple L7980s are used on the same board. This
-  pin serves a dual purpose: it allows an L7980 with a higher switching frequency (set with FSW) to
-  synchronize an L7980 with a lower switching frequency and shifts its phase by half a period. That
-  is, the ``master'' (the L7980 with a higher frequency) device makes its internal frequency
-  available on this pin but phase shifted. Now, the lower frequency converters have that higher
-  frequency at a phase shift. This reduces noise through destructive interference. This can also be
-  used with an externally supplied frequency, but we don't do that here. \\
-  EN & Active-high enable pin. \\
-  COMP & The error amplifier output which is used for loop frequency compensation. More on this
-  below. \\
-  FB & The feedback input. This is fed into the inverting input of an error amplifier against a 0.6V
-  reference. Therefore, we connect our output with a voltage divider to this pin such that it is
-  0.6V when we have the desired output voltage. \\
-  FSW & A resistor can be connected between this pin and ground to increase the converter's
-  switching frequency. See Equation~\ref{eq:l7980-freq}. Leaving the pin free-floating sets the
-  frequency at 250kHz, which is its minimum. \\
-  GND & Ground. \\
-  VCC & The unregulated DC input voltage. In our case, 12V from the barrel jack. \\
+        OUT & Regulated output voltage. \\
+        SYNCH & Synchronization pin that can be used when multiple L7980s are used on the same board. This
+        pin serves a dual purpose: it allows an L7980 with a higher switching frequency (set with FSW) to
+        synchronize an L7980 with a lower switching frequency and shifts its phase by half a period. That
+        is, the ``master'' (the L7980 with a higher frequency) device makes its internal frequency
+        available on this pin but phase shifted. Now, the lower frequency converters have that higher
+        frequency at a phase shift. This reduces noise through destructive interference. This can also be
+        used with an externally supplied frequency, but we don't do that here. \\
+        EN & Active-high enable pin. \\
+        COMP & The error amplifier output which is used for loop frequency compensation. More on this
+        below. \\
+        FB & The feedback input. This is fed into the inverting input of an error amplifier against a 0.6V
+        reference. Therefore, we connect our output with a voltage divider to this pin such that it is
+        0.6V when we have the desired output voltage. \\
+        FSW & A resistor can be connected between this pin and ground to increase the converter's
+        switching frequency. See Equation~\ref{eq:l7980-freq}. Leaving the pin free-floating sets the
+        frequency at 250kHz, which is its minimum. \\
+        GND & Ground. \\
+        VCC & The unregulated DC input voltage. In our case, 12V from the barrel jack. \\
 
-  \bottomrule
+        \bottomrule
 \end{tabularx}
 
 The radar contains 3 L7980s that output 5.6V, 3.6V and 1V. The two higher voltages are fed to linear
@@ -91,8 +208,8 @@ input voltages to the FPGA.
 The equation relating the resistor value at FSW to the switching frequency is:
 
 \begin{equation}
-  R_{\text{SW}}=\frac{28.5\times 10^9}{F_{\text{SW}}-250\times 10^3}-3.23\times 10^3
-  \label{eq:l7980-freq}
+        R_{\text{SW}}=\frac{28.5\times 10^9}{F_{\text{SW}}-250\times 10^3}-3.23\times 10^3
+        \label{eq:l7980-freq}
 \end{equation}
 
 The 5.6V output buck converter uses a resistor of $59\si{k\ohm}$, which corresponds to a switching
@@ -109,8 +226,8 @@ cost of a circuit ($L_{\text{min}}\propto 1/F_{\text{SW}}$). To select an induct
 Equation~\ref{eq:L-select-eqn}.
 
 \begin{equation}
-  \Delta I_{\text{L}} = \frac{V_{\text{IN}}-V_{\text{OUT}}}{L} T_{\text{ON}}
-  \label{eq:L-select-eqn}
+        \Delta I_{\text{L}} = \frac{V_{\text{IN}}-V_{\text{OUT}}}{L} T_{\text{ON}}
+        \label{eq:L-select-eqn}
 \end{equation}
 
 The duty cycle for buck converters is given by Equation~\ref{eq:duty-cycle}. Since
@@ -123,7 +240,7 @@ mixer's minimum current draw, the inductor will stay in CCM and the mixer will s
 voltage.
 
 \begin{equation} DV_{\text{IN}} = V_{\text{OUT}}
-  \label{eq:duty-cycle}
+        \label{eq:duty-cycle}
 \end{equation}
 
 \subsubsection{PWM}
@@ -169,12 +286,12 @@ output a voltage greater than their input voltage. The max dropout of the LDO is
 the output voltage of the buck converter a deviation of 0.4V.
 
 \begin{figure}[h]
-  \centering
-  \includegraphics[width=0.75\textwidth]{data/linear-reg.png}
-  \caption{A LDO regulator that takes as an input the voltage from one of the buck converters and
-    whose output is directly used to drive the operation of one of the ICs elsewhere in the
-    circuit.}
-  \label{fig:linear-reg}
+        \centering
+        \includegraphics[width=0.75\textwidth]{data/linear-reg.png}
+        \caption{A LDO regulator that takes as an input the voltage from one of the buck converters and
+          whose output is directly used to drive the operation of one of the ICs elsewhere in the
+          circuit.}
+        \label{fig:linear-reg}
 \end{figure}
 
 The input voltage is connected to both IN pins with a bypass capacitor of 10 $\mu$F, which is the
@@ -186,7 +303,7 @@ OUT and FB make a voltage divider that determines the output voltage of the line
 according to Equation~\ref{eq:linear-reg-vout}.
 
 \begin{equation}
-  R_1 = R_2\left(\frac{V_{\text{OUT}}}{V_{\text{REF}}}-1\right) \label{eq:linear-reg-vout}
+        R_1 = R_2\left(\frac{V_{\text{OUT}}}{V_{\text{REF}}}-1\right) \label{eq:linear-reg-vout}
 \end{equation}
 
 Where $V_{\text{REF}} = 0.8V$ Specifically, 1.15k and 3.57k are specified in the datasheet in order
@@ -216,21 +333,21 @@ voltage on EN high when PG is not driven. However, when PG is low, EN will be dr
 pin is left open, although a 1$\mu$F capacitor could have been placed there to reduce output noise.
 
 \begin{figure}[h]
-  \centering
-  \includegraphics[width=0.9\textwidth]{data/ldo-ldo-connection.png}
-  \caption{An ultra LDO regulator whose output feeds into an FPGA input. It uses the PG
-    pin from another LDO regulator to alternately enable/disable it.}
-  \label{fig:ldo-ldo-connection}
+        \centering
+        \includegraphics[width=0.9\textwidth]{data/ldo-ldo-connection.png}
+        \caption{An ultra LDO regulator whose output feeds into an FPGA input. It uses the PG
+          pin from another LDO regulator to alternately enable/disable it.}
+        \label{fig:ldo-ldo-connection}
 \end{figure}
 
 Another output from a buck converter leads to a 3V output LDO regulator with a dropout voltage of
 120mV shown in Figure~\ref{fig:lp5907}. All of the pin connections are evident.
 
 \begin{figure}[h]
-  \centering
-  \includegraphics[width=0.75\textwidth]{data/lp5907.png}
-  \caption{The LP5907 is a 3V LDO regulator with a dropout voltage of 120mV.}
-  \label{fig:lp5907}
+        \centering
+        \includegraphics[width=0.75\textwidth]{data/lp5907.png}
+        \caption{The LP5907 is a 3V LDO regulator with a dropout voltage of 120mV.}
+        \label{fig:lp5907}
 \end{figure}
 
 The last component on the power sheet is an
@@ -240,8 +357,8 @@ Figure~\ref{fig:lp2985}, that takes the 12V input voltage from the barrel jack a
 tied to BYPASS to decrease the output noise.
 
 \begin{figure}[h]
-  \centering
-  \includegraphics[width=0.9\textwidth]{data/lp2985.png}
-  \caption{The LP2985 LDO regulator.}
-  \label{fig:lp2985}
+        \centering
+        \includegraphics[width=0.9\textwidth]{data/lp2985.png}
+        \caption{The LP2985 LDO regulator.}
+        \label{fig:lp2985}
 \end{figure}
