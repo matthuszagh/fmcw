@@ -1,45 +1,74 @@
 \section{FPGA}
 \label{sec:fpga}
 
+\subsection{Overview}
+\label{sec:fpga-overview}
+
+The FPGA has two main roles. It performs digital signal processing on data sent from the ADC and
+relays the processed data back to a host computer via an \hyperlink{sec:ft2232h}{FT2232H} which acts
+as a FIFO-USB interface. Secondly, the FPGA is used to configure other components on the board. In
+order to program the FPGA, we use a host computer with a JTAG interface via the FT2232H.
+
+The FPGA stores and loads its configuration from an SPI flash memory device,
+\hyperlink{sec:w25q32jv}{W25Q32JV}.
+
 \subsection{XC7A15T-FTG256 Xilinx FPGA}
 \label{sec:xc7a15t-ftg256}
 
-There are several different documents for the
-\href{https://www.xilinx.com/products/silicon-devices/fpga/artix-7.html?resultsTablePreSelect=documenttype:Data\%20Sheets#documentation}{Artix-7
-  FPGA family}, which is used for this radar. There is a
-\href{https://www.xilinx.com/support/documentation/user_guides/ug475_7Series_Pkg_Pinout.pdf}{package-pinout document}
-that, as its name suggests, contains information about the various package options available and the associated pin
-definitions. There is an
-\href{https://www.xilinx.com/support/documentation/data_sheets/ds180_7Series_Overview.pdf}{overview sheet} that contains
-very general information about the FPGA. There is a
-\href{https://www.xilinx.com/support/documentation/user_guides/ug483_7Series_PCB.pdf}{PCB design guide} document that
-contains recommendations for soldering the FPGA on a PCB. There is a
-\href{https://www.xilinx.com/support/documentation/user_guides/ug480_7Series_XADC.pdf}{XADC document} which describes
-the mixed-signal functionality of the FPGA. Finally, there is a
-\href{https://www.xilinx.com/support/documentation/user_guides/ug470_7Series_Config.pdf}{configuration guide} that
-describes the different ways to configure the FPGA with a bitstream. The FPGA pins follow a logical syntax: they can be
-of the form IO\_LXXY\_ZZZ\_\#, IO\_XX\_ZZZ\_\#, or a specific name. If they have a specific name, they have a dedicated
-function described starting on page 26 of the package-pinout document. If they have the general form IO\_LXXY\_ZZZ\_\#
-or IO\_XX\_ZZZ\_\#, they can be used for several different dedicated functions, or as general purpose IO pins. L
-indicates that the pin can be used as a differential pair (differential signaling), where Y=P or N depending on whether
-the pin is the positive or negative side of the differential pair. XX gives a unique number identifier that can be used
-to associate the two different pins forming a differential pair. ZZZ represents one or more functions that the pin can
-be used for in addition to general purpose IO. \# indicates the bank number, which separate the pins into one of several
-different regions. The package used in this design is FTG256C, which contains banks 0, 14, 15, 34 and 35. Bank 0
-contains the dedicated configuration pins. Each bank has 4 pairs of clock capable inputs for differential or single
-ended clocks (there are no global clock pins). The bypass capacitor recommendations are outlined in the PCB design
-guide. As with any other bypass capacitor design, place the small caps as close to the pins they connect to as
-possible. The larger caps should also be as close as possible, but give priority to the small caps.  The FPGA loads its
-configuration from an SPI flash memory device,
-\href{http://www.winbond.com/resource-files/w25q32jv\%20revg\%2003272018\%20plus.pdf}{W25Q32JV} The CCLK\_0 pin is
-exported from the FPGA to the flash device to drive its operation and coordinates writes and reads to and from the
-device. DO is used by the FPGA to perform SPI reads from the flash memory device. It is connected to J14 of the FPGA. DI
-is connected to J13 of the FPGA and is used by the FPGA to send data to the flash memory device. CS is active low and is
-used by the FPGA to signal data transmission is about to occur. It is connected to L12 on the FPGA. WP (write protect)
-and HOLD are both active low pins and are used to prevent the status configuration registers from being written to and
-can pause the device when multiple devices share the same SPI signal, respectively They are unused and thus connected to
-the 3.3V power supply. The device is powered with 3.3V (it supports a range of 2.7V to 3.6V). Table~\ref{tab:fpga-pins}
-contains a list of all FPGA pins and their connections.
+\subsubsection{Documents}
+\label{sec:xc7a15t-ftg256-documents}
+
+\label{tab:xc7a15t-ftg256-documents}
+\begin{tabularx}{\textwidth}{l X>{\raggedright\arraybackslash}X}
+        \caption{Important documents.} \\
+        \toprule
+        \textbf{URL} & \textbf{Description} \\
+        \midrule
+        \endhead
+
+        \href{https://www.xilinx.com/products/silicon-devices/fpga/artix-7.html?resultsTablePreSelect=documenttype:Data\%20Sheets#documentation}{Artix-7
+          FPGA family} & The main page that contains a collection of documents about the 7 series
+        devices. \\
+        \href{https://www.xilinx.com/support/documentation/user_guides/ug475_7Series_Pkg_Pinout.pdf}{Package
+          / Pinout} & The various packages that the device comes in, along with the associated pin
+        definitions. \\
+        \href{https://www.xilinx.com/support/documentation/data_sheets/ds180_7Series_Overview.pdf}{Overview}
+        & Contains
+        general device capability information, such as number of logic cells, DSP blocks, etc. \\
+        \href{https://www.xilinx.com/support/documentation/user_guides/ug483_7Series_PCB.pdf}{PCB
+          Design Guide} &
+        Contains information about bypassing and other design considerations. \\
+        \href{https://www.xilinx.com/support/documentation/user_guides/ug480_7Series_XADC.pdf}{XADC}
+        & Contains
+        information about the FPGA's internal ADC. \\
+        \href{https://www.xilinx.com/support/documentation/user_guides/ug470_7Series_Config.pdf}{Configuration
+          Guide} &
+        Describes how to configure the FPGA with a bitstream. \\
+
+        \bottomrule
+\end{tabularx}
+
+\subsubsection{Bypassing}
+\label{sec:xc7a15t-ftg256-bypassing}
+
+The PCB Design Guide above specifies fairly stringent requirements for bypassing and should be adhered to.
+
+\subsubsection{Pinout}
+\label{sec:xc7a15t-ftg256-pinout}
+
+The FPGA pins follow a logical syntax: they can be of the form IO\_LXXY\_ZZZ\_\#, IO\_XX\_ZZZ\_\#,
+or a specific name. If they have a specific name, they have a dedicated function described starting
+on page 26 of the package-pinout document. If they have the general form IO\_LXXY\_ZZZ\_\# or
+IO\_XX\_ZZZ\_\#, they can be used for several different dedicated functions, or as general purpose
+IO pins. L indicates that the pin can be used as a differential pair (differential signaling), where
+Y=P or N depending on whether the pin is the positive or negative side of the differential pair. XX
+gives a unique number identifier that can be used to associate the two different pins forming a
+differential pair. ZZZ represents one or more functions that the pin can be used for in addition to
+general purpose IO. \# indicates the bank number, which separate the pins into one of several
+different regions. The package used in this design is FTG256C, which contains banks 0, 14, 15, 34
+and 35. Bank 0 contains the dedicated configuration pins. Each bank has 4 pairs of clock capable
+inputs for differential or single ended clocks (there are no global clock pins).
+
 
 \label{tab:fpga-pins}
 \begin{tabularx}{\textwidth}{c X>{\raggedright\arraybackslash}X}
@@ -139,6 +168,7 @@ contains a list of all FPGA pins and their connections.
         D16 & FT\_D6. Bidirectional pin 6/7 of ADBUS, used to transmit data between the FPGA andFT2232H. \\
 
         \midrule
+
         E01 & D10. Input pin 10/11 of the ADC's channel A digital outputs. It is used to transmit data
         from the ADC to FPGA. \\
         E02 & D11. Input pin 11/11 of the ADC's channel A digital outputs. It is used to transmit data
@@ -295,8 +325,8 @@ contains a list of all FPGA pins and their connections.
         reset of the configuration logic. \\
         L10 & VCCAUX. A 1.8V power supply for auxiliary circuits in the FPGA IC. \\
         L11 & GND. \\
-        L12 & SPI\_CS. An output pin that can be brought low to indicate that a transmission will take
-        place between the FPGA and flash storage device. It is currently left in the high-impedance
+        L12 & SPI\_CS. An output pin that can be brought low to indicate that a transmission will take place between the
+        FPGA and flash storage device. It is currently left in the high-impedance
         state in FPGA logic, seemingly indicating that the flash storage device is not yet used. \\
         L13 & Floating. \\
         L14 & Floating. \\
@@ -306,8 +336,7 @@ contains a list of all FPGA pins and their connections.
 
         \midrule
 
-        M01 & OF2. An input from the ADC. It is pulled high when an overflow or underflow occurs at
-        channel
+        M01 & OF2. An input from the ADC. It is pulled high when an overflow or underflow occurs at channel
         B. It is currently unused by the FPGA logic. \\
         M02 & ADF\_DATA. A serial data output pin the frequency synthesizer. \\
         M03 & VCC0\_34. 3.3V power supply to bank 34. \\
@@ -317,9 +346,9 @@ contains a list of all FPGA pins and their connections.
         M07 & TMS. Output pin that is fed into the FT223H as a mode select pin. It is unused by the
         current FPGA logic. \\
         M08 & GND. \\
-        M09 & M0. Along with M1 and M2, this specifies the configuration mode of the FPGA. M[2:0] =
-        001 which indicates the FPGA acts as a master in an SPI interface. Because a DNP resistor is
-        placed between M0 and 3.3V, it is not actually connected to the power supply. However, since all
+        M09 & M0. Along with M1 and M2, this specifies the configuration mode of the FPGA. M[2:0] = 001 which indicates
+        the FPGA acts as a master in an SPI interface. Because a DNP resistor is placed between M0 and 3.3V, it is not
+        actually connected to the power supply. However, since all
         pull-up resistors should be enabled by pulling PUDC\_B low, it should register a logic 1. \\
         M10 & M1. See M09. \\
         M11 & M2. See M09. \\
@@ -430,3 +459,22 @@ the FPGA, however, it is unused by the current FPGA code. VCCAUX is used for aux
 must be 1.8V. VCCADC\_0 is also 1.8V and is used to power the onchip ADC. VCCINT powers the internal
 core logic of the FPGA and must be 1.0V. VCCBRAM is the power supply for the FPGA internal RAM,
 which requires 1.0V.
+
+\subsection{W25Q32JV Flash Memory}
+\label{sec:w25q32jv}
+
+The CCLK\_0 pin is exported from the FPGA to the flash device to drive its operation and coordinates
+writes and reads to and from the device. DO is used by the FPGA to perform SPI reads from the flash
+memory device. It is connected to J14 of the FPGA. DI is connected to J13 of the FPGA and is used by
+the FPGA to send data to the flash memory device. CS is active low and is used by the FPGA to signal
+data transmission is about to occur. It is connected to L12 on the FPGA. WP (write protect) and HOLD
+are both active low pins and are used to prevent the status configuration registers from being
+written to and can pause the device when multiple devices share the same SPI signal, respectively
+They are unused and thus connected to the 3.3V power supply. The device is powered with 3.3V (it
+supports a range of 2.7V to 3.6V). Table~\ref{tab:fpga-pins} contains a list of all FPGA pins and
+their connections.
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "fmcw-radar"
+%%% End:

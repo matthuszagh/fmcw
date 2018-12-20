@@ -234,7 +234,8 @@ F 0 "U29" H 6100 4700 60  0000 C CNN
 F 1 "ADL5802" H 5600 3950 60  0000 C CNN
 F 2 "Package_DFN_QFN:QFN-24-1EP_4x4mm_P0.5mm_EP2.6x2.6mm" H 4650 4150 60  0001 C CNN
 F 3 "http://www.analog.com/media/en/technical-documentation/data-sheets/ADL5802.pdf" H 4650 4150 60  0001 C CNN
-F 4 "ADL5802ACPZ-R7" H 4650 4150 50  0001 C CNN "manf#"
+F 4 "" H 4650 4150 50  0001 C CNN "manf#"
+F 5 "ADL5802ACPZ-R7" H 0   0   50  0001 C CNN "MFN"
 	1    4650 4150
 	1    0    0    -1  
 $EndComp
@@ -794,6 +795,7 @@ F 0 "C162" H 6275 2900 50  0000 L CNN
 F 1 "10u" H 6275 2700 50  0000 L CNN
 F 2 "Capacitor_SMD:C_0805_2012Metric" H 6288 2650 30  0001 C CNN
 F 3 "" H 6250 2800 60  0000 C CNN
+F 4 "885012107014" H 0   0   50  0001 C CNN "MFN"
 	1    6250 2800
 	-1   0    0    1   
 $EndComp

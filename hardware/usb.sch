@@ -973,9 +973,8 @@ Wire Wire Line
 Text Label 1850 3050 0    60   ~ 0
 USBDM
 NoConn ~ 1550 3150
-NoConn ~ 1150 3350
 Wire Wire Line
-	1250 3350 1250 3450
+	1250 3350 1250 3400
 $Comp
 L power:GND #PWR0255
 U 1 1 632B9897
@@ -997,4 +996,11 @@ Wire Wire Line
 	4700 1050 5200 1050
 Wire Wire Line
 	8600 5350 8600 5450
+Wire Wire Line
+	1150 3350 1150 3400
+Wire Wire Line
+	1150 3400 1250 3400
+Connection ~ 1250 3400
+Wire Wire Line
+	1250 3400 1250 3450
 $EndSCHEMATC
