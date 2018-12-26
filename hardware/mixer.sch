@@ -524,8 +524,6 @@ Connection ~ 8400 3050
 Connection ~ 8400 3450
 Connection ~ 8400 3550
 Wire Wire Line
-	950  4050 2100 4050
-Wire Wire Line
 	4150 2200 4150 2450
 Wire Wire Line
 	5950 5300 5950 5200
@@ -925,4 +923,6 @@ Wire Wire Line
 Wire Wire Line
 	2200 4050 2100 4050
 Connection ~ 2100 4050
+Wire Wire Line
+	950  4050 2100 4050
 $EndSCHEMATC

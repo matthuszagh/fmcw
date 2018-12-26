@@ -31,7 +31,8 @@ compares the divided voltage output with a $1.221V$ reference and uses an error 
 the difference. It then feeds that difference into a PWM comparator along with a sawtooth ramp
 waveform. If the PWM comparator outputs a high voltage the switch is turned off, effectively
 decreasing the duty cycle. Conversely, a low voltage saturates the transistor and increases the duty
-cycle. This has the effect of converging the output voltage to its set point.
+cycle. This has the effect of converging the output voltage to its set point. The TPS5420 has a ramp
+time of between $6.6$ and $10 \si{ms}$.
 
 \begin{figure}[h]
         \centering
@@ -40,22 +41,85 @@ cycle. This has the effect of converging the output voltage to its set point.
         \label{fig:tps5420d-block}
 \end{figure}
 
+\subsubsection{Pinout}
+\label{sec:tps5420d-pinout}
+
+\fixme{What is the point of BOOT?}
+\label{tab:tps5420d-pinout}
+\begin{tabularx}{\textwidth}{l l X}
+        \caption{TPS5420D pinout.}                                                               \\
+        \toprule
+        \textbf{\#} & \textbf{Pin} & \textbf{Description}                                        \\
+        \midrule
+        1           & BOOT         &                                                             \\
+        2, 3        & NC           & No connect.                                                 \\
+        4           & VSENSE       & Feedback voltage for the regulator. This compares the divided output with a 1.221V
+        reference.                                                                               \\
+        5           & ENA          & Enable pin. This can be left floating to enable the device. \\
+        6           & GND          & Ground.                                                     \\
+        7           & VIN          & Input supply voltage.                                       \\
+        8           & PH           & Output voltage.                                             \\
+        \bottomrule
+\end{tabularx}
+
+\subsubsection{Component Selection}
+\label{sec:tps5420d-component-selection}
+
+An inductor is chosen such that it satisfies the following 3 requirements:
+\begin{enumerate}
+\item The inductance is given by Equation~\ref{eq:buck-inductance}.
+\item The current rating is at least 2x the maximum load current.
+\item The self-resonant frequency is at least 10x the switching frequency.
+\end{enumerate}
+
+\begin{equation}
+        \label{eq:buck-inductance}
+        L_{\text{min}} = \frac{T}{2} \frac{V_{\text{out}}}{I_{\text{out(min)}}} \left(1 -
+                \frac{V_{\text{out}}}{V_{\text{in}}}\right)
+\end{equation}
+
+The requirements are given in Table~\ref{tab:buck-inductor-reqs}. All of these requirements are
+satisfied by the \href{https://www.bourns.com/docs/Product-Datasheets/SRR1210A.pdf}{SRR1210A-330M}
+$33\si{\mu H}$ Bourns ferrite bead.
+
+\label{tab:buck-inductor-reqs}
+\begin{tabularx}{\textwidth}{c c c c}
+        \caption{TPS5420D inductor requirements. I've assumed an input ripple of $300\si{mV}$.} \\
+        \toprule
+        \textbf{Buck Vout} & \textbf{Lmin}    & \textbf{Current Rating} & \textbf{SRF min}      \\
+        \midrule
+        \endhead
+        $5.6\si{V}$        & $6.5\si{\mu H}$  & $2.21\si{A}$            & $5\si{MHz}$           \\
+        $3.6\si{V}$        & $15.1\si{\mu H}$ & $2.50\si{A}$            & $5\si{MHz}$           \\
+        \bottomrule
+\end{tabularx}
+
+The input, output and boot capacitors were chosen by the \href{https://webench.ti.com}{WEBENCH
+  tool}. The flyback diode was chosen to support $2A$ of current.
+
 \subsubsection{Downstream Current Draw}
 \label{sec:tps5420d-current}
+
+It is important to know both the maximum and minimum current draw of components whose voltage inputs
+are fed by the output of a buck converter. The minimum current sets a lower bound on the inductance
+that can be used (see Equation~\ref{eq:buck-inductance}) since the converter must remain in CCM for
+proper operation. It is also important to ensure that the buck converter and inductor are rated for
+the maximum current draw of downstream devices. Saturating the ferrite-core inductor can cause a
+loss in inductance.
 
 \label{tab:buck-5.6-current}
 \begin{tabularx}{\textwidth}{l c c X>{\raggedright\arraybackslash}X}
         \caption{The current draw of components downstream from the 5.6V buck converter. When
-          minimum current draw is omitted from the datasheet I've assumed 0A.} \\
+          minimum current draw is omitted from the datasheet I've assumed 0A.}                                                 \\
         \toprule
-        \textbf{MFN} & \textbf{I\textsubscript{Q}} & \textbf{I\textsubscript{max}} & \textbf{Voltage
-        Inputs} \\
-        \midrule \endhead
-        \hyperlink{sec:adl5802}{ADL5802} & $170\si{mA}$ & $300\si{mA}$ & 5V \\
-        \hyperlink{sec:adf4158}{ADF4158} & $312.5\si{\mu A}$ & $5\si{mA}$ & 5V (VP) \\
-        \hyperlink{sec:se5004l}{SE5004L} & $300\si{mA}$ & $800\si{mA}$ & 5V (VCC1, VCC2, VCC3) \\
+        \textbf{MFN}                     & \textbf{I\textsubscript{Q}} & \textbf{I\textsubscript{max}} &
+        \textbf{Voltage Inputs}                                                                                                \\
         \midrule
-        Total & $470\si{mA}$ & $1.105\si{A}$ & - \\
+        \hyperlink{sec:adl5802}{ADL5802} & $170\si{mA}$                & $300\si{mA}$                  & 5V                    \\
+        \hyperlink{sec:adf4158}{ADF4158} & $312.5\si{\mu A}$           & $5\si{mA}$                    & 5V (VP)               \\
+        \hyperlink{sec:se5004l}{SE5004L} & $300\si{mA}$                & $800\si{mA}$                  & 5V (VCC1, VCC2, VCC3) \\
+        \midrule
+        Total                            & $470\si{mA}$                & $1.105\si{A}$                 & -                     \\
         \bottomrule
 \end{tabularx}
 
@@ -64,8 +128,8 @@ cycle. This has the effect of converging the output voltage to its set point.
         \caption{Components downstream from the 3.6V buck converter.} \\
         \toprule
         \textbf{MFN} & \textbf{I\textsubscript{Q}} & \textbf{I\textsubscript{max}} & \textbf{Voltage
-        Inputs} \\
-        \midrule \endhead
+          Inputs} \\
+        \midrule
         \hyperlink{sec:kt2520k}{KT2520K}  & - & $2\si{mA}$ & 1.8V \\
         \hyperlink{sec:nc7s04}{NC7S04} & $1\si{\mu A}$ & $12.5\si{mA}$ & 3.3V \\
         \hyperlink{sec:nb3n551}{NB3N551} & - & $40\si{mA}$ & 3.3V \\
@@ -95,191 +159,300 @@ cycle. This has the effect of converging the output voltage to its set point.
         \bottomrule
 \end{tabularx}
 
-\subsubsection{Pinout}
-\label{sec:tps5420d-pinout}
+\subsubsection{PCB Layout Considerations}
+\label{sec:tps5420d-pcb}
 
-\fixme{What is the point of BOOT?}
-\label{tab:tps5420d-pinout}
-\begin{tabularx}{\textwidth}{l X>{\raggedright\arraybackslash}X}
-        \caption{TPS5420D pinout.} \\
+The datasheet provides a suggested PCB layout, shown in Figure~\ref{fig:tps5420d-pcb}.
+
+\begin{figure}[h]
+        \centering
+        \includegraphics[width=0.75\textwidth]{data/tps5420d-pcb.png}
+        \caption{TPS5420D suggested PCB layout.}
+        \label{fig:tps5420d-pcb}
+\end{figure}
+
+\subsection{TPS560200 Buck Converter}
+\label{sec:tps560200}
+
+\subsubsection{Description}
+\label{sec:tps560200-description}
+
+The TPS560200 is an internally-compensated buck converter with a switching frequency of
+$600 \si{kHz}$ and a fixed ramp time of $2 \si{ms}$. It is needed, rather then a linear regulator
+chained to a TPS5420D, because the FPGA requires its $1 \si{V}$ power supply first.
+
+\subsubsection{Pinout}
+\label{sec:tps560200-pinout}
+
+\label{tab:tps560200-pinout}
+\begin{tabularx}{\textwidth}{l l X}
+        \caption{TPS50600 pinout.}                                                 \\
         \toprule
-        \textbf{Pin} & \textbf{Description} \\
-        \midrule \endhead
-        BOOT & \\
-        VSENSE & Feedback voltage for the regulator. This compares the divided output with a 1.221V
-        reference. \\
-        ENA & Enable pin. This can be left floating to enable the device. \\
-        VIN & Input supply voltage. \\
-        PH & Output voltage. \\
+        \# & Pin    & Description                                                  \\
+        \midrule
+        1  & EN     & Enable pin. Can be floated to unconditionally enable device. \\
+        2  & GND    & Ground.                                                      \\
+        3  & PH     & Output voltage.                                              \\
+        4  & VIN    & Input voltage.                                               \\
+        5  & VSENSE & Feedback, compared to a $0.8 \si{V}$ reference.              \\
         \bottomrule
 \end{tabularx}
 
 \subsubsection{Component Selection}
-\label{sec:tps5420d-component-selection}
+\label{sec:tps560200-component-selection}
 
-An inductor is chosen such that it satisfies the following 3 requirements:
-\begin{enumerate}
-\item The inductance is given by Equation~\ref{eq:buck-inductance}.
-\item The current rating is at least 2x the maximum load current.
-\item The self-resonant frequency is at least 10x the switching frequency.
-\end{enumerate}
+The voltage divider resistors, filter capacitors and input capacitors are specified by the
+datasheet. The output voltage ripple must be sufficiently small that it falls within the required
+voltage range of the FPGA's V\textsubscript{CCINT} input. Specifically, it must be less than
+$100 \si{mV}$. Texas Instruments provides\footnote{\url{www.ti.com/lit/an/slva630a/slva630a.pdf}} an
+equation for the voltage ripple of a buck converter, given a small capacitor resistance. I'm further
+assuming an ESR of 0 since I'm using ceramic capacitors at the output and the current draw is fairly
+low. The equation is provided in Equation~\ref{eq:tps560200-ripple-voltage}. The ripple current for
+a buck converter is given in Equation~\ref{eq:tps560200-ripple-current}. Finally, the remaining
+inductor requirements are specified in Table~\ref{tab:tps560200-inductor-reqs}. All of these
+requirements are satisfied by a $10 \si{\mu H}$ inductor, which is used in the datasheet. However,
+this puts the inductor a bit close to DCM and since I have extra $33 \si{\mu H}$ inductors on hand
+I'd rather be safe and use one of those.
 
 \begin{equation}
-        \label{eq:buck-inductance}
-        L_{\text{min}} = \frac{T}{2} \frac{V_{\text{out}}}{I_{\text{out(min)}}} \left(1 -
-                \frac{V_{\text{out}}}{V_{\text{in}}}\right)
+        \label{eq:tps560200-ripple-voltage}
+        V_{\text{p2p}} = \frac{I_{\text{p2p}}}{8 C F_{\text{SW}}}
 \end{equation}
 
-The requirements are given in Table~\ref{tab:buck-inductor-reqs}. All of these requirements are
-satisfied by the \href{https://www.bourns.com/docs/Product-Datasheets/SRR1210A.pdf}{SRR1210A-330M}
-$33\si{\mu H}$ ferrite bead by Bourns.
+\begin{equation}
+        \label{eq:tps560200-ripple-current}
+        I_{\text{p2p}} = V_{\text{out}} \frac{1 - D}{L F_{\text{SW}}}
+\end{equation}
 
-\label{tab:buck-inductor-reqs}
+\label{tab:tps560200-inductor-reqs}
 \begin{tabularx}{\textwidth}{c c c c}
-        \caption{TPS5420D inductor requirements. I've assumed an input ripple of $300\si{mV}$.} \\
+        \caption{TPS560200 inductor requirements.}                                            \\
         \toprule
-        \textbf{Buck Vout} & \textbf{Lmin} & \textbf{Current Rating} & \textbf{SRF min} \\
+        V\textsubscript{out} & L\textsubscript{min} & Current Rating & SRF\textsubscript{min} \\
         \midrule
-        \endhead
-        $5.6\si{V}$ & $6.5\si{\mu H}$ & $2.21\si{A}$ & $5\si{MHz}$ \\
-        $3.6\si{V}$ & $15.1\si{\mu H}$ & $2.50\si{A}$ & $5\si{MHz}$ \\
+        $1 \si{V}$           & $7.9 \si{\mu H}$     & $554 \si{mA}$  & $6 \si{MHz}$           \\
         \bottomrule
 \end{tabularx}
 
-The input, output and boot capacitors were chosen by the \href{https://webench.ti.com}{WEBENCH
-  tool}. The flyback diode was chosen to support $2A$ of current.
+\subsubsection{Downstream Current Draw}
+\label{sec:tps560200-current}
+
+\label{tab:tps560200-current}
+\begin{tabularx}{\textwidth}{l c c X}
+        \caption{Components downstream from the TPS560200 buck converter.} \\
+        \toprule
+        MFN & I\textsubscript{Q} & I\textsubscript{max} & Voltage Inputs \\
+        \midrule
+        \hyperlink{sec:xc7a15t-ftg256}{XC7A15T-FTG256} & $97\si{mA}$ & $277\si{mA}$ & 1V (VCCINT,
+        VCCBRAM) \\
+        \bottomrule
+\end{tabularx}
+
+\subsubsection{PCB Layout Guidelines}
+\label{sec:tps560200-pcb}
+
+The datasheet provides a recommended layout, shown in Figure~\ref{fig:tps560200-pcb}.
+
+\begin{figure}[h]
+        \centering
+        \includegraphics[width=0.75\textwidth]{data/tps560200-pcb}
+        \caption{TPS560200 recommended PCB layout.}
+        \label{fig:tps560200-pcb}
+\end{figure}
 
 \subsection{LP2985A-10DBVR Linear Regulator}
 \label{sec:lp2985a-10dbvr}
+
+\subsubsection{Description}
+\label{sec:lp2985a-10dbvr-description}
+
+The LP2985A is a low-dropout fixed-output regulator with a max output current of $150\si{mA}$. It's
+functional block diagram is shown in Figure~\ref{fig:lp2985a-block-diagram}. It uses an op-amp to
+compare the voltage-divided output with a $1.23\si{V}$ reference. It then turns a PNP transistor
+on/off depending on the output voltage level relative to its $10\si{V}$ target.
+
+\begin{figure}[h]
+        \centering
+        \includegraphics[width=0.5\textwidth]{data/lp2985a-block-diagram}
+        \caption{The LP2985A-10DBVR LDO regulator block diagram.}
+        \label{fig:lp2985a-block-diagram}
+\end{figure}
+
+\subsubsection{Pinout}
+\label{sec:lp2985a-10dbvr-pinout}
+
+\label{tab:lp2985a-10dbvr-pinout}
+\begin{tabularx}{\textwidth}{l l X}
+        \caption{LP2985A's pin descriptions.}							\\
+        \toprule
+        \textbf{\#}	&	\textbf{Pin}		&	\textbf{Description}		\\
+        \midrule
+        1		&	VIN			&	Voltage supply.			\\
+        2		&	GND			&	Ground.				\\
+        3		&	ON/\textoverline{OFF}	&	Active-low shutdown pin. It is tied
+	to VIN since the device should be unconditionally enabled. \\
+        4		&	BYPASS			&	Connected to a $10\si{nF}$ capacitor
+	to ground to decrease output voltage noise. \\
+        5		&	VOUT			&	Regulated, voltage output.	\\
+        \bottomrule
+\end{tabularx}
+
+\subsubsection{Component Selection}
+\label{sec:lp2985a-10dbvr-component-selection}
+
+The input capacitor should be at least $1\si{\mu F}$ and the output capacitor should be at least
+$2.2\si{\mu F}$, but higher values are better at the output. I'm using $10\si{\mu F}$.
 
 \subsubsection{Downstream Current Draw}
 \label{sec:lp2985a-10dbvr-current}
 
 \label{tab:lp2985a-10dbvr-current}
-\begin{tabularx}{\textwidth}{l c c X>{\raggedright\arraybackslash}X}
+\begin{tabularx}{\textwidth}{l c c X}
         \caption{Downstream current draw for the 10V linear regulator.} \\
         \toprule
-        \textbf{MFN} & \textbf{I\textsubscript{Q}} & \textbf{I\textsubscript{max}} & \textbf{Voltage
-        Inputs} \\
+        MFN & I\textsubscript{Q} & I\textsubscript{max} & Voltage Inputs \\
         \midrule
-        \endhead
         \hyperlink{sec:tlv172dck}{TLV172DCK} & $1.6\si{mA}$ & $75\si{mA}$ & 10V \\
         \bottomrule
 \end{tabularx}
 
-The buck converter outputs feed into several different chips, the first of which is an LDO regulator
-for which an example is shown in Figure~\ref{fig:linear-reg}. The reason for attaching an LDO
-regulator in series with a buck converter may be to reduce the noise of the circuit and increase the
-efficiency at the expense of board area and cost. Particularly, the
-\href{http://www.ti.com/lit/ds/symlink/tps7a91.pdf}{LDO regulator} should be able to smooth out the
-noise caused by using an inductor with a low value in the buck converter. It is meant to effectively
-reject noise from the input source over the frequency range of 10Hz to 10MHz. Since the switching
-frequency of the buck converter is less than 1MHz and consequently the current/voltage ripple should
-be of the same frequency, the LDO regulator should be sufficient to smooth out the input noise
-provided, however, that it does not dip below the output voltage of the LDO regulator since the
-margin for error is small. $V_{\text{IN}}-V_{\text{OUT}}=0.6V$ and linear regulators are not able to
-output a voltage greater than their input voltage. The max dropout of the LDO is 0.2V, which allows
-the output voltage of the buck converter a deviation of 0.4V.
+\subsubsection{PCB Layout Considerations}
+\label{sec:lp2985a-10dbvr-pcb}
+
+The input and output capacitors should be placed within $1\si{cm}$ of the input and output pins and
+have a low-impedance path to ground.
+
+\subsection{TPS7A91 LDO Voltage Regulator}
+\label{sec:tps7a91}
+
+\subsubsection{Description}
+\label{sec:tps7a91-description}
+
+The TPS7A91 is a low-noise, low-dropout and adjustable voltage regulator. It has an RMS output noise
+of $4.7 \si{\mu V}$. The regulator works by comparing the feedback voltage, at the inverting input
+of an error amplifier, with a $0.8 \si{V}$ reference voltage at the non-inverting input. The output
+of the error amplifier is connected to the gate of an n-channel MOSFET whose drain is attached to
+the input voltage and whose source is attached to the output voltage. This negative feedback creates
+a stable equilibrium when the output voltage is at its set-point. The functional block diagram is
+shown in Figure~\ref{fig:tps7a91-block-diagram}.
+
+
 
 \begin{figure}[h]
         \centering
-        \includegraphics[width=0.75\textwidth]{data/linear-reg.png}
-        \caption{A LDO regulator that takes as an input the voltage from one of the buck converters and
-          whose output is directly used to drive the operation of one of the ICs elsewhere in the
-          circuit.}
-        \label{fig:linear-reg}
+        \includegraphics[width=0.75\textwidth]{data/tps7a91-block-diagram}
+        \caption{TP7A91 block diagram.}
+        \label{fig:tps7a91-block-diagram}
 \end{figure}
 
-The input voltage is connected to both IN pins with a bypass capacitor of 10 $\mu$F, which is the
-minimum specified by the datasheet. It is additionally connected to the EN pin which activates the
-LDO; the LDO is active for $V_{\text{EN}} \geq V_{\text{IH}}$ and disabled for
-$V_{\text{EN}} \leq V_{\text{IL}}$ (connecting the same input to IN and EN will make
-$V_{\text{EN}} = V_{\text{IH}}$, thus satisfying the first condition). The 2 resistors attached to
-OUT and FB make a voltage divider that determines the output voltage of the linear regulator,
-according to Equation~\ref{eq:linear-reg-vout}.
+\subsubsection{Pinout}
+\label{sec:tps7a91-pinout}
 
-\begin{equation}
-        R_1 = R_2\left(\frac{V_{\text{OUT}}}{V_{\text{REF}}}-1\right) \label{eq:linear-reg-vout}
-\end{equation}
-
-Where $V_{\text{REF}} = 0.8V$ Specifically, 1.15k and 3.57k are specified in the datasheet in order
-to get an output voltage of 3.3V. SS\_CTRL is connected to IN instead of GND which increases the
-soft-startup charging current to 100 $\mu$A from 6.2 $\mu$A and decreases the start-up time, which
-is given by Equation~\ref{eq:linear-reg-startup-time}.
-
-\begin{align}
-  t_{\text{SS}} &= (V_{\text{REF}} \times C_{\text{NR/SS}}) /
-                  I_{\text{NR/SS}} \label{eq:linear-reg-startup-time} \\
-                &= 0.8V \times 100 \times 10^{-9} F/(100 \times 10^{-6} A) \\
-                &= 0.8\text{ms}
-\end{align}
-
-An output capacitor of 10 $\mu$F is chosen which is the minimum specified by the
-datasheet. Additionally, a feed-forward capacitor of 10nF is added between the OUT and FB pins to
-improve the noise and PSRR performance of the voltage regulator. The value is recommended by the
-datasheet. The $C_{\text{NR/SS}}$ capacitor of 100nF is used to create an output RC filter for
-output noise and is also used to set the soft-start time. A value of between 10nF and 10$\mu$F is
-recommended. PAD and GND should both be connected to ground, as indicated by the datasheet. PG
-indicates whether the output voltage is in a usable state. Since we are not using it, it can be left
-floating.
-
-Another buck converter output feeds into the input of an ultra low LDO, with a dropout voltage of
-40mV as shown in Figure~\ref{fig:ldo-ldo-connection}. R104 acts as a pull-up resistor, pulling the
-voltage on EN high when PG is not driven. However, when PG is low, EN will be driven low. The bypass
-pin is left open, although a 1$\mu$F capacitor could have been placed there to reduce output noise.
-
-\begin{figure}[h]
-        \centering
-        \includegraphics[width=0.9\textwidth]{data/ldo-ldo-connection.png}
-        \caption{An ultra LDO regulator whose output feeds into an FPGA input. It uses the PG
-          pin from another LDO regulator to alternately enable/disable it.}
-        \label{fig:ldo-ldo-connection}
-\end{figure}
-
-Another output from a buck converter leads to a 3V output LDO regulator with a dropout voltage of
-120mV shown in Figure~\ref{fig:lp5907}. All of the pin connections are evident.
-
-\begin{figure}[h]
-        \centering
-        \includegraphics[width=0.75\textwidth]{data/lp5907.png}
-        \caption{The LP5907 is a 3V LDO regulator with a dropout voltage of 120mV.}
-        \label{fig:lp5907}
-\end{figure}
-
-The last component on the power sheet is an
-\href{http://www.ti.com/lit/ds/symlink/lp2985.pdf}{LP2985} LDO regulator shown in
-Figure~\ref{fig:lp2985}, that takes the 12V input voltage from the barrel jack and outputs
-10V. ON/OFF is an active-low shutdown pin, so it is tied to $V_{\text{IN}}$. A 10nF capacitor is
-tied to BYPASS to decrease the output noise.
-
-\begin{figure}[h]
-        \centering
-        \includegraphics[width=0.9\textwidth]{data/lp2985.png}
-        \caption{The LP2985 LDO regulator.}
-        \label{fig:lp2985}
-\end{figure}
-
-\subsection{BOM}
-\label{sec:power-bom}
-
-\label{tab:power-schematic-components}
-\begin{tabularx}{\textwidth}{c l l c X>{\raggedright\arraybackslash}X}
+\label{sec:tps7a91-pinout}
+\begin{tabularx}{\textwidth}{l l X}
+        \caption{TPS7A91 pinout.} \\
         \toprule
-        \textbf{Designators} & \textbf{Description} & \textbf{MFN} & \textbf{QTY} & \textbf{Links} \\
-        \midrule \endhead FB11 & barrel jack ferrite bead & 74279228600 & 1 &
-        \href{https://katalog.we-online.de/pbs/datasheet/74279228600.pdf}{Datasheet},
-        \href{https://www.digikey.com/product-detail/en/wurth-electronics-inc/74279228600/732-6119-1-ND/5050874}{Digi-Key}
-        \\
-        U18, U19 & buck converter & \hyperlink{sec:tps5420d}{TPS5420D} & 2 &
-        \href{http://www.ti.com/lit/ds/symlink/tps5420.pdf}{Datasheet},
-        \href{https://www.digikey.com/product-detail/en/texas-instruments/TPS5420DR/296-31984-1-ND/3505318}{Digi-Key}
-        \\
-        U21 & linear regulator & \hyperlink{sec:lp985a-10dbvr}{LP985A-10DBVR} & 1 &
-        \href{https://www.ti.com/lit/ds/symlink/lp2985.pdf}{Datasheet},
-        \href{https://www.digikey.com/product-detail/en/texas-instruments/LP2985A-10DBVR/296-24264-1-ND/2038549}{Digi-Key}
-        \\
+        \# & Pin & Description \\
+        \midrule
+        1, 2 & OUT & Regulated output voltage. A $10 \si{\mu F}$ or greater
+        capacitor should be
+        connected between this pin and ground. \\
+        3 & FB & Feedback pin. The divided output voltage is compared against a $0.8 \si{V}$
+        reference. \\
+        4 & GND & Ground. \\
+        5 & PG & A power good indicator that can signal to downstream devices when voltage is within
+        some range of the desired level. The design doesn't use this and so the pin has been left
+        floating. \\
+        6 & SS\_CTRL & Soft-start control pin. Tying this pin to the input voltage increases the
+        soft-start charging current to $100 \si{\mu A}$, which reduces the startup time. This pin
+        could have also been tied to ground if a slower startup time was desired. \\
+        7 & EN & Enable. Tying this to the input voltage unconditionally enables this device. \\
+        8 & NR/SS & Noise-reduction pin. A capacitor can be placed between this pin and ground
+        to reduce output noise. This effectively acts like an RC filter. A capacitance between $10
+        \si{nF}$ and $1 \si{\mu F}$ is recommended. I've used $100 \si{nF}$. This pin also limits
+        inrush current. \\
+        9, 10 & IN & Input voltage pin. A bypass capacitor of $10 \si{\mu F}$ or more is
+        required. \\
         \bottomrule
 \end{tabularx}
+
+\subsubsection{Component Selection}
+\label{sec:tps7a91-component-selection}
+
+MLCC capacitors are recommended for input and output bypassing due to their low ESR, with
+preferences given to X5R and X7R types. Additionally, they should be derated by at least 50\%. The
+recommended capacitance is $10 \si{\mu F}$ or greater at the input and output. I've used
+$10 \si{\mu F}$ at the input and the same at the output, with the option for another capacitor at
+the output if needed. The $10 \si{nF}$ feed-forward capacitor between FB and OUT is recommended by
+the datasheet to improve noise and PSRR performance. The voltage divider resistors are specifically
+mentioned in the datasheet to get the appropriate output values.
+
+\subsubsection{Downstream Current Draw}
+\label{sec:tps7a91-current}
+
+The $3.3 \si{V}$ output regulator sources a minimum of $4.2 \si{mA}$ and a maximum of $37.5
+\si{mA}$. The range for the $1.8 \si{V}$ device is $22 - 89 \si{mA}$.
+
+\subsubsection{PCB Layout Considerations}
+\label{sec:tps7a91-pcb}
+
+The recommended PCB layout is shown in Figure~\ref{fig:tps7a91-pcb}.
+
+\begin{figure}[h]
+        \centering
+        \includegraphics[width=\textwidth]{data/tps7a91-pcb}
+        \caption{TPS7A91 recommended PCB layout.}
+        \label{fig:tps7a91-pcb}
+\end{figure}
+
+\subsection{TPS7A7001DDA LDO Regulator}
+\label{sec:tps7a7001dda}
+
+\subsubsection{Description}
+\label{sec:tps7a7001dda-description}
+
+The TPS7A7001DDA supports low dropouts up to $2 \si{A}$, which is important since it must
+accommodate a maximum current draw of $1.1 \si{A}$ (see Table~\ref{tab:buck-5.6-current}).
+
+\subsubsection{Pinout}
+\label{sec:tps7a7001dda-pinout}
+
+\label{tab:tps7a7001dda-pinout}
+\begin{tabularx}{\textwidth}{l l X}
+        \caption{TPS7A7001DDA pinout.}                                \\
+        \toprule
+        \#      & Pin & Description                                   \\
+        \midrule
+        1, 4, 5 & NC  & No connect.                                   \\
+        2       & EN  & Enable input. Connected to IN since unused.   \\
+        3       & IN  & Input voltage.                                \\
+        6       & OUT & Regulated voltage output.                     \\
+        7       & FB  & Feedback, compared to $0.5 \si{V}$ reference. \\
+        8       & GND & Ground.                                       \\
+        9       & EP  & Exposed pad. Tied to ground.                  \\
+        \bottomrule
+\end{tabularx}
+
+
+\subsubsection{Component Selection}
+\label{sec:tps7a7001dda-component-selection}
+
+An input capacitor of $1 - 10 \si{\mu F}$ and with low ESR is recommended. The output capacitor
+should be ceramic and can be anywhere from $4.7 - 47 \si{\mu F}$. I've chosen $10 \si{\mu F}$ with
+the option for an additional capacitor if needed. The voltage divider resistors are specifically
+recommended by the datasheet.
+
+\subsubsection{PCB Layout Considerations}
+\label{sec:tps7a7001dda-pcb}
+
+The recommended PCB layout is provided in~\ref{fig:tps7a7001dda-pcb}.
+
+\begin{figure}[h]
+        \centering
+        \includegraphics[width=\textwidth]{data/tps7a7001dda-pcb}
+        \caption{TPS7A7001DDA recommended PCB layout.}
+        \label{fig:tps7a7001dda-pcb}
+\end{figure}
 %%% Local Variables:
 %%% mode: latex
 %%% TeX-master: "fmcw-radar"

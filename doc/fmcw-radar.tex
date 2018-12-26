@@ -8,53 +8,6 @@
 \tableofcontents
 \hypersetup{linkcolor=red}
 
-\chapter{Introduction}
-\label{cha:introduction}
-
-\section{Intent}
-\label{sec:intent}
-
-This document explains, in a great amount of detail, the design, operation and layout of an FMCW
-radar PCB. The radar was originally designed by Henrik Forst\'en and is described
-\href{http://hforsten.com/third-version-of-homemade-6-ghz-fmcw-radar.html}{in his blog post}. His
-source code is hosted on GitHub \href{https://github.com/Ttl/fmcw3}{here}. I have made this document
-in an effort to understand his design and to build it myself. While most of the design remains his
-work, I have made several modifications for deprecated parts or other design choices. I have also
-made an effort to update the schematic/footprints to use the default KiCad schematic and footprint
-libraries where possible. The design is a work in progress and will likely be updated through
-several different versions in order to make improvements and add functionality. I also hope to make
-the design more my own as it is modified and updated. This document will be kept up-to-date with
-those changes.
-
-\section{How to Use this Document}
-\label{sec:how-to-use}
-
-This document contains several sections. The first is an in-depth description of the circuit and the
-function of each component in it. Each section corresponds to a schematic sheet in the design. Below
-each section header is a hyperlink to a PDF version of that sheet of the schematic. The hyperlink is
-labeled ``schematic'' and is italicized. The full schematic in PDF form is contained at the end of
-this document. I have opted for this format instead of embedding diagrams of individual components
-throughout the document, which I believe is more aesthetically pleasing and is easier to maintain as
-the schematic is updated. Each section is then further subdivided into subsections composed of the
-individual components in the schematic sheet. They provide a detailed description of the component's
-operation and how it interacts with other components on the PCB. I also frequently include a table
-listing the full pinout of the component, which includes the purpose of each pin and its connections
-in the schematic.
-
-The following section describes the layout of the PCB in detail. It contains a subsection describing
-overall layout structure, including ground planes. I've also included a subsection for specific
-component layout considerations. I've left out considerations that are generally good practice and
-are thus applicable to most digital circuits. For instance, I've omitted justifications for
-bypassing unless the component's datasheet recommends a specific layout that differs from the
-default recommendations. Lastly, I've included a section for impedance matching.
-
-The last section (prior to the full schematic) contains a selection of useful hyperlinks.
-
-\section{Overview}
-\label{sec:overview}
-
-This design uses one antenna for transmitting and two for reception.
-
 \chapter{Circuit Description}
 \label{cha:circuit}
 
@@ -307,7 +260,7 @@ between the two mixed products tells us the incident angle, so we can localize t
 \href{https://assets.lairdtech.com/home/brandworld/files/ANT-DS-PA58\%201115.pdf}{This antenna}
 looks like it would be good for
 transmission. \href{https://shop.bizsyscon.com/rf-elements-sh-cc-5-30-symmetrical-horn-carrier-class-30-degree.html#horizontalTab1}{This
-  RF Elements} antenna looks even better, but is probably more than I'm willing to pay (it's gain is
+  RF Elements} antenna looks even better, but is more than I'm willing to pay (and its gain is
 lower,
 however). \href{https://smile.amazon.com/d/Sewing-Machines-Accessories/9-4dBi-Triple-Antenna-Terminator-RJX1749/B074PR4TW3/ref=sr_1_8?ie=UTF8&qid=1544680544&sr=8-8&keywords=patch+antenna}{The
   Triple Feed Patch Array Antenna} is a great deal for the price and is based off a clever

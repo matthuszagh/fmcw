@@ -23,28 +23,43 @@ The FPGA stores and loads its configuration from an SPI flash memory device,
         \caption{Important documents.} \\
         \toprule
         \textbf{URL} & \textbf{Description} \\
-        \midrule
-        \endhead
-
-        \href{https://www.xilinx.com/products/silicon-devices/fpga/artix-7.html?resultsTablePreSelect=documenttype:Data\%20Sheets#documentation}{Artix-7
+        \midrule \endhead
+        \href{https://www.xilinx.com/products/silicon-devices/fpga/artix-7.html?resultsTablePreSelect=documenttype:Data\%20Sheets\#documentation}{Artix-7
           FPGA family} & The main page that contains a collection of documents about the 7 series
         devices. \\
         \href{https://www.xilinx.com/support/documentation/user_guides/ug475_7Series_Pkg_Pinout.pdf}{Package
-          / Pinout} & The various packages that the device comes in, along with the associated pin
+          Pinout} & The various packages that the device comes in, along with the associated pin
         definitions. \\
         \href{https://www.xilinx.com/support/documentation/data_sheets/ds180_7Series_Overview.pdf}{Overview}
-        & Contains
-        general device capability information, such as number of logic cells, DSP blocks, etc. \\
+        & Contains general device capability information, such as number of logic cells, DSP blocks,
+        etc. \\
         \href{https://www.xilinx.com/support/documentation/user_guides/ug483_7Series_PCB.pdf}{PCB
           Design Guide} &
         Contains information about bypassing and other design considerations. \\
         \href{https://www.xilinx.com/support/documentation/user_guides/ug480_7Series_XADC.pdf}{XADC}
-        & Contains
-        information about the FPGA's internal ADC. \\
+        & Contains information about the FPGA's internal ADC. \\
         \href{https://www.xilinx.com/support/documentation/user_guides/ug470_7Series_Config.pdf}{Configuration
-          Guide} &
-        Describes how to configure the FPGA with a bitstream. \\
+          Guide} & Describes how to configure the FPGA with a bitstream. \\
+        \bottomrule
+\end{tabularx}
 
+\subsubsection{Power Supply Requirements}
+\label{sec:xc7a15t-ftg256-power}
+
+The FPGA requires that the VCCINT and VCCBRAM voltages be supplied first, followed by VCCAUX and
+then by VCCO. Additionally, all this must be done between $0.2$ and $50 \si{ms}$. The required
+voltage levels are displayed in Table~\ref{tab:xc7a15t-ftg256-power}.
+
+\label{tab:xc7a15t-ftg256-power}
+\begin{tabularx}{\textwidth}{l c c c}
+        \caption{XC7A15T-FTG256 power supply requirements.} \\
+        \toprule
+        Voltage Pin & Min & Typ & Max \\
+        \midrule
+        V\textsubscript{CCINT} & 0.95 & 1.00 & 1.05 \\
+        V\textsubscript{CCBRAM} & 0.95 & 1.00 & 1.05 \\
+        V\textsubscript{CCAUX} & 1.71 & 1.80 & 1.89 \\
+        V\textsubscript{CCO} & 1.14 & - & 3.465 \\
         \bottomrule
 \end{tabularx}
 
