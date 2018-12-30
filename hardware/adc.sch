@@ -285,7 +285,7 @@ Text Label 4100 4950 2    60   ~ 0
 3V0
 Text Label 2850 4450 0    60   ~ 0
 3V0
-Text Label 4900 1350 0    60   ~ 0
+Text Label 4650 1350 0    60   ~ 0
 3V0
 Text HLabel 7250 4100 2    60   Output ~ 0
 OFA

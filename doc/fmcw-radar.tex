@@ -8,6 +8,86 @@
 \tableofcontents
 \hypersetup{linkcolor=red}
 
+\chapter{Attribution \& Intent}
+\label{cha:attribution}
+
+This design is adapted from
+\href{http://hforsten.com/third-version-of-homemade-6-ghz-fmcw-radar.html}{a blog post by Henrik
+  Forst\'en}. A large portion of the design and schematics as well as parts of the description are
+his and should be thus credited. I've made a number of modifications to the schematic and attempted
+to thoroughly document the radar's operation in an effort to understand it. I hope that the
+description below will be useful to others who want to understand how a radar can be built from
+scratch.
+
+\chapter{Overview}
+\label{cha:overview}
+
+\section{Distance Calculation}
+\label{sec:distance}
+
+The principle of operation of an FMCW radar is shown in Fig.~\ref{fig:fmcw-principle}. A sinusoidal
+signal that ramps in frequency is transmitted through air via an antenna. The reflected signal
+(which is just a phase-shifted version of the original signal) is picked up by another antenna (or
+set of antennas) and modulated with the original signal. The distance to the object can be computed
+from the result, shown in Eq.~\ref{eq:fmcw-principle}, where $\Delta f$ is the frequency difference,
+$t_{\text{ramp}}$ is the known ramp duration, $f_{\text{ramp}}$ is the difference between the high
+and low ramp frequencies, $c$ is the speed of light and the 2 is present because the time measured
+is the round-trip time.
+
+\begin{figure}[h]
+        \centering
+        \includegraphics[width=0.75\textwidth]{data/fmcw-principle}
+        \caption{FMCW radar operation: a delayed signal is modulated with the original signal and
+          the distance to the remote object can be backed out from the phase difference between the
+          two signals.}
+        \label{fig:fmcw-principle}
+\end{figure}
+
+\begin{equation}
+        \label{eq:fmcw-principle}
+        d = \frac{c t_{\text{ramp}} \Delta f}{2 f_{\text{ramp}}}
+\end{equation}
+
+To calculate the frequency difference, we first express it in terms of the round-trip time,
+$t_{\text{d}}$:
+
+\begin{equation}
+        \Delta f = \frac{t_{\text{d}} f_{\text{ramp}}}{t_{\text{ramp}}}
+\end{equation}
+
+The transmitted signal during one ramp is:
+
+\begin{align}
+  f(t) &= \sin\left(\omega t\right) \\
+       &= \sin\left(2 \pi f(t) t\right) \\
+       &= \sin\left(2 \pi t \left( f_0 + t \frac{f_{\text{ramp}}}{t_{\text{ramp}}} \right) \right)
+\end{align}
+
+The received signal (which is just a phase shifted version of the transmitted signal) is
+$f(t-t_{\text{d}})$. Using the mixer output we can compute the time delay:
+
+\begin{align}
+  m &= f(t) f(t-t_{\text{d}}) && \text{$m$ is the mixer output.} \\
+    &= \sin(\omega t) \sin(\omega (t-t_{\text{d}})) \\
+    &= \cos(\omega t_{\text{d}})/2 && \text{\footnotemark} \\
+  t_{\text{d}} &= \frac{\arccos(2m)}{2 \pi \left(f_0 + t \frac{f_{\text{ramp}}}{t_{\text{ramp}}} \right)}
+\end{align}
+\footnotetext{We've used the identity
+  $\sin\theta\sin\phi = \left[\cos(\theta - \phi) - \cos(\theta + \phi)\right]/2$ and the fact that
+  the sum term is outside the IF amplifier pass-band and will be filtered out.}
+
+The distance can be computed with Eq.~\ref{eq:fmcw-distance}.
+
+\begin{equation}
+        \label{eq:fmcw-distance}
+        d = \frac{c \arccos(2m)}{4 \pi \left(f_0 + t \frac{f_{\text{ramp}}}{t_{\text{ramp}}} \right)}
+\end{equation}
+
+\section{Angle Calculation}
+\label{sec:angle}
+
+
+
 \chapter{Circuit Description}
 \label{cha:circuit}
 
@@ -22,6 +102,8 @@
 \include{rx}
 
 \chapter{PCB}
+\label{cha:pcb}
+
 \section{General Layout}
 
 The radar is constructed using a 4-layer board and uses both surfaces of the board. The front layer

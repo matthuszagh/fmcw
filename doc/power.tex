@@ -2,6 +2,13 @@
 \label{sec:power}
 \textit{\hyperlink{schematic.8}{schematic}}
 
+\fixme{I think this section needs information about PSRRs, especially for regulators that feed RF
+  circuits.}
+
+\fixme{Another thing that needs clarification is where should the LDO's be placed? Should they be
+  located near the loads they serve or the switching converters? My guess would be near the
+  converters since that decreases the part of the board that is exposed to the switching noise.}
+
 \subsection{Overview}
 \label{sec:power-overview}
 
@@ -159,7 +166,7 @@ loss in inductance.
         \bottomrule
 \end{tabularx}
 
-\subsubsection{PCB Layout Considerations}
+\subsubsection{PCB Layout}
 \label{sec:tps5420d-pcb}
 
 The datasheet provides a suggested PCB layout, shown in Figure~\ref{fig:tps5420d-pcb}.
@@ -316,7 +323,7 @@ $2.2\si{\mu F}$, but higher values are better at the output. I'm using $10\si{\m
         \bottomrule
 \end{tabularx}
 
-\subsubsection{PCB Layout Considerations}
+\subsubsection{PCB Layout}
 \label{sec:lp2985a-10dbvr-pcb}
 
 The input and output capacitors should be placed within $1\si{cm}$ of the input and output pins and
@@ -336,7 +343,10 @@ the input voltage and whose source is attached to the output voltage. This negat
 a stable equilibrium when the output voltage is at its set-point. The functional block diagram is
 shown in Figure~\ref{fig:tps7a91-block-diagram}.
 
-
+The power-good function of one regulator is used to ensure that the $1.8 \si{V}$ supply arrives at
+the FPGA before the $3.3 \si{V}$ supply. The circuit uses an open-drain output with a pull-up
+resistor. If the output voltage goes below some threshold, the MOSFET will saturate and the PG line
+will be brought low. Otherwise, it will be pulled high.
 
 \begin{figure}[h]
         \centering
@@ -387,20 +397,14 @@ the output if needed. The $10 \si{nF}$ feed-forward capacitor between FB and OUT
 the datasheet to improve noise and PSRR performance. The voltage divider resistors are specifically
 mentioned in the datasheet to get the appropriate output values.
 
-\subsubsection{Downstream Current Draw}
-\label{sec:tps7a91-current}
-
-The $3.3 \si{V}$ output regulator sources a minimum of $4.2 \si{mA}$ and a maximum of $37.5
-\si{mA}$. The range for the $1.8 \si{V}$ device is $22 - 89 \si{mA}$.
-
-\subsubsection{PCB Layout Considerations}
+\subsubsection{PCB Layout}
 \label{sec:tps7a91-pcb}
 
 The recommended PCB layout is shown in Figure~\ref{fig:tps7a91-pcb}.
 
 \begin{figure}[h]
         \centering
-        \includegraphics[width=\textwidth]{data/tps7a91-pcb}
+        \includegraphics[width=0.75\textwidth]{data/tps7a91-pcb}
         \caption{TPS7A91 recommended PCB layout.}
         \label{fig:tps7a91-pcb}
 \end{figure}
@@ -433,7 +437,6 @@ accommodate a maximum current draw of $1.1 \si{A}$ (see Table~\ref{tab:buck-5.6-
         \bottomrule
 \end{tabularx}
 
-
 \subsubsection{Component Selection}
 \label{sec:tps7a7001dda-component-selection}
 
@@ -442,17 +445,63 @@ should be ceramic and can be anywhere from $4.7 - 47 \si{\mu F}$. I've chosen $1
 the option for an additional capacitor if needed. The voltage divider resistors are specifically
 recommended by the datasheet.
 
-\subsubsection{PCB Layout Considerations}
+\subsubsection{PCB Layout}
 \label{sec:tps7a7001dda-pcb}
 
 The recommended PCB layout is provided in~\ref{fig:tps7a7001dda-pcb}.
 
 \begin{figure}[h]
         \centering
-        \includegraphics[width=\textwidth]{data/tps7a7001dda-pcb}
+        \includegraphics[width=0.75\textwidth]{data/tps7a7001dda-pcb}
         \caption{TPS7A7001DDA recommended PCB layout.}
         \label{fig:tps7a7001dda-pcb}
 \end{figure}
+
+\subsection{LP5907MFX-3.0}
+\label{sec:mic5301-3.3}
+
+\subsubsection{Description}
+\label{sec:mic5301-3.3-description}
+
+The LP5907MFX-3.0 is a low-noise and dropout voltage regulator used to power the VCO and
+reception-side amplifiers. It has a current rating of $250 \si{mA}$ which is more than the maximum
+current load of the downstream components.
+
+\subsubsection{Pinout}
+\label{sec:lp5907mfx-3.0-pinout}
+
+\label{tab:lp5907mfx-3.0-pinout}
+\begin{tabularx}{\textwidth}{l l X}
+        \caption{LP5907MFX-3.0 pinout.}                                      \\
+        \toprule
+        \# & Pin & Description                                               \\
+        \midrule
+	1  & IN  & Voltage input.                                            \\
+	2  & GND & Ground.                                                   \\
+	3  & EN  & Enable. Tied to IN to keep the device unconditionally on. \\
+	4  & NC  & No connect.                                               \\
+	5  & OUT & $1.8 \si{V}$ output.                                      \\
+        \bottomrule
+\end{tabularx}
+
+\subsubsection{Component Selection}
+\label{sec:lp5907mfx-3.0-component-selection}
+
+The input and output capacitors should be $1 - 10 \si{\mu F}$, with the input capacitor at least as
+large as the output capacitor. I've used $10 \si{\mu F}$ capacitors in this design.
+
+\subsubsection{PCB Layout}
+\label{sec:lp5907-3.0-pcb}
+
+The recommended PCB layout is shown in Figure~\ref{fig:lp5907mfx-3.0-pcb}.
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.5\textwidth]{data/lp5907mfx-3-pcb}
+	\caption{LP5907MFX-3.0 recommended PCB layout.}
+	\label{fig:lp5907mfx-3.0-pcb}
+\end{figure}
+
 %%% Local Variables:
 %%% mode: latex
 %%% TeX-master: "fmcw-radar"

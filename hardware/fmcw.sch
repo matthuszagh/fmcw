@@ -237,20 +237,19 @@ F 0 "U4" H 2500 6550 60  0000 C CNN
 F 1 "KT2520K" H 2350 6950 60  0000 C CNN
 F 2 "fmcw:KT2520K" H 2300 6800 60  0001 C CNN
 F 3 "https://media.digikey.com/pdf/Data%20Sheets/AVX%20PDFs/KT2520K40000DAW18TAS_Spec.pdf" H 2300 6800 60  0001 C CNN
-F 4 "" H 2300 6800 50  0001 C CNN "manf#"
-F 5 "KT2520K40000DAW18TAS" H 0   0   50  0001 C CNN "MFN"
+F 4 "KT2520K40000DAW18TAS" H 0   0   50  0001 C CNN "MFN"
 	1    2300 6800
 	1    0    0    -1  
 $EndComp
 $Comp
 L power:GND #PWR01
 U 1 1 597314F3
-P 1700 7050
-F 0 "#PWR01" H 1700 6800 50  0001 C CNN
-F 1 "GND" H 1700 6900 50  0000 C CNN
-F 2 "" H 1700 7050 60  0000 C CNN
-F 3 "" H 1700 7050 60  0000 C CNN
-	1    1700 7050
+P 1800 7050
+F 0 "#PWR01" H 1800 6800 50  0001 C CNN
+F 1 "GND" H 1800 6900 50  0000 C CNN
+F 2 "" H 1800 7050 60  0000 C CNN
+F 3 "" H 1800 7050 60  0000 C CNN
+	1    1800 7050
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -606,12 +605,8 @@ Wire Wire Line
 Wire Wire Line
 	8700 2800 8800 2800
 Wire Wire Line
-	1900 6950 1700 6950
-Wire Wire Line
-	1700 6850 1700 6950
-Wire Wire Line
-	1900 6850 1700 6850
-Connection ~ 1700 6950
+	1800 6850 1800 6950
+Connection ~ 1800 6950
 Wire Wire Line
 	1900 6550 1900 6750
 Wire Wire Line
@@ -837,7 +832,7 @@ Power (max):\nTX: 1.65 W\nLNA: 0.45 W\nDigital: 0.7 W\nMixer: 1.0 W\nIF: 0.01 W\
 Text Notes 8900 3400 0    60   ~ 0
 3V0: 70 mA
 Wire Wire Line
-	1700 6950 1700 7050
+	1800 6950 1800 7050
 Wire Wire Line
 	1400 5850 1550 5850
 Wire Wire Line
@@ -876,4 +871,8 @@ Text Notes 2600 1550 0    60   ~ 0
 Power-on current\n1V0:  277 mA\n1V8:  62 mA\n3V3D: 296 mA\n3V6:  78 mA
 Text Notes 3650 4850 0    60   ~ 0
 Current (min):\n1V0:  97 mA\n1V8:  22 mA\n3V0:  170 mA\n3V3A: 540 mA\n3V3D: 91 mA\n3V6:  78 mA\n5V:   500 mA\n10V:  5 mA
+Wire Wire Line
+	1900 6850 1800 6850
+Wire Wire Line
+	1900 6950 1800 6950
 $EndSCHEMATC

@@ -26,3 +26,4 @@ documentation/data/
 /hardware/_saved_power.sch
 doc/auto
 /hardware/_saved_fpga.sch
+*.ini

@@ -1166,24 +1166,6 @@ X CLKB 9 -1150 1350 200 R 50 50 1 1 I
 ENDDRAW
 ENDDEF
 #
-# fmcw-rescue_MIC5301-fmcw3-rescue
-#
-DEF fmcw-rescue_MIC5301-fmcw3-rescue U 0 40 Y Y 1 F N
-F0 "U" 200 -200 60 H V C CNN
-F1 "fmcw-rescue_MIC5301-fmcw3-rescue" 0 200 60 H V C CNN
-F2 "fmcw3:SOT-23-5" -200 -50 60 H I C CNN
-F3 "http://ww1.microchip.com/downloads/en/DeviceDoc/mic5301.pdf" -200 -50 60 H I C CNN
-F4 "MIC5301-3.3YD5-TR" 300 -100 60 H I C CNN "manf#"
-DRAW
-S -300 150 250 -150 0 1 0 f
-X VIN 1 -500 100 200 R 50 50 1 1 W
-X GND 2 -500 -100 200 R 50 50 1 1 W
-X EN 3 -500 0 200 R 50 50 1 1 I
-X BYP 4 450 -100 200 L 50 50 1 1 P
-X VOUT 5 450 100 200 L 50 50 1 1 w
-ENDDRAW
-ENDDEF
-#
 # fmcw-rescue_MOS_N_GSD-fmcw3-rescue
 #
 DEF fmcw-rescue_MOS_N_GSD-fmcw3-rescue Q 0 0 Y Y 1 F N
