@@ -231,8 +231,6 @@ Text HLabel 8600 3550 2    60   Output ~ 0
 IF1+
 Text HLabel 8600 3450 2    60   Output ~ 0
 IF1-
-Text HLabel 3100 2200 0    60   Input ~ 0
-5V
 $Comp
 L fmcw-rescue:ADL5802-fmcw3-rescue U?
 U 1 1 5942E974
@@ -798,15 +796,6 @@ F 3 "" H 3000 2800 60  0000 C CNN
 	1    3000 2800
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	3000 2500 3000 2300
-Wire Wire Line
-	3000 2300 3150 2300
-Wire Wire Line
-	3150 2300 3150 2200
-Wire Wire Line
-	3100 2200 3150 2200
-Connection ~ 3150 2200
 Connection ~ 4750 2450
 Text Label 5200 2450 0    60   ~ 0
 5VF
@@ -938,11 +927,9 @@ Wire Wire Line
 Wire Wire Line
 	4750 2450 5050 2450
 Wire Wire Line
-	5700 2450 6250 2450
+	5700 2450 5850 2450
 Wire Wire Line
 	5250 5300 5350 5300
-Wire Wire Line
-	3150 2200 3500 2200
 Wire Wire Line
 	3800 2200 4150 2200
 Wire Wire Line
@@ -950,4 +937,27 @@ Wire Wire Line
 Connection ~ 2100 4050
 Wire Wire Line
 	950  4050 2100 4050
+Wire Wire Line
+	2850 2200 3000 2200
+Wire Wire Line
+	3000 2200 3000 2500
+Connection ~ 3000 2200
+Wire Wire Line
+	3000 2200 3500 2200
+$Comp
+L power:PWR_FLAG #FLG0110
+U 1 1 5CDA3D12
+P 5850 2450
+F 0 "#FLG0110" H 5850 2525 50  0001 C CNN
+F 1 "PWR_FLAG" H 5850 2624 50  0000 C CNN
+F 2 "" H 5850 2450 50  0001 C CNN
+F 3 "~" H 5850 2450 50  0001 C CNN
+	1    5850 2450
+	1    0    0    -1  
+$EndComp
+Connection ~ 5850 2450
+Wire Wire Line
+	5850 2450 6250 2450
+Text HLabel 2850 2200 0    60   Input ~ 0
+5V
 $EndSCHEMATC

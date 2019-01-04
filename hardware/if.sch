@@ -88,8 +88,6 @@ F 3 "" H 5000 1100 60  0000 C CNN
 	1    5000 1100
 	1    0    0    -1  
 $EndComp
-Text Label 4650 800  0    60   ~ 0
-3V3
 $Comp
 L power:GND #PWR0243
 U 1 1 5966747B
@@ -271,8 +269,6 @@ Text HLabel 1150 2100 0    60   Input ~ 0
 IF2+
 Text HLabel 1150 1700 0    60   Input ~ 0
 IF2-
-Text Label 4450 4000 0    60   ~ 0
-3V3
 $Comp
 L power:GND #PWR0245
 U 1 1 5966BC37
@@ -405,8 +401,6 @@ F 4 "ERJ-2RKF5490X" H 0   0   50  0001 C CNN "MFN"
 $EndComp
 Text HLabel 3450 1900 0    60   Input ~ 0
 VCOM1
-Text HLabel 4550 800  0    60   Input ~ 0
-3V3
 $Comp
 L Device:C C140
 U 1 1 5966D17D
@@ -553,10 +547,6 @@ F 3 "" H 9300 2650 60  0000 C CNN
 	1    9300 2650
 	1    0    0    -1  
 $EndComp
-Text Label 9250 800  0    60   ~ 0
-3V3
-Text Label 10050 2200 0    60   ~ 0
-3V3
 $Comp
 L Device:R R76
 U 1 1 59672803
@@ -753,10 +743,6 @@ F 3 "" H 9300 5850 60  0000 C CNN
 	1    9300 5850
 	1    0    0    -1  
 $EndComp
-Text Label 9250 4000 0    60   ~ 0
-3V3
-Text Label 10050 5400 0    60   ~ 0
-3V3
 $Comp
 L Device:R R78
 U 1 1 59676148
@@ -930,8 +916,6 @@ Wire Wire Line
 	4750 1150 4650 1150
 Wire Wire Line
 	4650 800  4650 1150
-Wire Wire Line
-	4550 800  4650 800 
 Connection ~ 4650 1150
 Wire Wire Line
 	4750 2550 4750 2450
@@ -1127,8 +1111,6 @@ Wire Wire Line
 Wire Wire Line
 	9550 800  9200 800 
 Wire Wire Line
-	9200 800  9200 1300
-Wire Wire Line
 	9300 1400 9300 1300
 Wire Wire Line
 	9300 1300 9200 1300
@@ -1281,10 +1263,6 @@ Connection ~ 7900 5150
 Connection ~ 5000 800 
 Wire Wire Line
 	5450 5350 5250 5350
-Text Label 5450 5350 0    60   ~ 0
-3V3
-Text Label 5650 2150 0    60   ~ 0
-3V3
 Wire Wire Line
 	5650 2150 5450 2150
 Wire Wire Line
@@ -1401,4 +1379,26 @@ Wire Wire Line
 	1050 5300 1250 5300
 Wire Wire Line
 	1550 5300 1800 5300
+Text Label 10050 5400 0    60   ~ 0
+3V3
+Text Label 9250 4000 0    60   ~ 0
+3V3
+Text Label 5450 5350 0    60   ~ 0
+3V3
+Text Label 4450 4000 0    60   ~ 0
+3V3
+Text Label 4650 800  0    60   ~ 0
+3V3
+Text Label 9250 800  0    60   ~ 0
+3V3
+Text Label 10050 2200 0    60   ~ 0
+3V3
+Wire Wire Line
+	9200 800  9200 1300
+Text Label 5650 2150 0    60   ~ 0
+3V3
+Wire Wire Line
+	4550 800  4650 800 
+Text HLabel 4550 800  0    60   Input ~ 0
+3V3
 $EndSCHEMATC

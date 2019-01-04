@@ -478,8 +478,6 @@ F 3 "" H 11950 3050 60  0000 C CNN
 	1    11950 3050
 	0    1    1    0   
 $EndComp
-Text Label 11000 2750 2    50   ~ 0
-5V
 Text Notes 13550 4650 0    50   ~ 0
 Gain: 32 dB
 Text Notes 13600 4950 0    60   ~ 0
@@ -661,7 +659,7 @@ F 3 "" H 14600 5000 60  0000 C CNN
 $EndComp
 Text Notes 2850 4450 0    50   ~ 0
 35 mA
-Text Notes 11900 2750 0    50   ~ 0
+Text Notes 12000 2750 0    50   ~ 0
 I_max: 800mA\nI_q: 300mA
 $Comp
 L Device:R R18
@@ -993,15 +991,9 @@ Text HLabel 2150 6700 0    60   Input ~ 0
 ADF_LE
 Wire Wire Line
 	14900 5300 14900 5250
-Text HLabel 6950 4850 0    60   Input ~ 0
-10V
-Wire Wire Line
-	6950 4850 7100 4850
 Wire Wire Line
 	7100 4850 7100 5000
 Connection ~ 7100 5000
-Text HLabel 3050 3650 0    60   Input ~ 0
-5V
 Text HLabel 2750 4600 0    60   Input ~ 0
 3V3
 Wire Wire Line
@@ -1029,11 +1021,7 @@ F 4 "BLM18PG181SH1D" H 0   0   50  0001 C CNN "MFN"
 	0    1    1    0   
 $EndComp
 Wire Wire Line
-	3050 3650 3150 3650
-Wire Wire Line
 	3600 5200 3850 5200
-Wire Wire Line
-	4100 4450 3850 4450
 Wire Wire Line
 	4100 3650 4100 4450
 Connection ~ 3850 4900
@@ -1044,13 +1032,13 @@ Wire Wire Line
 $Comp
 L Device:Ferrite_Bead FB4
 U 1 1 59758907
-P 11500 2750
-F 0 "FB4" V 11450 2600 50  0000 C CNN
-F 1 "CIC21P101NE" V 11350 2750 50  0000 C CNN
-F 2 "Inductor_SMD:L_0805_2012Metric" H 11500 2750 60  0001 C CNN
-F 3 "" H 11500 2750 60  0000 C CNN
-F 4 "CIC21P101NE" H 0   0   50  0001 C CNN "MFN"
-	1    11500 2750
+P 11300 2750
+F 0 "FB4" V 11250 2600 50  0000 C CNN
+F 1 "CIC21P101NE" V 11150 2750 50  0000 C CNN
+F 2 "Inductor_SMD:L_0805_2012Metric" H 11300 2750 60  0001 C CNN
+F 3 "" H 11300 2750 60  0000 C CNN
+F 4 "CIC21P101NE" H -200 0   50  0001 C CNN "MFN"
+	1    11300 2750
 	0    1    1    0   
 $EndComp
 $Comp
@@ -1223,7 +1211,7 @@ Wire Wire Line
 Wire Wire Line
 	2800 4750 2950 4750
 Wire Wire Line
-	8100 4800 8400 4800
+	8100 4800 8200 4800
 Wire Wire Line
 	3850 4900 3850 5200
 Wire Wire Line
@@ -1285,9 +1273,7 @@ Wire Wire Line
 Wire Wire Line
 	7700 4400 7900 4400
 Wire Wire Line
-	11000 2750 11350 2750
-Wire Wire Line
-	11650 2750 12300 2750
+	11450 2750 11800 2750
 Wire Wire Line
 	4600 6950 4600 7000
 Wire Wire Line
@@ -1306,8 +1292,6 @@ F 4 "SE5004L-R" H 0   0   50  0001 C CNN "MFN"
 	1    12600 4700
 	1    0    0    -1  
 $EndComp
-Text Label 3200 3650 0    60   ~ 0
-5V
 $Comp
 L Device:C C30
 U 1 1 5C1E7E77
@@ -1429,9 +1413,7 @@ Wire Wire Line
 Wire Wire Line
 	12600 4100 12600 3950
 Wire Wire Line
-	12600 2250 11650 2250
-Text Label 11000 2250 2    50   ~ 0
-5V
+	12600 2250 12200 2250
 $Comp
 L Device:Ferrite_Bead FB9
 U 1 1 5C377909
@@ -1444,8 +1426,6 @@ F 4 "CIC21P101NE" H 0   0   50  0001 C CNN "MFN"
 	1    11500 2250
 	0    1    1    0   
 $EndComp
-Wire Wire Line
-	11350 2250 11000 2250
 Wire Wire Line
 	12500 4100 12500 3950
 Wire Wire Line
@@ -1609,9 +1589,7 @@ Wire Wire Line
 Wire Wire Line
 	13750 4050 13750 3850
 Wire Wire Line
-	13750 2250 14200 2250
-Text Label 14800 2250 0    50   ~ 0
-5V
+	13750 2250 13850 2250
 $Comp
 L Device:Ferrite_Bead FB10
 U 1 1 5C462E68
@@ -1833,4 +1811,96 @@ Wire Wire Line
 	15350 5000 14900 5000
 Wire Wire Line
 	15550 5300 15550 5200
+Wire Wire Line
+	6950 4850 7100 4850
+Text HLabel 6950 4850 0    60   Input ~ 0
+10V
+Wire Wire Line
+	4100 4450 3900 4450
+Text Label 14800 2250 0    50   ~ 0
+5V
+Wire Wire Line
+	11000 2750 11150 2750
+Text Label 11000 2750 2    50   ~ 0
+5V
+Wire Wire Line
+	11350 2250 11000 2250
+Text Label 11000 2250 2    50   ~ 0
+5V
+Text Label 3200 3650 0    60   ~ 0
+5V
+Wire Wire Line
+	3050 3650 3150 3650
+Text HLabel 3050 3650 0    60   Input ~ 0
+5V
+$Comp
+L power:PWR_FLAG #FLG0105
+U 1 1 5CF1FD67
+P 3900 4450
+F 0 "#FLG0105" H 3900 4525 50  0001 C CNN
+F 1 "PWR_FLAG" H 3900 4624 50  0000 C CNN
+F 2 "" H 3900 4450 50  0001 C CNN
+F 3 "~" H 3900 4450 50  0001 C CNN
+	1    3900 4450
+	1    0    0    -1  
+$EndComp
+Connection ~ 3900 4450
+Wire Wire Line
+	3900 4450 3850 4450
+$Comp
+L power:PWR_FLAG #FLG0106
+U 1 1 5CF1FF83
+P 8200 4800
+F 0 "#FLG0106" H 8200 4875 50  0001 C CNN
+F 1 "PWR_FLAG" H 8200 4974 50  0000 C CNN
+F 2 "" H 8200 4800 50  0001 C CNN
+F 3 "~" H 8200 4800 50  0001 C CNN
+	1    8200 4800
+	1    0    0    -1  
+$EndComp
+Connection ~ 8200 4800
+Wire Wire Line
+	8200 4800 8400 4800
+$Comp
+L power:PWR_FLAG #FLG0107
+U 1 1 5CF21675
+P 12200 2250
+F 0 "#FLG0107" H 12200 2325 50  0001 C CNN
+F 1 "PWR_FLAG" H 12200 2424 50  0000 C CNN
+F 2 "" H 12200 2250 50  0001 C CNN
+F 3 "~" H 12200 2250 50  0001 C CNN
+	1    12200 2250
+	1    0    0    -1  
+$EndComp
+Connection ~ 12200 2250
+Wire Wire Line
+	12200 2250 11650 2250
+$Comp
+L power:PWR_FLAG #FLG0108
+U 1 1 5CF21707
+P 13850 2250
+F 0 "#FLG0108" H 13850 2325 50  0001 C CNN
+F 1 "PWR_FLAG" H 13850 2424 50  0000 C CNN
+F 2 "" H 13850 2250 50  0001 C CNN
+F 3 "~" H 13850 2250 50  0001 C CNN
+	1    13850 2250
+	1    0    0    -1  
+$EndComp
+Connection ~ 13850 2250
+Wire Wire Line
+	13850 2250 14200 2250
+$Comp
+L power:PWR_FLAG #FLG0109
+U 1 1 5CF2E52E
+P 11800 2750
+F 0 "#FLG0109" H 11800 2825 50  0001 C CNN
+F 1 "PWR_FLAG" H 11800 2924 50  0000 C CNN
+F 2 "" H 11800 2750 50  0001 C CNN
+F 3 "~" H 11800 2750 50  0001 C CNN
+	1    11800 2750
+	1    0    0    -1  
+$EndComp
+Connection ~ 11800 2750
+Wire Wire Line
+	11800 2750 12300 2750
 $EndSCHEMATC

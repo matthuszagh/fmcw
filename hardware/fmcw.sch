@@ -137,8 +137,6 @@ Text Label 4650 2950 2    60   ~ 0
 RF1
 Text Label 4650 3050 2    60   ~ 0
 RF2
-Text Label 4650 3200 2    60   ~ 0
-5V
 Text Label 7150 3400 0    60   ~ 0
 3V3A
 Text Label 7150 3100 0    60   ~ 0
@@ -151,24 +149,14 @@ Text Label 7150 2950 0    60   ~ 0
 ADC2-
 Text Label 7150 2850 0    60   ~ 0
 ADC2+
-Text Label 8700 1850 2    60   ~ 0
-5V
 Text Label 8700 1950 2    60   ~ 0
 10V
-Text Label 8700 2050 2    60   ~ 0
-3V3A
 Text Label 4650 2600 2    60   ~ 0
 MIX_ENBL
 Text Label 3100 4000 0    60   ~ 0
 1V0
 Text Label 3100 4100 0    60   ~ 0
 1V8
-Text Label 3100 4200 0    60   ~ 0
-3V3D
-Text Label 3100 4300 0    60   ~ 0
-3V3A
-Text Label 3100 4400 0    60   ~ 0
-5V
 Text Label 3100 4700 0    60   ~ 0
 3V0
 Text Notes 4800 2350 0    60   ~ 0
@@ -179,16 +167,12 @@ Text Label 3100 4800 0    60   ~ 0
 3V6
 Text Label 1500 2100 2    60   ~ 0
 3V6
-Text Label 3100 4500 0    60   ~ 0
-10V
 Text Label 3300 2750 0    60   ~ 0
 PA_OFF
 Text Label 1500 1800 2    60   ~ 0
 1V0
 Text Label 1500 1900 2    60   ~ 0
 1V8
-Text Label 1500 2000 2    60   ~ 0
-3V3D
 Text Label 1500 2350 2    60   ~ 0
 ADC1+
 Text Label 1500 2450 2    60   ~ 0
@@ -458,8 +442,6 @@ F 4 "BLM18PG181SH1D" H 0   0   50  0001 C CNN "MFN"
 	1    4350 5300
 	0    1    1    0   
 $EndComp
-Text Label 3850 5300 2    60   ~ 0
-3V3D
 $Comp
 L Device:C C17
 U 1 1 5973FA5C
@@ -519,8 +501,6 @@ Wire Wire Line
 Wire Wire Line
 	4750 3050 4650 3050
 Wire Wire Line
-	4650 3200 4750 3200
-Wire Wire Line
 	4750 2600 4650 2600
 Wire Wire Line
 	7150 3400 7050 3400
@@ -535,21 +515,11 @@ Wire Wire Line
 Wire Wire Line
 	7150 2850 7050 2850
 Wire Wire Line
-	8700 1850 8800 1850
-Wire Wire Line
 	8700 1950 8800 1950
-Wire Wire Line
-	8700 2050 8800 2050
 Wire Wire Line
 	3000 4000 3100 4000
 Wire Wire Line
 	3000 4100 3100 4100
-Wire Wire Line
-	3000 4200 3100 4200
-Wire Wire Line
-	3000 4300 3100 4300
-Wire Wire Line
-	3000 4400 3100 4400
 Wire Wire Line
 	3000 4700 3100 4700
 Wire Wire Line
@@ -557,15 +527,11 @@ Wire Wire Line
 Wire Wire Line
 	1600 2100 1500 2100
 Wire Wire Line
-	3000 4500 3100 4500
-Wire Wire Line
 	3200 2750 3300 2750
 Wire Wire Line
 	1600 1800 1500 1800
 Wire Wire Line
 	1600 1900 1500 1900
-Wire Wire Line
-	1600 2000 1500 2000
 Wire Wire Line
 	1600 2350 1500 2350
 Wire Wire Line
@@ -743,8 +709,7 @@ F 0 "U2" H 2250 5700 60  0000 C CNN
 F 1 "LP5907-1.8" H 2050 6100 60  0000 C CNN
 F 2 "Package_TO_SOT_SMD:SOT-23-5" H 2050 5950 60  0001 C CNN
 F 3 "http://www.ti.com/lit/ds/symlink/lp5907.pdf" H 2050 5950 60  0001 C CNN
-F 4 "" H 2050 5900 50  0001 C CNN "manf#"
-F 5 "LP5907MFX-1.8/NOPB" H 0   0   50  0001 C CNN "MFN"
+F 4 "LP5907MFX-1.8/NOPB" H 0   0   50  0001 C CNN "MFN"
 	1    2050 5900
 	1    0    0    -1  
 $EndComp
@@ -777,7 +742,7 @@ Wire Wire Line
 Wire Wire Line
 	3700 6200 4500 6200
 Wire Wire Line
-	4500 6200 5150 6200
+	4500 6200 4700 6200
 Wire Wire Line
 	5100 7350 5100 7400
 Wire Wire Line
@@ -892,4 +857,52 @@ F 3 "" H 1450 7550 50  0001 C CNN
 $EndComp
 Wire Wire Line
 	1450 7550 1450 7450
+Wire Wire Line
+	3000 4500 3100 4500
+Text Label 3100 4500 0    60   ~ 0
+10V
+Wire Wire Line
+	8700 2050 8800 2050
+Text Label 8700 2050 2    60   ~ 0
+3V3A
+Wire Wire Line
+	3000 4300 3100 4300
+Text Label 3100 4300 0    60   ~ 0
+3V3A
+Wire Wire Line
+	8700 1850 8800 1850
+Text Label 8700 1850 2    60   ~ 0
+5V
+Wire Wire Line
+	4650 3200 4750 3200
+Text Label 4650 3200 2    60   ~ 0
+5V
+Wire Wire Line
+	3000 4400 3100 4400
+Text Label 3100 4400 0    60   ~ 0
+5V
+Wire Wire Line
+	1600 2000 1500 2000
+Text Label 1500 2000 2    60   ~ 0
+3V3D
+Wire Wire Line
+	3000 4200 3100 4200
+Text Label 3100 4200 0    60   ~ 0
+3V3D
+Text Label 3850 5300 2    60   ~ 0
+3V3D
+$Comp
+L power:PWR_FLAG #FLG0101
+U 1 1 5CE75A5A
+P 4700 6200
+F 0 "#FLG0101" H 4700 6275 50  0001 C CNN
+F 1 "PWR_FLAG" H 4700 6374 50  0000 C CNN
+F 2 "" H 4700 6200 50  0001 C CNN
+F 3 "~" H 4700 6200 50  0001 C CNN
+	1    4700 6200
+	1    0    0    -1  
+$EndComp
+Connection ~ 4700 6200
+Wire Wire Line
+	4700 6200 5150 6200
 $EndSCHEMATC

@@ -139,10 +139,6 @@ F 3 "" H 6150 2600 60  0000 C CNN
 	1    6150 2600
 	1    0    0    -1  
 $EndComp
-Text HLabel 12800 4950 2    60   Output ~ 0
-1V8
-Text HLabel 13300 2000 2    60   Output ~ 0
-3V3A
 $Comp
 L Device:LED D1
 U 1 1 593EBA52
@@ -305,8 +301,6 @@ F 3 "" H 9850 8400 60  0000 C CNN
 $EndComp
 Text Label 9750 7950 2    60   ~ 0
 3V6
-Text HLabel 11650 7950 2    60   Output ~ 0
-3V0
 $Comp
 L Regulator_Linear:LP2985-10.0 U21
 U 1 1 596CA417
@@ -371,8 +365,6 @@ F 3 "" H 6150 3900 60  0000 C CNN
 	1    6150 3900
 	1    0    0    -1  
 $EndComp
-Text HLabel 6250 3550 2    60   Output ~ 0
-10V
 $Comp
 L Device:C C95
 U 1 1 596CB539
@@ -893,17 +885,13 @@ Wire Wire Line
 	9800 2100 9650 2100
 Wire Wire Line
 	9650 2000 9650 2100
-Connection ~ 9650 2000
 Wire Wire Line
 	9650 2250 9800 2250
 Connection ~ 9050 2000
 Wire Wire Line
-	11100 2000 11200 2000
-Wire Wire Line
 	11100 2100 11200 2100
 Wire Wire Line
 	11200 2100 11200 2000
-Connection ~ 11200 2000
 Wire Wire Line
 	11800 2350 11800 2400
 Connection ~ 11800 2400
@@ -933,18 +921,12 @@ Connection ~ 11450 2400
 Wire Wire Line
 	8950 4950 9000 4950
 Wire Wire Line
-	9750 5050 9600 5050
-Connection ~ 9600 4950
-Wire Wire Line
 	9600 5200 9750 5200
 Connection ~ 9000 4950
-Wire Wire Line
-	11050 4950 11150 4950
 Wire Wire Line
 	11050 5050 11150 5050
 Wire Wire Line
 	11150 5050 11150 4950
-Connection ~ 11150 4950
 Connection ~ 12500 4950
 Wire Wire Line
 	11750 5300 11750 5350
@@ -972,8 +954,6 @@ Wire Wire Line
 Wire Wire Line
 	11400 5300 11400 5350
 Connection ~ 11400 5350
-Wire Wire Line
-	9600 5050 9600 4950
 Connection ~ 9650 2100
 Wire Wire Line
 	11050 5450 11050 6150
@@ -996,15 +976,11 @@ Wire Wire Line
 Wire Wire Line
 	5650 2150 5900 2150
 Wire Wire Line
-	6150 2150 6400 2150
+	6150 2150 6250 2150
 Wire Wire Line
 	10050 7950 10150 7950
 Wire Wire Line
 	4100 3550 4450 3550
-Wire Wire Line
-	6150 3550 6250 3550
-Wire Wire Line
-	9650 2000 9800 2000
 Wire Wire Line
 	9050 2000 9250 2000
 Wire Wire Line
@@ -1016,8 +992,6 @@ Wire Wire Line
 Wire Wire Line
 	11450 2400 11800 2400
 Wire Wire Line
-	9600 4950 9750 4950
-Wire Wire Line
 	9000 4950 9200 4950
 Wire Wire Line
 	11150 4950 11400 4950
@@ -1025,8 +999,6 @@ Wire Wire Line
 	12500 4950 12800 4950
 Wire Wire Line
 	11750 5350 11750 5400
-Wire Wire Line
-	9200 4950 9600 4950
 Wire Wire Line
 	11400 5350 11750 5350
 Wire Wire Line
@@ -1253,7 +1225,7 @@ F 4 "TPSD107M010R0080" H 7100 5000 50  0001 C CNN "MFN"
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	6200 4750 7100 4750
+	6200 4750 6800 4750
 Wire Wire Line
 	7100 4850 7100 4750
 Connection ~ 7100 4750
@@ -1309,8 +1281,6 @@ F 3 "" H 6200 7150 60  0000 C CNN
 	1    6200 7150
 	1    0    0    -1  
 $EndComp
-Text Label 7600 6150 0    60   ~ 0
-3V6
 Wire Wire Line
 	5850 6150 6200 6150
 $Comp
@@ -1513,7 +1483,7 @@ F 4 "TPSD107M010R0080" H 7100 6400 50  0001 C CNN "MFN"
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	6200 6150 7100 6150
+	6200 6150 6800 6150
 Wire Wire Line
 	7100 6250 7100 6150
 Connection ~ 7100 6150
@@ -1553,8 +1523,6 @@ Wire Wire Line
 	4700 3650 4450 3650
 Wire Wire Line
 	4450 3650 4450 3550
-Wire Wire Line
-	5500 3550 6150 3550
 Wire Wire Line
 	5500 3650 5800 3650
 Wire Wire Line
@@ -1719,7 +1687,7 @@ Wire Wire Line
 	6300 8350 6300 8450
 Connection ~ 6300 7850
 Wire Wire Line
-	6300 7850 7200 7850
+	6300 7850 6800 7850
 Wire Wire Line
 	6300 8350 6650 8350
 $Comp
@@ -1831,8 +1799,6 @@ F 4 "CL21B106KQQNNNE" H 4550 300 50  0001 C CNN "MFN"
 	1    0    0    -1  
 $EndComp
 NoConn ~ 3900 8050
-Text HLabel 7700 7850 2    60   Output ~ 0
-1V0
 $Comp
 L Device:L_Core_Ferrite L6
 U 1 1 5C248EE0
@@ -2035,8 +2001,6 @@ Wire Wire Line
 Wire Wire Line
 	10400 4050 10400 3950
 Connection ~ 10400 4050
-Text HLabel 12600 3550 2    60   Output ~ 0
-5V
 Wire Wire Line
 	12250 5350 12250 5450
 Wire Wire Line
@@ -2053,8 +2017,6 @@ Wire Wire Line
 Connection ~ 11750 4950
 Wire Wire Line
 	11050 6150 11200 6150
-Text HLabel 14800 6350 2    60   Output ~ 0
-3V3D
 $Comp
 L fmcw-rescue:TPS7A91-fmcw3-rescue U32
 U 1 1 5C3487B3
@@ -2237,16 +2199,12 @@ Wire Wire Line
 	11300 6450 11150 6450
 Wire Wire Line
 	11150 6350 11150 6450
-Connection ~ 11150 6350
 Connection ~ 10550 6350
-Wire Wire Line
-	12600 6350 12700 6350
 Connection ~ 14200 6350
 Wire Wire Line
 	12600 6450 12700 6450
 Wire Wire Line
 	12700 6450 12700 6350
-Connection ~ 12700 6350
 Wire Wire Line
 	13300 6700 13300 6750
 Connection ~ 13300 6750
@@ -2273,8 +2231,6 @@ Wire Wire Line
 Wire Wire Line
 	12950 6700 12950 6750
 Connection ~ 12950 6750
-Wire Wire Line
-	11150 6350 11300 6350
 Wire Wire Line
 	10550 6350 10750 6350
 Wire Wire Line
@@ -2349,4 +2305,86 @@ Wire Wire Line
 Connection ~ 9850 7950
 Wire Wire Line
 	9850 7950 10050 7950
+Text HLabel 7600 6150 2    60   Output ~ 0
+3V6
+Wire Wire Line
+	9200 4950 9600 4950
+Wire Wire Line
+	9750 5050 9600 5050
+Wire Wire Line
+	9600 5050 9600 4950
+Text HLabel 11650 7950 2    60   Output ~ 0
+3V0
+Wire Wire Line
+	5500 3550 6150 3550
+Wire Wire Line
+	6150 3550 6250 3550
+Text HLabel 6250 3550 2    60   Output ~ 0
+10V
+Text HLabel 7700 7850 2    60   Output ~ 0
+1V0
+Text HLabel 12800 4950 2    60   Output ~ 0
+1V8
+Text HLabel 12600 3550 2    60   Output ~ 0
+5V
+Text HLabel 13300 2000 2    60   Output ~ 0
+3V3A
+Text HLabel 14800 6350 2    60   Output ~ 0
+3V3D
+$Comp
+L power:PWR_FLAG #FLG0115
+U 1 1 5CF39927
+P 6800 6150
+F 0 "#FLG0115" H 6800 6225 50  0001 C CNN
+F 1 "PWR_FLAG" H 6800 6324 50  0000 C CNN
+F 2 "" H 6800 6150 50  0001 C CNN
+F 3 "~" H 6800 6150 50  0001 C CNN
+	1    6800 6150
+	1    0    0    -1  
+$EndComp
+Connection ~ 6800 6150
+Wire Wire Line
+	6800 6150 7100 6150
+$Comp
+L power:PWR_FLAG #FLG0116
+U 1 1 5CF399D9
+P 6800 4750
+F 0 "#FLG0116" H 6800 4825 50  0001 C CNN
+F 1 "PWR_FLAG" H 6800 4924 50  0000 C CNN
+F 2 "" H 6800 4750 50  0001 C CNN
+F 3 "~" H 6800 4750 50  0001 C CNN
+	1    6800 4750
+	1    0    0    -1  
+$EndComp
+Connection ~ 6800 4750
+Wire Wire Line
+	6800 4750 7100 4750
+$Comp
+L power:PWR_FLAG #FLG0117
+U 1 1 5CF39A84
+P 6800 7850
+F 0 "#FLG0117" H 6800 7925 50  0001 C CNN
+F 1 "PWR_FLAG" H 6800 8024 50  0000 C CNN
+F 2 "" H 6800 7850 50  0001 C CNN
+F 3 "~" H 6800 7850 50  0001 C CNN
+	1    6800 7850
+	1    0    0    -1  
+$EndComp
+Connection ~ 6800 7850
+Wire Wire Line
+	6800 7850 7200 7850
+$Comp
+L power:PWR_FLAG #FLG0119
+U 1 1 5CF3F318
+P 6250 2150
+F 0 "#FLG0119" H 6250 2225 50  0001 C CNN
+F 1 "PWR_FLAG" H 6250 2324 50  0000 C CNN
+F 2 "" H 6250 2150 50  0001 C CNN
+F 3 "~" H 6250 2150 50  0001 C CNN
+	1    6250 2150
+	1    0    0    -1  
+$EndComp
+Connection ~ 6250 2150
+Wire Wire Line
+	6250 2150 6400 2150
 $EndSCHEMATC
