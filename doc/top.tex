@@ -2,7 +2,7 @@
 \label{sec:top}
 \textit{\hyperlink{schematic.1}{schematic}}
 
-\section{Overview}
+\subsection{Overview}
 \label{sec:top-overview}
 
 The top-level schematic has two purposes: it instantiates the various submodules in the design and
@@ -20,7 +20,8 @@ capacitor $\geq 1 \si{nF}$ at the output since one is not included internally.
 \label{sec:nc7s04}
 
 Using a feedback resistor between the inverter's output and input biases the input to
-$V_{\text{CC}}/2$, thus keeping the duty cycle near 50\%.
+$V_{\text{CC}}/2$, thus keeping the duty cycle near 50\%. The feedback bypass capacitor ensures that
+high-frequency feedback signals are filtered and only the average voltage biases the input.
 
 \subsection{NB3N551 1:4 Clock Buffer}
 \label{sec:nb3n551}

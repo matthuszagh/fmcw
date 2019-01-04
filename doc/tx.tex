@@ -2,11 +2,20 @@
 \label{sec:tx}
 \textit{\hyperlink{schematic.5}{schematic}}
 
+\subsection{Overview}
+\label{sec:tx-overview}
+
+An RF frequency synthesizer and external VCO are used to generate a sine wave that is periodically
+ramped from $5.3 \si{GHz}$ to $5.9 \si{GHz}$ over $1 \si{ms}$ with a $2 \si{ms}$ delay between
+ramps. The signal is then power-amplified and a portion of the resulting signal is sent to an SMA
+connector for transmission via an antenna and the remainder is kept on the board for mixing with the
+received signal. Most of the power is directed for transmission.
+
 \subsection{ADF4158 Frequency Synthesizer}
 \label{sec:adf4158-freq-synth}
 
-\subsubsection{Overview}
-\label{sec:adf4158-overview}
+\subsubsection{Description}
+\label{sec:adf4158-description}
 
 The \href{http://www.analog.com/media/en/technical-documentation/data-sheets/ADF4158.pdf}{ADF4158}
 is a 6.1GHz fractional-n frequency synthesizer. A block diagram describing its functionality is shown in
@@ -370,10 +379,6 @@ register 1 is 001). I've left these out of the tables because their values are o
 
         \bottomrule
 \end{tabularx}
-
-
-\paragraph{FIXME} I need to finish describing this component along with all other component on this
-sheet.
 
 \label{tab:adf4158-pins}
 \begin{tabularx}{\textwidth}{l l X>{\raggedright\arraybackslash}X}
