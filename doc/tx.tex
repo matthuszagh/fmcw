@@ -449,7 +449,32 @@ non-inverting amplifier configuration is used to produce the necessary gain.
 
 The
 \href{http://www.analog.com/media/en/technical_documentation/data_sheets/hmc431.pdf}{HMC431LP4RF} is
-a radio-frequency VCO.
+a radio-frequency VCO\@.
+
+\subsection{Directional Coupler}
+\label{sec:directional-coupler}
+
+A coupler with a $15 \si{dB}$ coupling factor is used to redirect some of the transmission power
+back to the \hyperref[sec:adl5802]{mixer}'s local oscillator input. A directional coupler is a
+4-terminal device, whose general form is shown in Fig.~\ref{fig:directional-coupler}. The coupling
+factor gives the amount of input power that is redirected to the coupled port, as shown in
+Eq.~\ref{eq:coupling-factor}. Assuming an ideal coupler, the rest of the power will be transmitted
+to the through port. With a $15 \si{dB}$ coupling factor, about $1 \si{dBm}$ is directed to the
+coupled port and the remaining $25 \si{dBm}$ is directed for transmission. The real values will be
+somewhat less because the coupler is not ideal and there will be various other losses.
+
+\begin{figure}[h]
+        \centering
+        \includegraphics[width=0.5\textwidth]{data/directional-coupler}
+        \caption{Directional coupler.}
+        \label{fig:directional-coupler}
+\end{figure}
+
+\begin{equation}
+        \label{eq:coupling-factor}
+        C = 10 \log \frac{P_1}{P_3}
+\end{equation}
+
 
 \subsection{SE2567L Power Amplifier}
 \label{sec:se2567l-power-amp}

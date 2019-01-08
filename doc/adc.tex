@@ -1,5 +1,6 @@
 \section{ADC}
 \label{sec:adc}
+\textit{\hyperlink{schematic.4}{schematic}}
 
 \subsection{Overview}
 \label{sec:adc-overview}
@@ -15,35 +16,18 @@ processing.
 \label{sec:ltc2292-description}
 
 The \href{http://www.analog.com/media/en/technical-documentation/data-sheets/229321fa.pdf}{LTC2292}
-is a 40MHz, 12-bit differential input ADC. The schematic for this device is shown in
-Figure~\ref{fig:ltc2292-schematic}. We use this device instead of the built-in FPGA ADCs because
-those sample at a rate of 1Msps, which is insufficient for our needs. The difference signal received
-by the ADC and passed to the FPGA has a frequency in the range of kHz to a few MHz, for a which a
-40MHz sampling rate is significantly more than the Nyquist frequency. The received signal is
-received on two antennas, which allows for the angle of the received signal to be computed. These
-are amplified, mixed and then amplified again before feeding into the ADC. By connecting the CLKA,
-CLKB, and MUX pins together, we multiplex both channels together through the same output pins,
-D01-D11A. The timing for this multiplexed output is shown in
-Figure~\ref{fig:ltc2292-multiplex}. Table~\ref{tab:ltc2292-pinout} contains a list of all the ADC
-pins and their connections.
+is a 40MHz, 12-bit differential input ADC\@. This sets the Nyquist frequency at $20 \si{MHz}$, well
+above the several hundred $\si{kHz}$ of the signal frequencies. Oversampling allows us to relax
+anti-aliasing filter requirements, which improves bandwidth and resolution.
 
-\begin{figure}[h]
-        \centering
-        \includegraphics[width=\textwidth]{data/ltc2292-schematic.png}
-        \caption{The LTC2292ADC schematic.}
-        \label{fig:ltc2292-schematic}
-\end{figure}
-
-\begin{figure}[h]
-        \centering\includegraphics[width=0.75\textwidth]{data/LTC2292-multiplex.png}
-        \caption{Multiplexed digital output bus timing for the LTC2292 ADC.}
-        \label{fig:ltc2292-multiplex}
-\end{figure}
+\subsubsection{Pinout}
+\label{sec:ltc2292-pinout}
 
 \label{tab:ltc2292-pinout}
 \begin{tabularx}{\textwidth}{>{\hsize=.25\hsize} X >{\hsize=.25\hsize} XX}
         \caption{All LTC2292 ADC pin connections in logical groupings.} \\
-        \toprule\textbf{LABELS} & \textbf{PIN \#s} & \textbf{DESCRIPTION} \\
+        \toprule
+        LABELS & PIN \#s & DESCRIPTION \\
         \midrule
 
         VDD & 7, 10, 18, 63 & The power supply required is 3.0V and each pin requires its own 0.1$\mu$F
@@ -56,8 +40,8 @@ pins and their connections.
         to their corresponding pins (39 and 42). \\
         CLKA, CLKB, MUX & 8, 9, 21 & Feeds a 40MHz clock signal to the device and specifies that the
         digitized channel A and B data should be multiplexed and pass through both output buses A and
-        B. We leave B unconnected, so only bus A
-        matters. \\
+        B. We leave B unconnected, so only bus A matters. Fig.~\ref{fig:ltc2292-multiplex} shows the
+        timing for this. \\
         DA0-DA11 & 43-48, 51-56 & The digitized output data that contains the input data from both
         channels A and B, multiplexed. This is fed into the FPGA for
         processing. \\
@@ -100,6 +84,38 @@ pins and their connections.
 
         \bottomrule
 \end{tabularx}
+
+\begin{figure}[h]
+        \centering\includegraphics[width=0.75\textwidth]{data/LTC2292-multiplex.png}
+        \caption{Multiplexed digital output bus timing for the LTC2292 ADC.}
+        \label{fig:ltc2292-multiplex}
+\end{figure}
+
+\subsubsection{Component Selection}
+\label{sec:ltc2292-component-selection}
+
+The analog inputs employ anti-aliasing filters. The filters provide several benefits: (1) they
+reduce aliasing by attenuating signals above the Nyquist frequency, (2) they limit wideband noise at
+the input at the ADC input, which is important because the converter has a $575 \si{MHz}$ full-power
+bandwidth, and (3) they isolate the \hyperref[sec:ada4940-2]{IF amplifier} from ADC noise at the
+sampling frequency. Lastly, the capacitors act as a necessary charge source for the ADC input
+capacitor. The two outer $100 \si{pF}$ capacitors (between the signal lines and ground) provide CMR
+low-pass filtering with a cutoff frequency of $32 \si{MHz}$ (equation given in
+Eq.~\ref{eq:anti-alias-cm-lp-filter}). The capacitor between the signal lines provides differential
+low-pass filtering with a cutoff frequency of $16 \si{MHz}$. A
+\href{https://e2e.ti.com/blogs_/archives/b/precisionhub/archive/2015/11/06/three-guidelines-for-designing-anti-aliasing-filters}{post
+  from TI} explains this filtering. It's also important to keep the series resistor value low, since
+the greater the resistance, the greater the Johnson noise.
+
+\begin{equation}
+        \label{eq:anti-alias-cm-lp-filter}
+        f_{\text{c}} = \frac{1}{2 \pi R C}
+\end{equation}
+
+\subsubsection{PCB Layout}
+\label{sec:ltc2292-pcb}
+
+
 
 %%% Local Variables:
 %%% mode: latex
