@@ -1249,7 +1249,7 @@ Wire Wire Line
 Text HLabel 4500 800  0    60   Input ~ 0
 3V3
 $Comp
-L Amplifier_Difference:ADA4940-2 U33
+L fmcw-rescue:ADA4940-2-Amplifier_Difference U33
 U 1 1 5C3DAB96
 P 4650 1900
 AR Path="/5C3DAB96" Ref="U33"  Part="1" 
@@ -1293,7 +1293,7 @@ Connection ~ 3900 2350
 Wire Wire Line
 	3900 2350 3900 2450
 $Comp
-L Amplifier_Difference:ADA4940-2 U33
+L fmcw-rescue:ADA4940-2-Amplifier_Difference U33
 U 2 1 5C5E7E6D
 P 4650 5100
 AR Path="/5C5E7E6D" Ref="U33"  Part="2" 
@@ -1335,10 +1335,10 @@ Connection ~ 3400 2000
 Wire Wire Line
 	3400 2000 3250 2000
 $Comp
-L power:GND #PWR?
+L power:GND #PWR0218
 U 1 1 5C886507
 P 3400 2650
-F 0 "#PWR?" H 3400 2400 50  0001 C CNN
+F 0 "#PWR0218" H 3400 2400 50  0001 C CNN
 F 1 "GND" H 3405 2477 50  0000 C CNN
 F 2 "" H 3400 2650 50  0001 C CNN
 F 3 "" H 3400 2650 50  0001 C CNN
@@ -1371,10 +1371,10 @@ Connection ~ 3400 5200
 Wire Wire Line
 	3400 5200 3200 5200
 $Comp
-L power:GND #PWR?
+L power:GND #PWR0220
 U 1 1 5C8DD1D3
 P 3400 5850
-F 0 "#PWR?" H 3400 5600 50  0001 C CNN
+F 0 "#PWR0220" H 3400 5600 50  0001 C CNN
 F 1 "GND" H 3405 5677 50  0000 C CNN
 F 2 "" H 3400 5850 50  0001 C CNN
 F 3 "" H 3400 5850 50  0001 C CNN

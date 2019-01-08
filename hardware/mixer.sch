@@ -217,7 +217,7 @@ IF1+
 Text HLabel 8600 3450 2    60   Output ~ 0
 IF1-
 $Comp
-L RF_Mixer:ADL5802 U?
+L fmcw-rescue:ADL5802-RF_Mixer U?
 U 1 1 5942E974
 P 5600 4350
 AR Path="/59396B97/593ABC4F/5942E974" Ref="U?"  Part="1" 

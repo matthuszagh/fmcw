@@ -451,17 +451,24 @@ The
 \href{http://www.analog.com/media/en/technical_documentation/data_sheets/hmc431.pdf}{HMC431LP4RF} is
 a radio-frequency VCO\@.
 
-\subsection{Directional Coupler}
-\label{sec:directional-coupler}
+\subsection{DC4759J5020AHF Directional Coupler}
+\label{sec:dc4759j5020ahf}
 
-A coupler with a $15 \si{dB}$ coupling factor is used to redirect some of the transmission power
+\subsubsection{Description}
+\label{sec:dc4759j5020ahf-description}
+
+The DC4759J5020AHF is a directional coupler with a $20 \si{dB}$ coupling factor, $0.17 \si{dB}$
+insertion loss and $10.3 \si{dB}$ directivity. It is used to redirect some of the transmission power
 back to the \hyperref[sec:adl5802]{mixer}'s local oscillator input. A directional coupler is a
 4-terminal device, whose general form is shown in Fig.~\ref{fig:directional-coupler}. The coupling
-factor gives the amount of input power that is redirected to the coupled port, as shown in
-Eq.~\ref{eq:coupling-factor}. Assuming an ideal coupler, the rest of the power will be transmitted
-to the through port. With a $15 \si{dB}$ coupling factor, about $1 \si{dBm}$ is directed to the
-coupled port and the remaining $25 \si{dBm}$ is directed for transmission. The real values will be
-somewhat less because the coupler is not ideal and there will be various other losses.
+factor gives the amount of input power that is redirected to the coupled port, the insertion loss
+gives the amount of input power that is transmitted through to the output port and the directivity
+is a measure of the coupler's ability to isolate the coupled and isolation ports. The actual
+equations are given in Eq.~\ref{eq:coupling-factor}, Eq.~\ref{eq:insertion-loss} and
+Eq.~\ref{eq:directivity}. In an ideal coupler, all input power is either transmitted through or
+coupled. However, in all real directional couplers, some power is directed to the isolation port. In
+our case $25.8 \si{dBm}$ is directed for transmission, $6 \si{dBm}$ is coupled, and $-4.3 \si{dBm}$
+is sent to the isolated port.
 
 \begin{figure}[h]
         \centering
@@ -475,6 +482,97 @@ somewhat less because the coupler is not ideal and there will be various other l
         C = 10 \log \frac{P_1}{P_3}
 \end{equation}
 
+\begin{equation}
+        \label{eq:insertion-loss}
+        L = 10 \log \frac{P_1}{P_2}
+\end{equation}
+
+\begin{equation}
+        \label{eq:directivity}
+        D = 10 \log \frac{P_3}{P_4}
+\end{equation}
+
+\subsubsection{PCB Layout}
+\label{sec:dc4759j5020ahf-pcb}
+
+The recommended PCB layout is shown in Fig.~\ref{fig:dc4759j5020ahf-pcb}, where the leftmost pads
+correspond to the input and direct pins. All PCB traces leading from the pads should have a $50
+\si{\Omega}$ characteristic impedance.
+
+\begin{figure}[h]
+        \centering
+        \includegraphics[width=0.3\textwidth]{data/dc4759j5020ahf-pcb}
+        \caption{DC4759J5020AHF recommended PCB layout.}
+        \label{fig:dc4759j5020ahf-pcb}
+\end{figure}
+
+\subsection{PD4859J5050S2HF Wilkinson Power Divider}
+\label{sec:pd4859j5050s2hf}
+
+\subsubsection{Description}
+\label{sec:pd4859j5050s2hf-description}
+
+The PD4859J5050S2HF is a Wilkinson power divider that equally divides the input power between the
+two output ports. We use one after the \hyperref[sec:hmc431lp4rf]{VCO} to share its $2 \si{dBm}$
+output power between the \hyperref[sec:se2567l]{power amplifier} and the RF\textsubscript{IN} port
+of the \hyperref[sec:adf4158]{frequency synthesizer}.
+
+\subsubsection{PCB Layout}
+\label{sec:pd4859j50502shf-pcb}
+
+The recommended layout is shown in Fig.~\ref{fig:pd4859j50502shf-pcb}. Ensure the location of the
+external $100 \si{\Omega}$ 0603 resistor matches the location shown in the figure. All ports have a
+$50 \si{\Omega}$ characteristic impedance which must be matched by the input and output traces.
+
+\begin{figure}[h]
+        \centering
+        \includegraphics[width=0.5\textwidth]{data/pd4859j50502shf-pcb}
+        \caption{PD4859J50502SHF recommended PCB layout. Note the location of the resistor.}
+        \label{fig:pd4859j50502shf-pcb}
+\end{figure}
+
+\subsection{PAT1220 RF Attenuator}
+\label{sec:pat1220}
+
+\subsubsection{Description}
+\label{sec:pat1220-description}
+
+The PAT1220 is a simple resistive attenuator that can be used to preserve the shape of a signal but
+decrease its power.
+
+We use a $5 \si{dB}$ attenuator between the \hyperref[sec:hmc431lp4rf]{VCO} and
+\hyperref[sec:se2567l]{power amplifier} in order to set the power amplifier's output power to its
+typical value of $26 \si{dBm}$ as specified by the datasheet (it has a small-signal gain of
+$32 \si{dB}$). This is enough power for a small radar (see~\cref{sec:distance}) and is sufficiently
+below the $1 \si{dB}$ compression point, which should ensure good linearity.
+
+I've placed a $3 \si{dB}$ attenuator between one of the \hyperref[sec:pd4859j5050s2hf]{Wilkinson
+  power divider} outputs and the RF\textsubscript{IN} port of the \hyperref[sec:adf4158]{frequency
+  synthesizer}. This shouldn't be strictly necessary, since the max power of the
+RF\textsubscript{IN} port is $0 \si{dBm}$. However, using $-1 \si{dBm}$ would be playing it a bit
+close. Additionally, the $2 \si{dBm}$ output of the VCO is a typical power output, not the max
+power, which makes foregoing the attenuator even more dangerous. Finally, the RF\textsubscript{IN}
+port supports an input power of as low as $-10 \si{dBm}$, so we have plenty of room on the downside.
+
+The last attenuator ($6 \si{dB}$) is used at the coupled port of the
+\hyperref[sec:dc4759j5020ahf]{directional coupler}, on its way to the local oscillator input of the
+\hyperref[sec:adl5802]{mixer}. Again, the unattenuated $6 \si{dBm}$ should be ok (the max input
+power of the LO is $10 \si{dBm}$). However, using the attenuator brings the LO power down to the
+typical value specified by the mixer datasheet. To make sure our devices operate properly, we might
+as well use the conditions recommended by the datasheet.
+
+\subsubsection{PCB Layout}
+\label{sec:pat1220-pcb-layout}
+
+The recommended layout is shown in Fig.~\ref{fig:pat1220-pcb}. The ports are matched for a $50
+\si{\Omega}$ characteristic trace impedance.
+
+\begin{figure}[h]
+        \centering
+        \includegraphics[width=0.25\textwidth]{data/pat1220-pcb}
+        \caption{PAT1220 recommended PCB layout.}
+        \label{fig:pat1220-pcb}
+\end{figure}
 
 \subsection{SE2567L Power Amplifier}
 \label{sec:se2567l-power-amp}
@@ -524,6 +622,7 @@ dissipated, and are commonly used to reduce cost and make them easier to replace
 necessary. Lastly, I'd like to keep the values in the ballpark of those specified in the datasheet
 in case there are any other reasons I'm not thinking of. The values $R_2 = 1.47\si{k\Omega}$ and
 $R_1 = 6.8\si{k\Omega}$ should work well.
+
 %%% Local Variables:
 %%% mode: latex
 %%% TeX-master: "fmcw-radar"
