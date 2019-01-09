@@ -71,29 +71,29 @@ The PCB Design Guide above specifies fairly stringent requirements for bypassing
 \subsubsection{Pinout}
 \label{sec:xc7a15t-ftg256-pinout}
 
-The FPGA pins follow a logical syntax: they can be of the form IO\_LXXY\_ZZZ\_\#, IO\_XX\_ZZZ\_\#,
-or a specific name. If they have a specific name, they have a dedicated function described starting
-on page 26 of the package-pinout document. If they have the general form IO\_LXXY\_ZZZ\_\# or
-IO\_XX\_ZZZ\_\#, they can be used for several different dedicated functions, or as general purpose
-IO pins. L indicates that the pin can be used as a differential pair (differential signaling), where
-Y=P or N depending on whether the pin is the positive or negative side of the differential pair. XX
-gives a unique number identifier that can be used to associate the two different pins forming a
-differential pair. ZZZ represents one or more functions that the pin can be used for in addition to
-general purpose IO. \# indicates the bank number, which separate the pins into one of several
-different regions. The package used in this design is FTG256C, which contains banks 0, 14, 15, 34
-and 35. Bank 0 contains the dedicated configuration pins. Each bank has 4 pairs of clock capable
-inputs for differential or single ended clocks (there are no global clock pins).
+The FPGA pin names follow a logical syntax: they can be of the form IO\_LXXY\_ZZZ\_\#,
+IO\_XX\_ZZZ\_\#, or a specific name. If they have a specific name, they have a dedicated function
+described starting on page 26 of the package-pinout document. If they have the general form
+IO\_LXXY\_ZZZ\_\# or IO\_XX\_ZZZ\_\#, they can be used for several different dedicated functions, or
+as general purpose IO pins. L indicates that the pin can be used as a differential pair
+(differential signaling), where Y=P or N depending on whether the pin is the positive or negative
+side of the differential pair. XX gives a unique number identifier that can be used to associate the
+two different pins forming a differential pair. ZZZ represents one or more functions that the pin
+can be used for in addition to general purpose IO. \# indicates the bank number, which separate the
+pins into one of several different regions. The package used in this design is FTG256C, which
+contains banks 0, 14, 15, 34 and 35. Bank 0 contains the dedicated configuration pins. Each bank has
+4 pairs of clock capable inputs for differential or single ended clocks (there are no global clock
+pins).
 
 
 \label{tab:fpga-pins}
 \begin{tabularx}{\textwidth}{c X>{\raggedright\arraybackslash}X}
-        \caption{All FPGA pin connections in alphabetical order.} \\
+        \caption{FPGA pinout. Displayed in alphanumeric order.} \\
         \toprule
-        \textbf{PIN} & \textbf{DESCRIPTION} \\
+        Pin & Description \\
         \midrule
-        \endhead
 
-        A01 & GND. \\
+        A01 & GND\@. \\
         A02 & Connected to an external 1x1 pin header that is currently unused by FPGA logic. \\
         A03 & Connected to external 2x4 pin header that is currently unused by FPGA logic. \\
         A04 & Connected to same pin header as A03. Also unused. \\
@@ -104,7 +104,7 @@ inputs for differential or single ended clocks (there are no global clock pins).
         A08 & A different 2x4 pin header. Unused. \\
         A09 & Connected to the same pin header as A08. Unused. \\
         A10 & Floating. \\
-        A11 & GND. \\
+        A11 & GND\@. \\
         A12 & Connected as an output to the FT2232H USB-JTAG converter. Pulling this low allows the
         FT2232H device to output data to the FPGA through the ADBUS pins. Driving it high sets the ADBUS
         pins as inputs. Remember, the ADBUS pins serve as the bidirectional translation between JTAG data
@@ -121,7 +121,7 @@ inputs for differential or single ended clocks (there are no global clock pins).
         \midrule
 
         B01 & ADC\_SHDN1. One of two ADC\_SHDN outputs that, together with OEA (B02), controls the
-        shutdown mode selection of the ADC. It is used by the digital FPGA logic. When both SHDN and OE
+        shutdown mode selection of the ADC\@. It is used by the digital FPGA logic. When both SHDN and OE
         are grounded, the ADC performs normally. When they are both pulled high, the ADC goes into sleep
         mode. There are two other states but they are not used by the FPGA logic. \\
         B02 & ADC\_OE1. See pin B01. This is used for channel A. \\

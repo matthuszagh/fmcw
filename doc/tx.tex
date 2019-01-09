@@ -12,7 +12,7 @@ connector for transmission via an antenna and the remainder is kept on the board
 received signal. Most of the power is directed for transmission.
 
 \subsection{ADF4158 Frequency Synthesizer}
-\label{sec:adf4158-freq-synth}
+\label{sec:adf4158}
 
 \subsubsection{Description}
 \label{sec:adf4158-description}
@@ -577,51 +577,6 @@ The recommended layout is shown in Fig.~\ref{fig:pat1220-pcb}. The ports are mat
 \subsection{SE2567L Power Amplifier}
 \label{sec:se2567l-power-amp}
 
-\fxnote{I've changed this component with the SE5004L, which has higher power output. Everything
-  from this section forward (within the TX section) will need to be changed.}
-
-\subsection{Notes}
-\label{sec:notes}
-
-\subsubsection{MGA25203 $\rightarrow$ SE2567L Substitution}
-\label{sec:mga25203-se2567l-sub}
-
-The MGA-25203 power amplifier is now obsolete and there are no alternatives with an identical
-interface. Therefore the design will need to be modified. The alternative I will use is the
-\href{http://www.skyworksinc.com/uploads/documents/202425A.pdf}{SE2567L} which seems to be very
-similar. There are a few small differences in addition to the pin differences: the original device
-has a power output of 23dBm in contrast to the new device which has a power output of 21.5dBm when
-VCC0,1=3.3V and VCC2,3=4.5V. I believe this is close enough to not create any issues, especially as
-they are both quoted as having 30dB gain and are IEEE 802.11-compliant. Additionally, the original
-device has a load current about twice that of the new device. Since the output powers are relatively
-similar (and the overview of original design describes a 20dB gain), I don't believe this should be
-an issue. The original chip contains BCTRL, BSW, and BSPLY that differ from the new chip. BCTRL
-regulates the device current and is kept at a constant 2.8V. There is no analogous pin on the new
-chip. BSW is an enable pin that turns on the device when set to 1.8V. When it is set to 0V, the
-device is turned off. The original design uses a MOSFET transistor with a drain of 1.8V, source at
-GND and gate controlled by the FPGA (when the gate is activated the BSW pin gets a voltage of 0V and
-is disabled). The new chip contains an analogous pin, EN, which enables the power amplifier at the
-input voltage level 3.3V and disables it at GND. So, to get analogous functionality, we should
-connect the MOSFET drain to 3.3V instead of 1.8. Everything else should stay the same. BSPLY simply
-received the input voltage of 3.3V. In the new chip, the pins that are different from the original
-chip (and not already discussed) are VCC0-3 and DET. DET is a pin that outputs a voltage indicating
-the power output. We should connect this to a DNP capacitor to GND to be able to detect the output
-power of the amplifier with an ammeter. VCC0-1 should be connected to the 3.3V power supply. In
-order to get the additional power output, we should connect VCC2-3 to a 4.5V power supply instead of
-3.3V. Unfortunately, it isn't possible to simply repurpose the voltage divider to the BCTRL pin for
-this since I do not know the internal impedance of the power amplifier IC and in general voltage
-dividers are bad for supplying power. Additionally, the simple LP5907 voltage divider may not work
-since it is only rated to 250mA of current, which doesn't leave much room above the 220mA expected
-by the SE2567L. It seems to make the most sense to use the
-\href{http://www.ti.com/lit/ds/symlink/tps7a91.pdf}{TPS7A91} which is rated to 1A. It has the
-downside of requiring additional hardware which will need to be adjusted in the PCB accordingly. To
-get the correct output voltage of 4.5V, we need to use Equation~\ref{eq:linear-reg-vout}. Since the
-datasheet doesn't specify the resistors for a 4.5V output voltage this takes a bit of art to finding
-the correct resistors. Ideally, we want resistors with a higher-value so that less power is
-dissipated, and are commonly used to reduce cost and make them easier to replace if
-necessary. Lastly, I'd like to keep the values in the ballpark of those specified in the datasheet
-in case there are any other reasons I'm not thinking of. The values $R_2 = 1.47\si{k\Omega}$ and
-$R_1 = 6.8\si{k\Omega}$ should work well.
 
 %%% Local Variables:
 %%% mode: latex

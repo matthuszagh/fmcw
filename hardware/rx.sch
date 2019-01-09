@@ -4,7 +4,7 @@ EELAYER 26 0
 EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
-Sheet 6 10
+Sheet 7 10
 Title ""
 Date ""
 Rev ""
@@ -290,9 +290,9 @@ Wire Wire Line
 	3300 4050 3150 4050
 Wire Wire Line
 	8600 2600 8600 3150
-Text HLabel 2850 2750 0    60   Input ~ 0
+Text HLabel 2600 2750 0    60   Input ~ 0
 3V0
-Text HLabel 7500 2600 0    60   Input ~ 0
+Text HLabel 7300 2600 0    60   Input ~ 0
 3V0
 Text HLabel 3150 4050 0    60   Output ~ 0
 RF_OUT
@@ -315,7 +315,7 @@ F 4 "BLM18PG181SH1D" H 0   0   50  0001 C CNN "MFN"
 	0    1    1    0   
 $EndComp
 Wire Wire Line
-	2850 2750 2900 2750
+	2600 2750 2900 2750
 $Comp
 L Device:C C54
 U 1 1 59751D28
@@ -387,7 +387,7 @@ F 4 "BLM18PG181SH1D" H 0   0   50  0001 C CNN "MFN"
 	0    1    1    0   
 $EndComp
 Wire Wire Line
-	7500 2600 7550 2600
+	7300 2600 7550 2600
 $Comp
 L Device:C C50
 U 1 1 59752C43

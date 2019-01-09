@@ -6,4 +6,10 @@ K balun rf
 F https://www.johansontechnology.com/datasheets/5400BL15B050/5400BL15B050.pdf
 $ENDCMP
 #
+$CMP NC7SVU04P5X
+D Logic Inverter
+K inverter
+F https://www.onsemi.com/pub/Collateral/NC7SVU04-D.pdf
+$ENDCMP
+#
 #End Doc Library
