@@ -66,7 +66,8 @@ voltage levels are displayed in Table~\ref{tab:xc7a15t-ftg256-power}.
 \subsubsection{Bypassing}
 \label{sec:xc7a15t-ftg256-bypassing}
 
-The PCB Design Guide above specifies fairly stringent requirements for bypassing and should be adhered to.
+The PCB Design Guide above specifies fairly stringent requirements for bypassing and should be
+adhered to.
 
 \subsubsection{Pinout}
 \label{sec:xc7a15t-ftg256-pinout}
@@ -464,30 +465,35 @@ PROGRAM\_B\_0 is connected to a pushbutton switch and can be used to perform an 
 to the configuration logic. TDI, TDO, TMS, and TCK are used for the JTAG clock, data input, data
 output, and mode select, respectively. They are connected to the FT2232H IC that translates between
 USB signals and JTAG signals. They are used to configure the FPGA (which is also stored in the flash
-memory). M[2:0] specify the configuration mode for the FPGA. In our configuration, M0 is pulled high
-while the other 2 are pulled low, indicating a Master SPI interface. CFGBVS\_0 is used to specify
-the voltage level used for all banks. Since we use 3.3V, we connect this pin to the same 3.3V. The
-PUDC\_B pin is pulled low, which configures all I/O pins to enable their internal
-pull-upresistors. \textbf{\{STARTINCOMPLETE\}} The FPGA seems to have a built-in ADC. However, it
-doesn't appear to be used \textbf{\{END INCOMPLETE\}}. There is an SD card reader connected up to
-the FPGA, however, it is unused by the current FPGA code. VCCAUX is used for auxiliary circuits and
-must be 1.8V. VCCADC\_0 is also 1.8V and is used to power the onchip ADC. VCCINT powers the internal
-core logic of the FPGA and must be 1.0V. VCCBRAM is the power supply for the FPGA internal RAM,
-which requires 1.0V.
+memory). M[2:0] specify the configuration mode for the FPGA\@. In our configuration, M0 is pulled
+high while the other 2 are pulled low, indicating a Master SPI interface. CFGBVS\_0 is used to
+specify the voltage level used for all banks. Since we use 3.3V, we connect this pin to the same
+3.3V. The PUDC\_B pin is pulled low, which configures all I/O pins to enable their internal pull-up
+resistors. \textbf{\{STARTINCOMPLETE\}} The FPGA seems to have a built-in ADC\@. However, it doesn't
+appear to be used \textbf{\{END INCOMPLETE\}}. There is an SD card reader connected up to the FPGA,
+however, it is unused by the current FPGA code. VCCAUX is used for auxiliary circuits and must be
+1.8V. VCCADC\_0 is also 1.8V and is used to power the on chip ADC\@. VCCINT powers the internal core
+logic of the FPGA and must be 1.0V. VCCBRAM is the power supply for the FPGA internal RAM, which
+requires 1.0V.
+
+\subsubsection{PCB Layout}
+\label{sec:xc7a15t-ftg256-pcb}
+
+
 
 \subsection{W25Q32JV Flash Memory}
 \label{sec:w25q32jv}
 
 The CCLK\_0 pin is exported from the FPGA to the flash device to drive its operation and coordinates
 writes and reads to and from the device. DO is used by the FPGA to perform SPI reads from the flash
-memory device. It is connected to J14 of the FPGA. DI is connected to J13 of the FPGA and is used by
-the FPGA to send data to the flash memory device. CS is active low and is used by the FPGA to signal
-data transmission is about to occur. It is connected to L12 on the FPGA. WP (write protect) and HOLD
-are both active low pins and are used to prevent the status configuration registers from being
-written to and can pause the device when multiple devices share the same SPI signal, respectively
-They are unused and thus connected to the 3.3V power supply. The device is powered with 3.3V (it
-supports a range of 2.7V to 3.6V). Table~\ref{tab:fpga-pins} contains a list of all FPGA pins and
-their connections.
+memory device. It is connected to J14 of the FPGA\@. DI is connected to J13 of the FPGA and is used
+by the FPGA to send data to the flash memory device. CS is active low and is used by the FPGA to
+signal data transmission is about to occur. It is connected to L12 on the FPGA\@. WP (write protect)
+and HOLD are both active low pins and are used to prevent the status configuration registers from
+being written to and can pause the device when multiple devices share the same SPI signal,
+respectively They are unused and thus connected to the 3.3V power supply. The device is powered with
+3.3V (it supports a range of 2.7V to 3.6V). Table~\ref{tab:fpga-pins} contains a list of all FPGA
+pins and their connections.
 
 %%% Local Variables:
 %%% mode: latex

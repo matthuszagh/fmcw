@@ -598,9 +598,9 @@ Wire Wire Line
 	10150 2050 10200 2050
 Text Label 10200 2050 0    60   ~ 0
 ADF_REF
-Text Label 6100 6800 0    60   ~ 0
-ADF_REF
 Text Label 6100 6600 0    60   ~ 0
+ADF_REF
+Text Label 6100 6800 0    60   ~ 0
 FPGA_REF
 Text Label 6100 6700 0    60   ~ 0
 ADC_REF

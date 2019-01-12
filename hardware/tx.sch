@@ -375,7 +375,7 @@ F 2 "RF_Converter:RF_Attenuator_Susumu_PAT1220" H 11350 5100 60  0001 C CNN
 F 3 "" H 11350 5100 60  0000 C CNN
 F 4 "PAT1220-C-5DB-T5" H 150 100 50  0001 C CNN "MFN"
 	1    11350 5100
-	-1   0    0    -1  
+	1    0    0    -1  
 $EndComp
 $Comp
 L power:GND #PWR0126
@@ -589,7 +589,7 @@ F 2 "RF_Converter:RF_Attenuator_Susumu_PAT1220" H 15100 5850 60  0001 C CNN
 F 3 "" H 15100 5850 60  0000 C CNN
 F 4 "PAT1220-C-6DB-T5" H 900 0   50  0001 C CNN "MFN"
 	1    15100 5850
-	0    1    -1   0   
+	0    1    1    0   
 $EndComp
 $Comp
 L power:GND #PWR0147
