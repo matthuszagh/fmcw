@@ -436,13 +436,33 @@ register 1 is 001). I've left these out of the tables because their values are o
         \label{fig:adf4158-fast-lock}
 \end{figure}
 
-\subsubsection{TLV2172 Operational Amplifier}
-\label{sec:tlv2172-op-amp}
+\subsection{TLV172 Operational Amplifier}
+\label{sec:tlv172-op-amp}
 
-The \href{http://www.ti.com/lit/ds/symlink/tlv172.pdf}{TLV2172} op-amp is used to produce a gain of
-2 to match the CP output of the ADF4158 to the VTUNE input of the VCO. This is necessary since the
-charge pump supports a tune voltage of up to 5.5V but the VCO has a tune range of 0V to 10V. A
-non-inverting amplifier configuration is used to produce the necessary gain.
+\subsubsection{Description}
+\label{sec:tlv172-description}
+
+The TLV172 op-amp is used to produce a gain of 2 to match the CP output of the ADF4158 to the VTUNE
+input of the VCO\@. This is necessary since the charge pump supports a tune voltage of up to 5.5V
+but the VCO has a tune range of 0V to 10V. A non-inverting amplifier configuration is used to
+produce the necessary gain.
+
+\subsubsection{Component Selection}
+\label{sec:tlv172-component-selection}
+
+The $100 \si{nF}$ bypass capacitor is recommended by the datasheet.
+
+\subsubsection{PCB Layout}
+\label{sec:tlv172-pcb}
+
+The recommended layout for the TLV172 op amp is shown in Fig.~\ref{fig:tlv172-pcb}.
+
+\begin{figure}[h]
+        \centering
+        \includegraphics[width=\textwidth]{data/tlv172-pcb}
+        \caption{TLV172 op-amp recommended PCB layout.}
+        \label{fig:tlv172-pcb}
+\end{figure}
 
 \subsection{HMC431LP4RF VCO}
 \label{sec:hmc431lp4rf}
