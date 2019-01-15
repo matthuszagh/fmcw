@@ -26,3 +26,5 @@ documentation/data/
 doc/auto
 *.ini
 *_saved_*
+*fp-info-cache
+*fp-lib-table

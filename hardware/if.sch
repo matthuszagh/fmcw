@@ -61,9 +61,9 @@ F 3 "" H 4400 5000 60  0000 C CNN
 	1    4400 5000
 	1    0    0    -1  
 $EndComp
-Text HLabel 4150 2400 0    60   Input ~ 0
+Text HLabel 4300 4850 0    60   Input ~ 0
 IF1-
-Text HLabel 4150 2800 0    60   Input ~ 0
+Text HLabel 4300 5250 0    60   Input ~ 0
 IF1+
 $Comp
 L Device:C C233
@@ -254,9 +254,9 @@ F 3 "" H 4250 2600 60  0000 C CNN
 	1    4250 2600
 	1    0    0    -1  
 $EndComp
-Text HLabel 4300 5250 0    60   Input ~ 0
+Text HLabel 4150 2400 0    60   Input ~ 0
 IF2-
-Text HLabel 4300 4850 0    60   Input ~ 0
+Text HLabel 4150 2800 0    60   Input ~ 0
 IF2+
 $Comp
 L power:GND #PWR0256
@@ -377,13 +377,13 @@ F 4 "ERJ-2RKF5490X" H 3200 -2450 50  0001 C CNN "MFN"
 	1    5900 2800
 	0    1    1    0   
 $EndComp
-Text HLabel 8700 2700 2    60   Output ~ 0
-OUT1-
-Text HLabel 8700 2500 2    60   Output ~ 0
-OUT1+
-Text HLabel 8700 5150 2    60   Output ~ 0
-OUT2-
 Text HLabel 8700 4950 2    60   Output ~ 0
+OUT1-
+Text HLabel 8700 5150 2    60   Output ~ 0
+OUT1+
+Text HLabel 8700 2700 2    60   Output ~ 0
+OUT2-
+Text HLabel 8700 2500 2    60   Output ~ 0
 OUT2+
 $Comp
 L power:GND #PWR0258
@@ -597,7 +597,7 @@ Wire Wire Line
 	7750 3050 7750 3150
 Wire Wire Line
 	7450 5150 6700 5150
-Text HLabel 6550 5150 0    60   Input ~ 0
+Text HLabel 6500 2700 0    60   Input ~ 0
 VOCM1
 Wire Wire Line
 	6700 5150 6700 5400
@@ -619,7 +619,7 @@ Wire Wire Line
 	6700 5800 6700 5700
 Wire Wire Line
 	7450 2700 6700 2700
-Text HLabel 6500 2700 0    60   Input ~ 0
+Text HLabel 6550 5150 0    60   Input ~ 0
 VOCM2
 Wire Wire Line
 	6700 2950 6700 2700
