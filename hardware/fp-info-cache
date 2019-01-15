@@ -1,4 +1,4 @@
-15426464081816799
+15445044216007799
 Battery
 BatteryHolder_Bulgin_BX0036_1xC
 Bulgin Battery Holder, BX0036, Battery Type C (https://www.bulgin.com/products/pub/media/bulgin/data/Battery_holders.pdf)
@@ -50204,6 +50204,13 @@ SMD SMT crystal oscillator hand-soldering
 4
 4
 Oscillator
+Oscillator_SMD_Kyocera_2520-6Pin_2.5x2.0mm
+https://global.kyocera.com/prdct/electro/product/pdf/kt2520_e.pdf
+2.5mm 2mm SMD
+0
+6
+6
+Oscillator
 Oscillator_SMD_OCXO_ConnorWinfield_OH300
 http://www.conwin.com/datasheets/cx/cx282.pdf
 OCXO
@@ -51506,6 +51513,13 @@ DFN 0.4
 6
 6
 Package_DFN_QFN
+DFN-8-1EP_2x2mm_P0.5mm_EP0.8x1.2mm
+DFN, 8 Pin (https://www.onsemi.com/pub/Collateral/NB3N551-D.PDF (page 7)), generated with kicad-footprint-generator ipc_dfn_qfn_generator.py
+DFN DFN_QFN
+0
+13
+9
+Package_DFN_QFN
 DFN-8-1EP_2x2mm_P0.5mm_EP0.9x1.5mm
 DFN, 8 Pin (http://ww1.microchip.com/downloads/en/DeviceDoc/Atmel-8127-AVR-8-bit-Microcontroller-ATtiny4-ATtiny5-ATtiny9-ATtiny10_Datasheet.pdf), generated with kicad-footprint-generator ipc_dfn_qfn_generator.py
 DFN DFN_QFN
@@ -51617,6 +51631,13 @@ DFN 0.5
 0
 8
 8
+Package_DFN_QFN
+DFN-10-1EP_2.5x2.5mm_P0.5mm_EP1.2x2mm
+DFN, 10 Pin (http://www.ti.com/lit/ds/symlink/tps7a91.pdf (page 30)), generated with kicad-footprint-generator ipc_dfn_qfn_generator.py
+DFN DFN_QFN
+0
+15
+11
 Package_DFN_QFN
 DFN-10-1EP_2x3mm_P0.5mm_EP0.64x2.4mm
 DDB Package; 10-Lead Plastic DFN (3mm x 2mm) (see Linear Technology DFN_10_05-08-1722.pdf)
@@ -52299,6 +52320,20 @@ QFN DFN_QFN
 Package_DFN_QFN
 QFN-24-1EP_4x4mm_P0.5mm_EP2.7x2.7mm_ThermalVias
 QFN, 24 Pin (http://www.alfarzpp.lv/eng/sc/AS3330.pdf), generated with kicad-footprint-generator ipc_dfn_qfn_generator.py
+QFN DFN_QFN
+0
+39
+25
+Package_DFN_QFN
+QFN-24-1EP_4x4mm_P0.5mm_EP2.8x2.8mm
+QFN, 24 Pin (https://www.analog.com/media/en/technical-documentation/data-sheets/hmc431.pdf), generated with kicad-footprint-generator ipc_dfn_qfn_generator.py
+QFN DFN_QFN
+0
+29
+25
+Package_DFN_QFN
+QFN-24-1EP_4x4mm_P0.5mm_EP2.8x2.8mm_ThermalVias
+QFN, 24 Pin (https://www.analog.com/media/en/technical-documentation/data-sheets/hmc431.pdf), generated with kicad-footprint-generator ipc_dfn_qfn_generator.py
 QFN DFN_QFN
 0
 39
@@ -53060,6 +53095,20 @@ QFN DFN_QFN
 151
 65
 Package_DFN_QFN
+QFN-64-1EP_9x9mm_P0.5mm_EP7.15x7.15mm
+QFN, 64 Pin (https://www.analog.com/media/en/technical-documentation/data-sheets/229321fa.pdf (page 27)), generated with kicad-footprint-generator ipc_dfn_qfn_generator.py
+QFN DFN_QFN
+0
+90
+65
+Package_DFN_QFN
+QFN-64-1EP_9x9mm_P0.5mm_EP7.15x7.15mm_ThermalVias
+QFN, 64 Pin (https://www.analog.com/media/en/technical-documentation/data-sheets/229321fa.pdf (page 27)), generated with kicad-footprint-generator ipc_dfn_qfn_generator.py
+QFN DFN_QFN
+0
+127
+65
+Package_DFN_QFN
 QFN-64-1EP_9x9mm_P0.5mm_EP7.25x7.25mm
 64-Lead Plastic Quad Flat No-Lead Package, 9x9mm Body (see Atmel Appnote 8826)
 QFN 0.5
@@ -53143,6 +53192,13 @@ QFN 0.5
 0
 31
 21
+Package_DFN_QFN
+Skyworks_QFN-6-1EP_1.5x1.5mm_P0.5mm_EP0.7x1.2mm
+http://www.skyworksinc.com/uploads/documents/SKY65404_31_201512K.pdf
+QFN 6
+0
+7
+7
 Package_DFN_QFN
 ST_UFQFPN-20_3x3mm_P0.5mm
 UFQFPN 20-lead, 3 x 3 mm, 0.5 mm pitch, ultra thin fine pitch quad flat package (http://www.st.com/resource/en/datasheet/stm8s003f3.pdf)
@@ -58173,6 +58229,13 @@ Package_SON
 WSON-8-1EP_3x3mm_P0.5mm_EP1.6x2.0mm
 8-Lead Plastic WSON, 2x2mm Body, 0.5mm Pitch, WSON-8, http://www.ti.com/lit/ds/symlink/lm27761.pdf
 WSON 8 1EP
+0
+13
+9
+Package_SON
+WSON-8-1EP_6x5mm_P1.27mm_EP3.4x4.3mm
+WSON, 8 Pin (http://www.winbond.com/resource-files/w25q32jv%20revg%2003272018%20plus.pdf (page 68)), generated with kicad-footprint-generator ipc_dfn_qfn_generator.py
+WSON DFN_QFN
 0
 13
 9
@@ -63363,6 +63426,27 @@ PCB antenna
 0
 2
 2
+RF_Converter
+Anaren_0805_2012Metric-6
+https://cdn.anaren.com/product-documents/Xinger/DirectionalCouplers/DC4759J5020AHF/DC4759J5020AHF_DataSheet(Rev_E).pdf
+coupler rf
+0
+6
+6
+RF_Converter
+Balun_Johanson_5400BL15B050E
+https://www.johansontechnology.com/datasheets/5400BL15B050/5400BL15B050.pdf
+balun RF
+0
+6
+6
+RF_Converter
+RF_Attenuator_Susumu_PAT1220
+http://www.susumu-usa.com/pdf/Foot_Print_38.pdf, https://www.susumu.co.jp/common/pdf/n_catalog_partition16_en.pdf
+2mm 1.2mm
+0
+3
+3
 RF_Module
 Ai-Thinker-Ra-01-LoRa
 Ai Thinker Ra-01 LoRa
