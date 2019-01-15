@@ -288,6 +288,16 @@ PH trace.
 
 \section{RF Impedance Matching}
 
+Document \href{https://en.wikipedia.org/wiki/Via_fence}{via fencing} used. Note the general rule
+that spacing between vias should not be more than the RF wavelength divided by 20. I believe the
+wavelength is 5cm, but check this and then put this in the documentation. For the impedance line
+width I've decided to go with the original design's 14.96mil. I'm a little skeptical of the Mantaro
+tool below which seems to not calculate effective impedance. Saturn PCB should be pretty good, and
+if you can get OpenEMS to do this that would be the best.
+
+Also document the RF via. Note the parallel ground trace running below it (and the ground plane
+above it).
+
 \fixme{I don't think the text below is correct.}.
 
 I'm keeping it for the value of knowing the trace widths used by the original design. However, the

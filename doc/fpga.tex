@@ -131,7 +131,7 @@ pins).
         B05 & Connected to the same 2x4 pin header as A03. Unused. \\
         B06 & Floating. \\
         B07 & Connected to the same 2x4 pin header as A03. Unused. \\
-        B08 & GND. \\
+        B08 & GND\@. \\
         B09 & Connected to the same pin header as A08. Unused. \\
         B10 & Connected to the same pin header as A08. Unused. \\
         B11 & Floating. \\
@@ -151,7 +151,7 @@ pins).
         channel A. It is currently unused by the FPGA logic. \\
         C03 & Floating. \\
         C04 & Floating. \\
-        C05 & GND. \\
+        C05 & GND\@. \\
         C06 & Floating. \\
         C07 & Floating. \\
         C08 & Floating. \\
@@ -161,13 +161,13 @@ pins).
         C12 & Connected to the same pin header as A08. Unused. \\
         C13 & Floating. \\
         C14 & Floating. \\
-        C15 & GND. \\
+        C15 & GND\@. \\
         C16 & FT\_SUSPEND. An active-low input to the FPGA. FT223H drives this low when the USB is in
         suspend mode. It is currently unused by the FPGA logic. \\
 
         \midrule
-        D01 & LED. Connects to an LED that is used by the FPGA to signal data processing. \\
-        D02 & GND. \\
+        D01 & LED\@. Connects to an LED that is used by the FPGA to signal data processing. \\
+        D02 & GND\@. \\
         D03 & Floating. \\
         D04 & Floating. \\
         D05 & Floating. \\
@@ -177,7 +177,7 @@ pins).
         D09 & Floating. \\
         D10 & Floating. \\
         D11 & Floating. \\
-        D12 & GND. \\
+        D12 & GND\@. \\
         D13 & Floating. \\
         D14 & Floating. \\
         D15 & FT\_D7. Bidirectional pin 7/7 of ADBUS, used to transmit data between the FPGA andFT2232H. \\
@@ -198,7 +198,7 @@ pins).
         same 3.3V voltage level. \\
         E08 & CCLK\_0. An output pin exported from the FPGA to the flash memory device, W25Q32JV, to drive
         its operation and coordinate writes and reads to and from the device. \\
-        E09 & GND. \\
+        E09 & GND\@. \\
         E10 & VCCBRAM. One of the two power supply pins to the FPGA's internal RAM. It requires 1.0V. \\
         E11 & Floating. \\
         E12 & Floating. \\
@@ -217,11 +217,11 @@ pins).
         F03 & Floating. \\
         F04 & Floating. \\
         F05 & Floating. \\
-        F06 & GND. \\
+        F06 & GND\@. \\
         F07 & VCCINT. 1.0V power supply for the internal core logic of the FPGA. \\
-        F08 & VCCBATT\_0. Can be used for memory backup. We do not use it so we tie it to GND. \\
+        F08 & VCCBATT\_0. Can be used for memory backup. We do not use it so we tie it to GND\@. \\
         F09 & VCCINT. 1.0V power supply for the internal core logic of the FPGA. \\
-        F10 & GND. \\
+        F10 & GND\@. \\
         F11 & VCCBRAM. One of the two power supply pins to the FPGA's internal RAM. It requires 1.0V. \\
         F12 & Floating. \\
         F13 & Floating. \\
@@ -229,7 +229,7 @@ pins).
         FT2232H. \\
         F15 & FT\_D0. Bidirectional pin 0/7 of ADBUS, used to transmit data between the FPGA and
         FT2232H. \\
-        F16 & GND. \\
+        F16 & GND\@. \\
 
         \midrule
 
@@ -237,17 +237,17 @@ pins).
         from the ADC to FPGA. \\
         G02 & D7. Input pin 7/11 of the ADC's channel A digital outputs. It is used to transmit data from
         the ADC to FPGA. \\
-        G03 & GND. \\
+        G03 & GND\@. \\
         G04 & Floating. \\
         G05 & Floating. \\
         G06 & VCCINT. 1.0V power supply for the internal core logic of the FPGA. \\
         G07 & GNDADC\_0. The reference voltage for the onchip ADC. \\
         G08 & VCCADC\_0. A 1.8V power supply used to power the onchip ADC. \\
-        G09 & GND. \\
+        G09 & GND\@. \\
         G10 & VCCAUX. A 1.8V power supply for auxiliary circuits in the FPGA IC. \\
         G11 & Floating. \\
         G12 & Floating. \\
-        G13 & GND. \\
+        G13 & GND\@. \\
         G14 & Floating. \\
         G15 & FT\_D2. Bidirectional pin 2/7 of ADBUS, used to transmit data between the FPGA and
         FT2232H. \\
@@ -265,8 +265,8 @@ pins).
         the ADC to FPGA. \\
         H04 & Floating. \\
         H05 & Floating. \\
-        H06 & GND. \\
-        H07 & VREFN\_0. A dedicated pin that is used as a 1.25V reference GND voltage. Tied to GND. \\
+        H06 & GND\@. \\
+        H07 & VREFN\_0. A dedicated pin that is used as a 1.25V reference GND voltage. Tied to GND\@. \\
         H08 & VP\_0. A dedicated pin that is used as the XADC differential analog input (positive side). It
         is left floating and is unused. \\
         H09 & VCCINT. 1.0V power supply for the internal core logic of the FPGA. \\
@@ -293,9 +293,9 @@ pins).
         side). It is tied to GND and is unused. \\
         J08 & VREFP\_0. A dedicated pin that is used as a 1.25V reference input. It is tied to GND and
         unused. \\
-        J09 & GND. \\
+        J09 & GND\@. \\
         J10 & VCCAUX. A 1.8V power supply for auxiliary circuits in the FPGA IC. \\
-        J11 & GND. \\
+        J11 & GND\@. \\
         J12 & VCC0\_15. 3.3V power supply for bank 15. \\
         J13 & SPI\_MOSI. Used by the FPGA to send data to the flash memory device. \\
         J14 & SPI\_DIN. Used by the FPGA to read data from the flash memory device. \\
@@ -309,25 +309,25 @@ pins).
         K02 & D1. Input pin 1/11 of the ADC's channel A digital outputs. It is used to transmit data from
         the ADC to FPGA. \\
         K03 & ADF\_MUXOUT. Input from the frequency synthesizer. It indicates that a sweep is done. \\
-        K04 & GND. \\
+        K04 & GND\@. \\
         K05 & Floating. \\
-        K06 & GND. \\
+        K06 & GND\@. \\
         K07 & DXN\_0. The cathode of two temperature-monitoring diode pins. It is not used and is
-        therefore tied to GND. \\
+        therefore tied to GND\@. \\
         K08 & DXP\_0. The anode of two temperature-monitoring diode pins. It is not used and is therefore
-        tied to GND. \\
+        tied to GND\@. \\
         K09 & VCCINT. 1.0V power supply for the internal core logic of the FPGA. \\
         K10 & INIT\_B. Indicates initialization of configuration memory. It is pulled high and is unused. \\
         K11 & VCCAUX. A 1.8V power supply for auxiliary circuits in the FPGA IC. \\
         K12 & Floating. \\
         K13 & Floating. \\
-        K14 & GND. \\
+        K14 & GND\@. \\
         K15 & Floating. \\
         K16 & Floating. \\
 
         \midrule
 
-        L01 & GND. \\
+        L01 & GND\@. \\
         L02 & D0. Input pin 0/11 of the ADC's channel A digital outputs. It is used to transmit data from
         the ADC to FPGA. \\
         L03 & Floating. \\
@@ -340,7 +340,7 @@ pins).
         L09 & PROGRAM\_B. Connected to a pushbutton switch and can be used to perform an asynchronous
         reset of the configuration logic. \\
         L10 & VCCAUX. A 1.8V power supply for auxiliary circuits in the FPGA IC. \\
-        L11 & GND. \\
+        L11 & GND\@. \\
         L12 & SPI\_CS. An output pin that can be brought low to indicate that a transmission will take place between the
         FPGA and flash storage device. It is currently left in the high-impedance
         state in FPGA logic, seemingly indicating that the flash storage device is not yet used. \\
@@ -361,7 +361,7 @@ pins).
         M06 & Floating. \\
         M07 & TMS. Output pin that is fed into the FT223H as a mode select pin. It is unused by the
         current FPGA logic. \\
-        M08 & GND. \\
+        M08 & GND\@. \\
         M09 & M0. Along with M1 and M2, this specifies the configuration mode of the FPGA. M[2:0] = 001 which indicates
         the FPGA acts as a master in an SPI interface. Because a DNP resistor is placed between M0 and 3.3V, it is not
         actually connected to the power supply. However, since all
@@ -381,7 +381,7 @@ pins).
         N02 & ADC\_SHDN2. See B01. \\
         N03 & Floating. \\
         N04 & Floating. \\
-        N05 & GND. \\
+        N05 & GND\@. \\
         N06 & Floating. \\
         N07 & TDI. JTAG data input from FT2232H. It is not currently used by the FPGA logic. \\
         N08 & TDO. JTAG data output to FT2232H. It is not currently used by the FPGA logic. \\
@@ -393,13 +393,13 @@ pins).
         N13 & Floating. \\
         N14 & SD\_CLK. A clock that synchronizes activity with the SD card reader. It is not currently used
         by the FPGA logic. \\
-        N15 & GND. \\
+        N15 & GND\@. \\
         N16 & SD\_DAT0. A data line to the SD card reader. Not currently used by the FPGA logic. \\
 
         \midrule
 
         P01 & ADC\_OE2. See pin B01. This is used for channel B. \\
-        P02 & GND. \\
+        P02 & GND\@. \\
         P03 & ADF\_TXDATA. Output pin that transmits data to be used by the ADF4158 frequency
         synthesizer for FSK or PSK transmission. This is unused by the FPGA logic. \\
         P04 & Floating. \\
@@ -410,7 +410,7 @@ pins).
         P09 & Floating. \\
         P10 & Floating. \\
         P11 & Floating. \\
-        P12 & GND. \\
+        P12 & GND\@. \\
         P13 & Floating. \\
         P14 & Floating. \\
         P15 & Floating. \\
@@ -429,7 +429,7 @@ pins).
         R06 & Floating. \\
         R07 & Floating. \\
         R08 & Floating. \\
-        R09 & GND. \\
+        R09 & GND\@. \\
         R10 & Floating. \\
         R11 & Floating. \\
         R12 & Floating. \\
@@ -446,7 +446,7 @@ pins).
         T03 & Floating. \\
         T04 & ADF\_DONE. Input pin that that is unused by the FPGA logic. \\
         T05 & Floating. \\
-        T06 & GND. \\
+        T06 & GND\@. \\
         T07 & Floating. \\
         T08 & Floating. \\
         T09 & Floating. \\
@@ -456,7 +456,7 @@ pins).
         T13 & Floating. \\
         T14 & Floating. \\
         T15 & Floating. \\
-        T16 & GND. \\
+        T16 & GND\@. \\
 
         \bottomrule
 \end{tabularx}
