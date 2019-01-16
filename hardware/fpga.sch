@@ -522,39 +522,13 @@ Wire Wire Line
 Wire Wire Line
 	11650 9550 11650 9600
 Wire Wire Line
-	9900 9600 10450 9600
-Wire Wire Line
 	11300 9600 11300 9550
 Connection ~ 11650 9600
 Wire Wire Line
-	10800 9600 10800 9550
-Connection ~ 11300 9600
-Wire Wire Line
-	10450 9600 10450 9550
-Connection ~ 10800 9600
-Wire Wire Line
-	10450 9250 10450 9200
-Wire Wire Line
-	9900 9200 10450 9200
-Wire Wire Line
-	10800 9200 10800 9250
-Wire Wire Line
 	11300 9200 11300 9250
-Connection ~ 10800 9200
 Wire Wire Line
 	11650 8950 11650 9200
-Connection ~ 11300 9200
-Wire Wire Line
-	9900 9250 9900 9200
-Connection ~ 10450 9200
-Wire Wire Line
-	9900 9550 9900 9600
-Connection ~ 10450 9600
-Wire Wire Line
-	12000 9200 12000 9250
 Connection ~ 11650 9200
-Wire Wire Line
-	12000 9600 12000 9550
 Wire Wire Line
 	15650 8950 15650 9050
 Wire Wire Line
@@ -1190,23 +1164,11 @@ Wire Wire Line
 Wire Wire Line
 	11650 9600 11650 9650
 Wire Wire Line
-	11650 9600 12000 9600
-Wire Wire Line
 	11300 9600 11650 9600
-Wire Wire Line
-	10800 9600 11300 9600
-Wire Wire Line
-	10800 9200 11300 9200
 Wire Wire Line
 	11300 9200 11650 9200
 Wire Wire Line
-	10450 9200 10800 9200
-Wire Wire Line
-	10450 9600 10800 9600
-Wire Wire Line
 	11650 9200 11650 9250
-Wire Wire Line
-	11650 9200 12000 9200
 Wire Wire Line
 	11900 7700 12150 7700
 Wire Wire Line
@@ -1632,38 +1594,6 @@ Wire Wire Line
 	13750 700  13850 700 
 Text Label 12250 700  0    60   ~ 0
 3V3D
-Wire Wire Line
-	4750 600  4850 600 
-Connection ~ 4850 600 
-Wire Wire Line
-	4850 600  4950 600 
-Connection ~ 4950 600 
-Wire Wire Line
-	4950 600  5050 600 
-Connection ~ 5050 600 
-Wire Wire Line
-	5050 600  5150 600 
-Connection ~ 5150 600 
-Wire Wire Line
-	5150 600  5250 600 
-Connection ~ 5250 600 
-Wire Wire Line
-	5250 600  7450 600 
-Connection ~ 7450 600 
-Wire Wire Line
-	7450 600  7550 600 
-Connection ~ 7550 600 
-Wire Wire Line
-	7550 600  7650 600 
-Connection ~ 7650 600 
-Wire Wire Line
-	7650 600  7750 600 
-Connection ~ 7750 600 
-Wire Wire Line
-	7750 600  7850 600 
-Connection ~ 7850 600 
-Wire Wire Line
-	7850 600  7950 600 
 Text Label 6300 600  0    60   ~ 0
 3V3D
 Wire Wire Line
@@ -2322,20 +2252,6 @@ F 4 "XC7A15T-1FTG256C" H 0   0   50  0001 C CNN "MFN"
 	1    0    0    -1  
 $EndComp
 $Comp
-L FPGA_Xilinx_Artix7:XC7A15T-FTG256 U?
-U 1 1 5B9D6CE1
-P 6350 3500
-AR Path="/5B9D6CE1" Ref="U?"  Part="1" 
-AR Path="/59395D6A/5B9D6CE1" Ref="U6"  Part="1" 
-F 0 "U6" H 6350 3500 50  0000 C CNN
-F 1 "XC7A15T-FTG256" H 6350 435 50  0000 C CNN
-F 2 "fmcw:FTG256" H 6350 3500 50  0001 C CNN
-F 3 "" H 6350 3500 50  0000 C CNN
-F 4 "XC7A15T-1FTG256C" H 0   0   50  0001 C CNN "MFN"
-	1    6350 3500
-	1    0    0    -1  
-$EndComp
-$Comp
 L Connector:Micro_SD_Card_Det_Hirose_DM3AT J1
 U 1 1 5B5E6DDE
 P 10050 10400
@@ -2732,30 +2648,6 @@ F 4 "C3216JB1C476M160AB" H 0   0   50  0001 C CNN "MFN"
 	1    0    0    -1  
 $EndComp
 $Comp
-L Device:C C35
-U 1 1 584F7C97
-P 12000 9400
-F 0 "C35" H 12025 9500 50  0000 L CNN
-F 1 "470n" H 12025 9300 50  0000 L CNN
-F 2 "Capacitor_SMD:C_0603_1608Metric" H 12038 9250 30  0001 C CNN
-F 3 "" H 12000 9400 60  0000 C CNN
-F 4 "GRM188R70J474KA01" H 0   0   50  0001 C CNN "MFN"
-	1    12000 9400
-	1    0    0    -1  
-$EndComp
-$Comp
-L Device:C C22
-U 1 1 584F6A45
-P 9900 9400
-F 0 "C22" H 9925 9500 50  0000 L CNN
-F 1 "47u" H 9925 9300 50  0000 L CNN
-F 2 "Capacitor_SMD:C_1206_3216Metric" H 9938 9250 30  0001 C CNN
-F 3 "" H 9900 9400 60  0000 C CNN
-F 4 "C3216JB1C476M160AB" H 9900 9400 50  0001 C CNN "MFN"
-	1    9900 9400
-	1    0    0    -1  
-$EndComp
-$Comp
 L Device:C C33
 U 1 1 584F6A1F
 P 11650 9400
@@ -2777,30 +2669,6 @@ F 2 "Capacitor_SMD:C_0603_1608Metric" H 11338 9250 30  0001 C CNN
 F 3 "" H 11300 9400 60  0000 C CNN
 F 4 "GRM188R70J474KA01" H 0   0   50  0001 C CNN "MFN"
 	1    11300 9400
-	1    0    0    -1  
-$EndComp
-$Comp
-L Device:C C27
-U 1 1 584F6A13
-P 10800 9400
-F 0 "C27" H 10825 9500 50  0000 L CNN
-F 1 "4.7u" H 10825 9300 50  0000 L CNN
-F 2 "Capacitor_SMD:C_0805_2012Metric" H 10838 9250 30  0001 C CNN
-F 3 "" H 10800 9400 60  0000 C CNN
-F 4 "CL21A475KLCLQNC" H 0   0   50  0001 C CNN "MFN"
-	1    10800 9400
-	1    0    0    -1  
-$EndComp
-$Comp
-L Device:C C25
-U 1 1 584F6A0D
-P 10450 9400
-F 0 "C25" H 10475 9500 50  0000 L CNN
-F 1 "4.7u" H 10475 9300 50  0000 L CNN
-F 2 "Capacitor_SMD:C_0805_2012Metric" H 10488 9250 30  0001 C CNN
-F 3 "" H 10450 9400 60  0000 C CNN
-F 4 "CL21A475KLCLQNC" H 0   0   50  0001 C CNN "MFN"
-	1    10450 9400
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -2921,6 +2789,138 @@ F 2 "Resistor_SMD:R_0402_1005Metric" V 9680 8700 30  0001 C CNN
 F 3 "" H 9750 8700 30  0000 C CNN
 F 4 "ERJ-2GE0R00X" H 0   0   50  0001 C CNN "MFN"
 	1    9750 8700
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	7850 600  7950 600 
+Connection ~ 7850 600 
+Connection ~ 7750 600 
+Wire Wire Line
+	7750 600  7850 600 
+Wire Wire Line
+	7650 600  7750 600 
+Connection ~ 7650 600 
+Connection ~ 7550 600 
+Wire Wire Line
+	7550 600  7650 600 
+Wire Wire Line
+	7450 600  7550 600 
+Connection ~ 7450 600 
+Connection ~ 5250 600 
+Wire Wire Line
+	5250 600  7450 600 
+Wire Wire Line
+	5150 600  5250 600 
+Connection ~ 5150 600 
+Connection ~ 5050 600 
+Wire Wire Line
+	5050 600  5150 600 
+Wire Wire Line
+	4950 600  5050 600 
+Connection ~ 4950 600 
+Connection ~ 4850 600 
+Wire Wire Line
+	4850 600  4950 600 
+Wire Wire Line
+	4750 600  4850 600 
+$Comp
+L FPGA_Xilinx_Artix7:XC7A15T-FTG256 U?
+U 1 1 5B9D6CE1
+P 6350 3500
+AR Path="/5B9D6CE1" Ref="U?"  Part="1" 
+AR Path="/59395D6A/5B9D6CE1" Ref="U6"  Part="1" 
+F 0 "U6" H 6350 3500 50  0000 C CNN
+F 1 "XC7A15T-FTG256" H 6350 435 50  0000 C CNN
+F 2 "fmcw:FTG256" H 6350 3500 50  0001 C CNN
+F 3 "" H 6350 3500 50  0000 C CNN
+F 4 "XC7A15T-1FTG256C" H 0   0   50  0001 C CNN "MFN"
+	1    6350 3500
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:C C25
+U 1 1 584F6A0D
+P 10450 9400
+F 0 "C25" H 10475 9500 50  0000 L CNN
+F 1 "4.7u" H 10475 9300 50  0000 L CNN
+F 2 "Capacitor_SMD:C_0805_2012Metric" H 10488 9250 30  0001 C CNN
+F 3 "" H 10450 9400 60  0000 C CNN
+F 4 "CL21A475KLCLQNC" H 0   0   50  0001 C CNN "MFN"
+	1    10450 9400
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:C C22
+U 1 1 584F6A45
+P 9900 9400
+F 0 "C22" H 9925 9500 50  0000 L CNN
+F 1 "47u" H 9925 9300 50  0000 L CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric" H 9938 9250 30  0001 C CNN
+F 3 "" H 9900 9400 60  0000 C CNN
+F 4 "C3216JB1C476M160AB" H 9900 9400 50  0001 C CNN "MFN"
+	1    9900 9400
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	9900 9550 9900 9600
+Wire Wire Line
+	9900 9250 9900 9200
+Wire Wire Line
+	9900 9200 10450 9200
+Wire Wire Line
+	10450 9250 10450 9200
+Wire Wire Line
+	10450 9600 10450 9550
+Wire Wire Line
+	9900 9600 10450 9600
+Connection ~ 11300 9600
+Connection ~ 10450 9600
+Connection ~ 11300 9200
+Connection ~ 10450 9200
+Wire Wire Line
+	10450 9600 10800 9600
+Wire Wire Line
+	10800 9600 11300 9600
+Connection ~ 10800 9600
+Wire Wire Line
+	10800 9600 10800 9550
+Wire Wire Line
+	10450 9200 10800 9200
+Wire Wire Line
+	10800 9200 11300 9200
+Connection ~ 10800 9200
+Wire Wire Line
+	10800 9200 10800 9250
+$Comp
+L Device:C C27
+U 1 1 584F6A13
+P 10800 9400
+F 0 "C27" H 10825 9500 50  0000 L CNN
+F 1 "4.7u" H 10825 9300 50  0000 L CNN
+F 2 "Capacitor_SMD:C_0805_2012Metric" H 10838 9250 30  0001 C CNN
+F 3 "" H 10800 9400 60  0000 C CNN
+F 4 "CL21A475KLCLQNC" H 0   0   50  0001 C CNN "MFN"
+	1    10800 9400
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	11650 9200 12000 9200
+Wire Wire Line
+	11650 9600 12000 9600
+Wire Wire Line
+	12000 9600 12000 9550
+Wire Wire Line
+	12000 9200 12000 9250
+$Comp
+L Device:C C35
+U 1 1 584F7C97
+P 12000 9400
+F 0 "C35" H 12025 9500 50  0000 L CNN
+F 1 "470n" H 12025 9300 50  0000 L CNN
+F 2 "Capacitor_SMD:C_0603_1608Metric" H 12038 9250 30  0001 C CNN
+F 3 "" H 12000 9400 60  0000 C CNN
+F 4 "GRM188R70J474KA01" H 0   0   50  0001 C CNN "MFN"
+	1    12000 9400
 	1    0    0    -1  
 $EndComp
 $EndSCHEMATC

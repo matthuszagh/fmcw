@@ -1621,6 +1621,22 @@ X NC 6 100 0 100 L 50 50 1 1 N N
 ENDDRAW
 ENDDEF
 #
+# fmcw-rescue_Via-fmcw3-rescue
+#
+DEF fmcw-rescue_Via-fmcw3-rescue F 0 40 Y Y 1 F N
+F0 "F" 0 200 60 H V C CNN
+F1 "fmcw-rescue_Via-fmcw3-rescue" 250 0 60 H V C CNN
+F2 "" 0 0 60 H I C CNN
+F3 "" 0 0 60 H I C CNN
+DRAW
+S -50 50 50 -100 0 1 0 N
+P 2 0 1 0 -50 -250 50 -250 N
+P 3 0 1 0 -50 -200 0 -200 0 -250 N
+X ~ 1 -200 0 200 R 50 50 1 1 I
+X ~ 2 -200 -200 200 R 50 50 1 1 I
+ENDDRAW
+ENDDEF
+#
 # power_GND
 #
 DEF power_GND #PWR 0 0 Y Y 1 F P

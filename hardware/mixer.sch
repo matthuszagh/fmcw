@@ -210,7 +210,7 @@ Text Label 8400 4300 0    60   ~ 0
 5VF
 Text HLabel 5000 4850 0    60   Input ~ 0
 MIX_ENBL
-Text HLabel 2600 4200 0    60   Input ~ 0
+Text HLabel 1300 4200 0    60   Input ~ 0
 LO_IN
 Text HLabel 8600 3750 2    60   Output ~ 0
 IF1+
@@ -800,8 +800,6 @@ Wire Wire Line
 Wire Wire Line
 	3400 5500 3700 5500
 Wire Wire Line
-	2750 4200 2600 4200
-Wire Wire Line
 	2700 3800 2900 3800
 Wire Wire Line
 	8000 4300 8000 4200
@@ -843,4 +841,64 @@ Wire Wire Line
 	1950 2700 1950 2800
 Wire Wire Line
 	2400 2200 4150 2200
+Wire Wire Line
+	1400 4400 1350 4400
+Wire Wire Line
+	1350 4400 1350 4450
+$Comp
+L power:GND #PWR013
+U 1 1 5C68B882
+P 1350 4450
+F 0 "#PWR013" H 1350 4200 50  0001 C CNN
+F 1 "GND" H 1355 4277 50  0000 C CNN
+F 2 "" H 1350 4450 50  0001 C CNN
+F 3 "" H 1350 4450 50  0001 C CNN
+	1    1350 4450
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	2600 4400 2650 4400
+Wire Wire Line
+	2650 4400 2650 4450
+$Comp
+L power:GND #PWR014
+U 1 1 5C68EEE7
+P 2650 4450
+F 0 "#PWR014" H 2650 4200 50  0001 C CNN
+F 1 "GND" H 2655 4277 50  0000 C CNN
+F 2 "" H 2650 4450 50  0001 C CNN
+F 3 "" H 2650 4450 50  0001 C CNN
+	1    2650 4450
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	1300 4200 1400 4200
+$Comp
+L fmcw-rescue:Via-fmcw3-rescue F1
+U 1 1 5C6849A7
+P 1600 4200
+F 0 "F1" H 1517 4447 60  0000 C CNN
+F 1 "Via-fmcw3-rescue" H 1517 4341 60  0000 C CNN
+F 2 "fmcw:RF_via" H 1600 4200 60  0001 C CNN
+F 3 "" H 1600 4200 60  0001 C CNN
+	1    1600 4200
+	1    0    0    -1  
+$EndComp
+$Comp
+L fmcw-rescue:Via-fmcw3-rescue F2
+U 1 1 5C683DA9
+P 2400 4200
+F 0 "F2" H 2400 4300 60  0000 C CNN
+F 1 "Via-fmcw3-rescue" H 2650 3900 60  0000 C CNN
+F 2 "fmcw:RF_via" H 2400 4200 60  0001 C CNN
+F 3 "" H 2400 4200 60  0001 C CNN
+	1    2400 4200
+	-1   0    0    -1  
+$EndComp
+Wire Wire Line
+	1400 4200 2600 4200
+Connection ~ 1400 4200
+Connection ~ 2600 4200
+Wire Wire Line
+	2600 4200 2750 4200
 $EndSCHEMATC
