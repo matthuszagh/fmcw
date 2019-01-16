@@ -28,3 +28,6 @@ doc/auto
 *_saved_*
 *fp-info-cache
 *fp-lib-table
+*.vtr
+openems/tmp
+openems/octave-workspace

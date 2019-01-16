@@ -1141,4 +1141,12 @@ F 4 "CL05B104KO5NNNC" H -1150 50  50  0001 C CNN "MFN"
 	1    4450 1250
 	1    0    0    -1  
 $EndComp
+Text Label 5550 3050 0    50   ~ 0
+AINA+
+Text Label 5550 3150 0    50   ~ 0
+AINA-
+Text Label 5550 4450 0    50   ~ 0
+AINB+
+Text Label 5550 4550 0    50   ~ 0
+AINB-
 $EndSCHEMATC
