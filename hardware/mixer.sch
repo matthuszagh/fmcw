@@ -901,12 +901,20 @@ Connection ~ 1400 4200
 Connection ~ 2600 4200
 Wire Wire Line
 	2600 4200 2750 4200
-Text Label 3350 3300 0    50   ~ 0
-RF1a-
 Text Label 3350 3700 0    50   ~ 0
+RF1a-
+Text Label 3350 3300 0    50   ~ 0
 RF1a+
-Text Label 3350 5300 0    50   ~ 0
-RF2a-
 Text Label 3350 5700 0    50   ~ 0
+RF2a-
+Text Label 3350 5300 0    50   ~ 0
 RF2a+
+Text Label 4650 4050 0    50   ~ 0
+RF1b+
+Text Label 4650 3950 0    50   ~ 0
+RF1b-
+Text Label 4650 4650 0    50   ~ 0
+RF2b+
+Text Label 4650 4550 0    50   ~ 0
+RF2b-
 $EndSCHEMATC
