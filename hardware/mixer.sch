@@ -917,4 +917,12 @@ Text Label 4650 4650 0    50   ~ 0
 RF2b+
 Text Label 4650 4550 0    50   ~ 0
 RF2b-
+Text Label 3350 4600 0    50   ~ 0
+LOIa+
+Text Label 3350 4200 0    50   ~ 0
+LOIa-
+Text Label 4650 4250 0    50   ~ 0
+LOIb+
+Text Label 4650 4350 0    50   ~ 0
+LOIb-
 $EndSCHEMATC

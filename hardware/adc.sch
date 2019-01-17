@@ -954,20 +954,6 @@ Wire Wire Line
 	3850 5300 4450 5300
 Wire Wire Line
 	3250 1500 3250 1450
-$Comp
-L Device:Ferrite_Bead FB?
-U 1 1 5D83CEED
-P 4750 1050
-AR Path="/5D83CEED" Ref="FB?"  Part="1" 
-AR Path="/59395D6A/583E250D/5D83CEED" Ref="FB5"  Part="1" 
-F 0 "FB5" V 4476 1050 50  0000 C CNN
-F 1 "BLM18PG181SH1D" V 4567 1050 50  0000 C CNN
-F 2 "Inductor_SMD:L_0603_1608Metric" H 4750 1050 60  0001 C CNN
-F 3 "https://www.murata.com/en-us/products/productdata/8796738650142/ENFA0003.pdf" H 4750 1050 60  0001 C CNN
-F 4 "BLM18PG181SH1D" H 400 -4250 50  0001 C CNN "MFN"
-	1    4750 1050
-	0    1    1    0   
-$EndComp
 Connection ~ 4000 1050
 Wire Wire Line
 	3700 1050 4000 1050
@@ -992,22 +978,6 @@ Wire Wire Line
 Wire Wire Line
 	5650 1600 5650 1550
 Connection ~ 5650 1550
-Wire Wire Line
-	5650 1550 5800 1550
-$Comp
-L power:PWR_FLAG #FLG05
-U 1 1 5C415896
-P 5800 1550
-F 0 "#FLG05" H 5800 1625 50  0001 C CNN
-F 1 "PWR_FLAG" H 5800 1724 50  0000 C CNN
-F 2 "" H 5800 1550 50  0001 C CNN
-F 3 "~" H 5800 1550 50  0001 C CNN
-	1    5800 1550
-	1    0    0    -1  
-$EndComp
-Connection ~ 5800 1550
-Wire Wire Line
-	5800 1550 5950 1550
 Wire Wire Line
 	5400 1550 5650 1550
 Wire Wire Line
@@ -1107,40 +1077,6 @@ F 4 "ERJ-2GE0R00X" H 2050 -800 50  0001 C CNN "MFN"
 	1    6400 4250
 	0    1    1    0   
 $EndComp
-Wire Wire Line
-	4900 1050 5400 1050
-Wire Wire Line
-	4000 1050 4450 1050
-Wire Wire Line
-	4450 1050 4600 1050
-Connection ~ 4450 1050
-Wire Wire Line
-	4450 1100 4450 1050
-Wire Wire Line
-	4450 1450 4450 1400
-$Comp
-L power:GND #PWR078
-U 1 1 5D861E18
-P 4450 1450
-F 0 "#PWR078" H 4450 1200 50  0001 C CNN
-F 1 "GND" H 4455 1277 50  0000 C CNN
-F 2 "" H 4450 1450 50  0001 C CNN
-F 3 "" H 4450 1450 50  0001 C CNN
-	1    4450 1450
-	1    0    0    -1  
-$EndComp
-$Comp
-L Device:C C85
-U 1 1 5D85A49D
-P 4450 1250
-F 0 "C85" H 4565 1296 50  0000 L CNN
-F 1 "100n" H 4565 1205 50  0000 L CNN
-F 2 "Capacitor_SMD:C_0402_1005Metric" H 4488 1100 30  0001 C CNN
-F 3 "" H 4450 1250 60  0000 C CNN
-F 4 "CL05B104KO5NNNC" H -1150 50  50  0001 C CNN "MFN"
-	1    4450 1250
-	1    0    0    -1  
-$EndComp
 Text Label 5550 3050 0    50   ~ 0
 AINA+
 Text Label 5550 3150 0    50   ~ 0
@@ -1149,4 +1085,8 @@ Text Label 5550 4450 0    50   ~ 0
 AINB+
 Text Label 5550 4550 0    50   ~ 0
 AINB-
+Wire Wire Line
+	4000 1050 5400 1050
+Wire Wire Line
+	5650 1550 5950 1550
 $EndSCHEMATC
