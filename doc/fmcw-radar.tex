@@ -273,17 +273,17 @@ PH trace.
 \item The device contains 2 input pins for the voltage of the device where the output data is
         sent. These, similarly require a 0.1$\mu$F capacitor each. As before they should be placed
         next to their respective pins, not next to one another.
-\item VCMA and VCMB each are connected to a 2.2$\mu$F capacitor to GND. They should be placed as
+\item VCMA and VCMB each are connected to a 2.2$\mu$F capacitor to GND\@. They should be placed as
         close to the pins as possible.
 \item REFHA and REFLA (and REFHB and REFLB) have a 0.1$\mu$F capacitor connected between them. These
-        are the most critical capacitors connected to the ADC. They must be placed 1.5mm away at
+        are the most critical capacitors connected to the ADC\@. They must be placed 1.5mm away at
         most, and preferably closer to the pins.
 \end{itemize}
 
 \subsection{RX1 / RX2}
 
 \begin{itemize}
-\item The 100pF capacitor used to bypass TRF37A73 should be place as close as possible to VCC.
+\item The 100pF capacitor used to bypass TRF37A73 should be place as close as possible to VCC\@.
 \end{itemize}
 
 \section{Board Layout}
@@ -292,6 +292,14 @@ PH trace.
 There should be a section here on board layout. I.e.\ signal plane, ground plane, power plane,
 etc. See High Speed Digital Design for recommendations. Also calculate the capacitance between the
 power and ground plane. Btw, this is a great way to further filter noise from the power supplies.
+
+\fixme{I'm not exactly sure where it should go, but there should be a section that documents the use
+of vias, especially for high speed signals. Use page 258 of High Speed Logic to calculate the step
+response, and present the results here. Additionally, mention via best practices such as placing an
+adjacent ground via to any signal via to provide a current return path. Also, the use a multiple
+small vias instead of one large one to minimize inductance. While we're at it, it's probably also
+good to calculate trace inductance for certain important signals. I'm not sure where the equation
+for this is, but it should be in High Speed Design.}
 
 \section{RF Impedance Matching}
 
