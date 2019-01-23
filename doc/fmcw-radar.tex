@@ -19,10 +19,10 @@ to thoroughly document the radar's operation in an effort to understand it. I ho
 description below will be useful to others who want to understand how a radar can be built from
 scratch but who, like me, are relatively new to electronics design.
 
-\chapter{Overview}
+\chapter{Physics}
 \label{cha:overview}
 
-\section{Distance Calculation}
+\section{Range Calculation}
 \label{sec:distance}
 
 The principle of operation of an FMCW radar is shown in Fig.~\ref{fig:fmcw-principle}. A sinusoidal
@@ -55,41 +55,53 @@ $t_{\text{d}}$:
         \Delta f = \frac{t_{\text{d}} f_{\text{ramp}}}{t_{\text{ramp}}}
 \end{equation}
 
-The transmitted signal during one ramp is:
+The transmitted signal during one ramp is\footnote{It's acceptable to confine ourselves to a single
+  ramp period for each object since the max distance we can detect with a $1 \si{ms}$ ramp period is
+  about $150 \si{km}$, well beyond the radar's other physical limits.}:
 
 \begin{align}
-  f(t) &= \sin\left(\omega t\right) \\
-       &= \sin\left(2 \pi f(t) t\right) \\
-       &= \sin\left(2 \pi t \left( f_0 + t \frac{f_{\text{ramp}}}{t_{\text{ramp}}} \right) \right)
+  s(t) &= T \sin\left(\omega t\right)  && \text{$T$ is the transmitted signal amplitude.} \\
+       &= T \sin\left(2 \pi f(t) t\right) \\
+       &= T \sin\left(2 \pi t \left( f_0 + t \frac{f_{\text{ramp}}}{t_{\text{ramp}}} \right) \right)
 \end{align}
 
 The received signal (which is just a phase shifted version of the transmitted signal) is
-$f(t-t_{\text{d}})$. Using the mixer output we can compute the time delay:
+$s(t-t_{\text{d}})$. Using the mixer output we can compute the time delay:
 
 \begin{align}
-  m &= f(t) f(t-t_{\text{d}}) && \text{$m$ is the mixer output.} \\
-    &= \sin(\omega t) \sin(\omega (t-t_{\text{d}})) \\
-    &= \cos(\omega t_{\text{d}})/2 && \text{\footnotemark} \\
-  t_{\text{d}} &= \frac{\arccos(2m)}{2 \pi \left(f_0 + t \frac{f_{\text{ramp}}}{t_{\text{ramp}}} \right)}
+  m &= s(t) s(t-t_{\text{d}}) && \text{$m$ is the mixer output.} \\
+    &= T \sin(\omega(t) t) R \sin(\omega (t-t_{\text{d}})(t-t_{\text{d}})) && \text{$R$ is the received signal amplitude.} \\
+    &\approx T R \cos(\omega t_{\text{d}})/2 && \text{\footnotemark} \\
+  t_{\text{d}} &\approx \frac{\arccos\left(\frac{2m}{T R}\right)}{2 \pi \left(f_0 + t \frac{f_{\text{ramp}}}{t_{\text{ramp}}} \right)}
 \end{align}
 \footnotetext{We've used the identity
   $\sin\theta\sin\phi = \left[\cos(\theta - \phi) - \cos(\theta + \phi)\right]/2$ and the fact that
-  the sum term is outside the IF amplifier pass-band and will be filtered out.}
+  the sum term is well outside the \hyperref[sec:adl5802]{mixer} output IF range (as well as the
+  subsequent \hyperref[sec:ada4940-2]{IF amplifier} pass-band) and will therefore be filtered out.}
 
 The distance can be computed with Eq.~\ref{eq:fmcw-distance}.
 
 \begin{equation}
         \label{eq:fmcw-distance}
-        d = \frac{c \arccos(2m)}{4 \pi \left(f_0 + t \frac{f_{\text{ramp}}}{t_{\text{ramp}}} \right)}
+        d = \frac{c \arccos\left(\frac{2m}{T R}\right)}{4 \pi \left(f_0 + t
+                  \frac{f_{\text{ramp}}}{t_{\text{ramp}}} \right)}
 \end{equation}
+
+\fixme{The range equation needs to be adjusted for when the mixer product includes multiple received
+  signals (use a Fourier transform to separate them) and possibly also for sinusoidal
+  amplitudes. How does the sampling frequency affect the minimum detectable range? If we're
+  performing a Fourier transform anyway, it might be better to leave
+  $f_0 + t \frac{f_{\text{ramp}}}{t_{\text{ramp}}}$ as simply the frequency of the received
+  signal. This must also account for the decomposed mixer output (for multiple received signals). To
+  do this, it might be necessary to normalize all sinusoids before computing the distance.}
 
 \section{Angle Calculation}
 \label{sec:angle}
 
 
 
-\chapter{Circuit Description}
-\label{cha:circuit}
+\chapter{Schematic}
+\label{cha:schematic}
 
 \include{power}
 \include{top}
@@ -378,6 +390,10 @@ last one, look at the description for it on Antenna Test Lab. They provide excel
 information. I'm mostly struggling to find a good patch array antenna for reception. I may have to
 just build this myself, but I'm worried about the quality using normal FR4.
 
+\begin{appendices}
+
+\include{pinouts}
+
 \chapter{Links}
 \label{cha:links}
 
@@ -388,6 +404,7 @@ just build this myself, but I'm worried about the quality using normal FR4.
 \includepdf[pages=-, link, linkname=schematic, landscape=true, angle=-90,
 pagecommand={\refstepcounter{includepdfpage}\label{schematic.\theincludepdfpage}}]{data/fmcw-schematic.pdf}
 
+\end{appendices}
 
 \end{document}
 %%% Local Variables:

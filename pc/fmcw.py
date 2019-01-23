@@ -4,6 +4,7 @@ from queue import Queue, Empty
 from threading import Thread
 import datetime
 
+
 class FMCW():
     def __init__(self):
         SYNCFF = 0x40
@@ -30,9 +31,10 @@ class FMCW():
         except TypeError:
             l = 1
             x = [x]
+
         header = [0xaa, l, cmd]
         b = bytearray(header+x)
-        #print map(hex, map(ord, str(b)))
+        # print map(hex, map(ord, str(b)))
         return self.device.write(str(b))
 
     def clear_gpio(self, led=False, pa_off=False, mix_enbl=False, adf_ce=False):
@@ -85,7 +87,8 @@ class FMCW():
 
     def write_pll_reg(self, n):
         reg = self.pll.registers[n]
-        w = [(reg & 0xff) | n, (reg >> 8) & 0xff, (reg >> 16) & 0xff, (reg >> 24) & 0xff]
+        w = [(reg & 0xff) | n, (reg >> 8) & 0xff,
+             (reg >> 16) & 0xff, (reg >> 24) & 0xff]
         return self.send_packet(w, 4)
 
     def write_pll(self):
@@ -98,22 +101,25 @@ class FMCW():
         self.write_pll_reg(5)
         self.pll.write_value(dev_sel=1)
         self.write_pll_reg(5)
-        for i in range(4,-1,-1):
+        for i in range(4, -1, -1):
             self.write_pll_reg(i)
 
     def set_sweep(self, fstart, bw, length, delay):
-        real_delay = self.pll.freq_to_regs(fstart, self.fpd_freq, bw, length, delay)
+        real_delay = self.pll.freq_to_regs(
+            fstart, self.fpd_freq, bw, length, delay)
         self.write_pll()
         return real_delay
 
     def write_sweep_timer(self, length):
         length = int(self.fclk*length)
-        w = [(length & 0xff), (length >> 8) & 0xff, (length >> 16) & 0xff, (length >> 24) & 0xff]
+        w = [(length & 0xff), (length >> 8) & 0xff,
+             (length >> 16) & 0xff, (length >> 24) & 0xff]
         return self.send_packet(w, 5)
 
     def write_sweep_delay(self, length):
         length = int(self.fclk*length)
-        w = [(length & 0xff), (length >> 8) & 0xff, (length >> 16) & 0xff, (length >> 24) & 0xff]
+        w = [(length & 0xff), (length >> 8) & 0xff,
+             (length >> 16) & 0xff, (length >> 24) & 0xff]
         return self.send_packet(w, 6)
 
     def set_channels(self, a=True, b=True):
@@ -141,11 +147,13 @@ class FMCW():
 
     def write_pa_off_timer(self, length):
         length = int(self.fclk*length)
-        w = [(length & 0xff), (length >> 8) & 0xff, (length >> 16) & 0xff, (length >> 24) & 0xff]
+        w = [(length & 0xff), (length >> 8) & 0xff,
+             (length >> 16) & 0xff, (length >> 24) & 0xff]
         return self.send_packet(w, 10)
 
     def clear_buffer(self):
         return self.send_packet(0, 11)
+
 
 class Writer(Thread):
     def __init__(self, filename, queue):
@@ -170,6 +178,7 @@ class Writer(Thread):
                 self.f.write(d)
                 wrote += len(d)
 
+
 fmcw = FMCW()
 
 f0 = 5.3e9
@@ -185,7 +194,7 @@ quarter = False
 
 fmcw.set_gpio(led=True, adf_ce=True)
 fmcw.set_adc(oe2=True)
-fmcw.clear_adc(oe1=True, shdn1=True, shdn2= True)
+fmcw.clear_adc(oe1=True, shdn1=True, shdn2=True)
 delay = fmcw.set_sweep(f0, bw, tsweep, tdelay)
 
 fmcw.set_downsampler(enable=downsampler, quarter=quarter)
@@ -200,7 +209,8 @@ q = Queue()
 
 date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-settings_dict = {'date': date, 'f0':f0, 'bw': bw, 'tsweep': tsweep, 'tdelay': tdelay, 'a': ch_a, 'b': ch_b, 'decimate': decimate, 'downsampler': downsampler, 'quarter': quarter}
+settings_dict = {'date': date, 'f0': f0, 'bw': bw, 'tsweep': tsweep, 'tdelay': tdelay,
+                 'a': ch_a, 'b': ch_b, 'decimate': decimate, 'downsampler': downsampler, 'quarter': quarter}
 
 settings = 'fmcw; {}'.format(settings_dict)
 
@@ -222,7 +232,7 @@ try:
         if len(r) != 0:
             q.put(r)
 finally:
-    fmcw.set_adc(oe1=True, shdn1=True, shdn2= True)
+    fmcw.set_adc(oe1=True, shdn1=True, shdn2=True)
     fmcw.set_channels(a=False, b=False)
     fmcw.clear_gpio(led=True, adf_ce=True)
     fmcw.set_gpio(pa_off=True)

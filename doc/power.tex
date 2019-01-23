@@ -77,7 +77,7 @@ time of between $6.6$ and $10 \si{ms}$.
 
 An inductor is chosen such that it satisfies the following 3 requirements:
 \begin{enumerate}
-\item The inductance is given by Equation~\ref{eq:buck-inductance}.
+\item The minimum inductance is given by Equation~\ref{eq:buck-inductance}.
 \item The current rating is at least 2x the maximum load current.
 \item The self-resonant frequency is at least 10x the switching frequency.
 \end{enumerate}
@@ -220,9 +220,7 @@ assuming an ESR of 0 since I'm using ceramic capacitors at the output and the cu
 low. The equation is provided in Equation~\ref{eq:tps560200-ripple-voltage}. The ripple current for
 a buck converter is given in Equation~\ref{eq:tps560200-ripple-current}. Finally, the remaining
 inductor requirements are specified in Table~\ref{tab:tps560200-inductor-reqs}. All of these
-requirements are satisfied by a $10 \si{\mu H}$ inductor, which is used in the datasheet. However,
-this puts the inductor a bit close to DCM and since I have extra $33 \si{\mu H}$ inductors on hand
-I'd rather be safe and use one of those.
+requirements are satisfied by a $10 \si{\mu H}$ inductor, which is used in the datasheet.
 
 \begin{equation}
         \label{eq:tps560200-ripple-voltage}

@@ -5,9 +5,9 @@ EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
 Sheet 10 10
-Title ""
+Title "FMCW"
 Date ""
-Rev ""
+Rev "v2.0"
 Comp ""
 Comment1 ""
 Comment2 ""

@@ -23,6 +23,23 @@ the JTAG interface to configure the FPGA. In order, they are TCK, TDI, TDO and T
 \subsection{FT2232H}
 \label{sec:ft2232h}
 
+\subsubsection{Description}
+\label{sec:ft2232h-description}
+
+
+
+\subsubsection{Configuration}
+\label{sec:ft2232h-configuration}
+
+The FT2232H is configured to use channel A with 245 synchronous FIFO mode and channel B with MPSSE
+interface mode for JTAG interfacing with the FPGA\@.
+
+
+
+See this
+\href{https://www.reddit.com/r/FPGA/comments/4brday/confusion_regarding_jtag_and_ftdi_chips/}{Reddit
+post} for how to use the FT2232H to program the FPGA\@.
+
 \paragraph{FIXME} The FT2232H device also communicates with the FPGA using a synchronous FIFO
 interface as described
 \href{http://www.ftdichip.com/Support/Documents/AppNotes/AN_130_FT2232H_Used_In_FT245\%20Synchronous\%20FIFO\%20Mode.pdf}{here}. This
@@ -36,10 +53,10 @@ require the external EEPROM storage IC,
 why this interface requires additional, external memory.
 
 \begin{figure}[h]
-  \centering
-  \includegraphics[width=\textwidth]{data/usb-ft2232.png}
-  \caption{The configuration bit stream is loaded onto the FPGA using a USB-JTAG interface.}
-  \label{fig:usb-ft2232}
+        \centering
+        \includegraphics[width=\textwidth]{data/usb-ft2232.png}
+        \caption{The configuration bit stream is loaded onto the FPGA using a USB-JTAG interface.}
+        \label{fig:usb-ft2232}
 \end{figure}
 
 \subsection{93LC46B 1k EEPROM}
