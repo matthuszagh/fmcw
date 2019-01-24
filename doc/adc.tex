@@ -15,57 +15,13 @@ processing.
 \subsubsection{Description}
 \label{sec:ltc2292-description}
 
-The LTC2292 is a 40MHz, 12-bit differential input ADC\@. This sets the Nyquist frequency at
+The LTC2292 is a 40MHz, 12-bit differential input ADC\@. It has a max differential input voltage of
+$2 \si{V}$ and uses twos complement output encoding which makes the minimum detectable (LSB) voltage
+magnitude equal to about $1 \si{mV}$ \fixme{Make sure this is correct. It should be fairly evident
+  after writing the relevant FPGA code}. The sampling frequency sets the Nyquist frequency at
 $20 \si{MHz}$, well above the several hundred $\si{kHz}$ that characterize our signal
 frequencies. By oversampling, we're able to relax anti-aliasing filter requirements, which improves
 bandwidth and resolution.
-
-\subsubsection{Pinout}
-\label{sec:ltc2292-pinout}
-
-\label{tab:ltc2292-pinout}
-\begin{tabularx}{\textwidth}{>{\hsize=.2\hsize}X >{\hsize=.3\hsize}X X}
-        \caption{LTC2292 pinout.} \\
-        \toprule
-        \# & Pin & Description \\
-        \midrule
-
-        1--2, 15--16       & AINA+, AINA-, AINB-, AINB+ & The differential inputs for channels A and
-        B. The input filters are explained in \cref{sec:ltc2292-component-selection}.           \\
-        3--6, 11--14       & REFHA, REFLA, REFLB, REFHB & These are the high and low reference for
-        channels A and B, respectively. Their connection is specified exactly by the datasheet. \\
-        7, 10, 18, 63      & VDD                        & 3.0V power supply.                    \\
-        8, 9, 21           & CLKA, CLKB, MUX            & 40MHz clock inputs for channels A and B. Connecting the clock
-        pins together with MUX multiplexes channels A and B together and causes the multiplexed
-        output to be available on buses A and B. Fig.~\ref{fig:ltc2292-multiplex} shows the timing
-        diagram for the multiplexed output. Since we only need one set of the identical signals, bus
-        B is left floating.                                                                    \\
-        17, 64, 65, 31, 50 & GND, OGND                  & ADC, output and power grounds are all
-        connected to the same ground plane.                                                    \\
-        39, 42             & OVDD                       & Power supply for the output drivers. \\
-        43--48, 51--56     & DA0--DA11                  & Digitized 12-bit output data.        \\
-        57                 & OFA                        & Driven high when overflow or underflow
-        occurs. This is fed to the FPGA to allow overflow/underflow detection.                 \\
-        26--30, 33--39     & DB0--DB11                  & The channel B data bus. Left floating (see
-        description for CLKA, CLKB, MUX).                                                      \\
-        40                 & OFB                        & Similar to OFA, but for channel B. Also
-        exported to the FPGA\@.                                                                \\
-        61, 20             & VCMA, VCMB                 & Exports a 1.5V signal to the IF differential amplifiers, which use it
-        to set their common mode voltage. The $2.2 \si{\mu F}$ capacitors are specified by the
-        datasheet.                                                                             \\
-        24--25, 41--42     & NC                         & No connect.                          \\
-        59, 22, 58, 23     & SHDNA, SHDNB, OEA, OEB     & Allow the FPGA to control the ADC's
-        operation. Pulling SHDNA and OEA low operates channel A normally, while bringing them both
-        high puts channel A in sleep mode. Channel B works the same way.                       \\
-        62, 19             & SENSEA, SENSEB             & Tied to VDD, which specifies that the input voltage range of the
-        differential signals for channels A and B is $1.5 \si{V} \pm 1
-        \si{V}$ (i.e. 1.5V common-mode voltage with a 2V range).                               \\
-        60                 & MODE                       & Tied to VDD, which specifies the output
-        format as 2s complement and turns off the clock duty stabilizer, which should be unnecessary
-        because the input clock has a 50\% duty cycle.                                         \\
-
-        \bottomrule
-\end{tabularx}
 
 \begin{figure}[h]
         \centering\includegraphics[width=0.75\textwidth]{data/LTC2292-multiplex.png}
@@ -73,8 +29,15 @@ bandwidth and resolution.
         \label{fig:ltc2292-multiplex}
 \end{figure}
 
+\subsubsection{Linked Sections}
+\label{sec:ltc2292-linked-sections}
+
+\textit{\hyperref[sec:ltc2292-pinout]{pinout}}
+
 \subsubsection{Component Selection}
 \label{sec:ltc2292-component-selection}
+
+\fixme{The part about the input filter should get its own section.}
 
 The analog inputs employ anti-aliasing filters. The filters provide several benefits: (1) they
 reduce aliasing by attenuating signals above the Nyquist frequency, (2) they limit wideband noise at

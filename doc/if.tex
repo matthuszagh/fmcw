@@ -48,9 +48,10 @@ numbers on the mixer datasheet. However, I'm also confused about the power input
 
 The components between \hyperref[sec:adl5802]{ADL5802} and the IF amplifier form a high-pass filter
 with a transfer function shown in Fig.~\ref{fig:mixer-if-amp-filter}. The filter has a flat gain of
-$-10 \si{dBV}$ from about $30 \si{kHz}$ through several hundred $\si{kHz}$, which corresponds to our
-frequency region of interest. The transfer function was performed using Ngspice with KiCad, and the
-schematic for it is shown in Fig.~\ref{fig:mixer-if-amp-filter-schematic}.
+$-10 \si{dBV}$ from about $30 \si{kHz}$ through several hundred $\si{kHz}$ and still stays below
+$-5 \si{dBV}$ up to $1 \si{MHz}$. The phase angle is also mostly flat at 0 in this region. The
+transfer function was performed using Ngspice with KiCad, and the schematic for it is shown in
+Fig.~\ref{fig:mixer-if-amp-filter-schematic}.
 
 \begin{figure}[h]
         \centering

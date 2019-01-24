@@ -23,16 +23,11 @@ scratch but who, like me, are relatively new to electronics design.
 \label{cha:overview}
 
 \section{Range Calculation}
-\label{sec:distance}
+\label{sec:range}
 
 The principle of operation of an FMCW radar is shown in Fig.~\ref{fig:fmcw-principle}. A sinusoidal
-signal that ramps in frequency is transmitted through air via an antenna. The reflected signal
-(which is just a phase-shifted version of the original signal) is picked up by another antenna (or
-set of antennas) and modulated with the original signal. The distance to the object can be computed
-from the result, shown in Eq.~\ref{eq:fmcw-principle}, where $\Delta f$ is the frequency difference,
-$t_{\text{ramp}}$ is the known ramp duration, $f_{\text{ramp}}$ is the difference between the high
-and low ramp frequencies, $c$ is the speed of light and the 2 is present because the time measured
-is the round-trip time.
+signal that ramps in frequency is transmitted through air via an antenna. The reflected signal is
+picked up by another antenna and mixed with the original signal.
 
 \begin{figure}[h]
         \centering
@@ -43,62 +38,125 @@ is the round-trip time.
         \label{fig:fmcw-principle}
 \end{figure}
 
+Because the signal travels at the speed of light, the distance to the object can be computed using
+Eq.~\ref{eq:distance-generic}.
+
 \begin{equation}
-        \label{eq:fmcw-principle}
+        \label{eq:distance-generic}
+        d = \frac{c t_{\text{d}}}{2}
+\end{equation}
+
+$c$ is the speed of light, $t_{\text{d}}$ is the time delay and the 2 is necessary because we are
+computing the round-trip time. By using the programmed frequency ramp rate we can express this
+equation in terms of the frequency difference instead of the time delay\footnote{It's acceptable to
+  confine ourselves to a single ramp period for each object since the max distance we can detect
+  with a $1 \si{ms}$ ramp period is about $150 \si{km}$, well beyond the radar's other physical
+  limits. We'll ignore the edge case where the transmitted and received signals bridge a ramp
+  boundary.}. This is shown in Eq.~\ref{eq:distance-freq}.
+
+\begin{equation}
+        \label{eq:distance-freq}
         d = \frac{c t_{\text{ramp}} \Delta f}{2 f_{\text{ramp}}}
 \end{equation}
 
-To calculate the frequency difference, we first express it in terms of the round-trip time,
-$t_{\text{d}}$:
-
-\begin{equation}
-        \Delta f = \frac{t_{\text{d}} f_{\text{ramp}}}{t_{\text{ramp}}}
-\end{equation}
-
-The transmitted signal during one ramp is\footnote{It's acceptable to confine ourselves to a single
-  ramp period for each object since the max distance we can detect with a $1 \si{ms}$ ramp period is
-  about $150 \si{km}$, well beyond the radar's other physical limits.}:
+Now we just need to figure out the frequency difference between the transmitted and received
+signals. The transmitted signal during one ramp is:
 
 \begin{align}
-  s(t) &= T \sin\left(\omega t\right)  && \text{$T$ is the transmitted signal amplitude.} \\
-       &= T \sin\left(2 \pi f(t) t\right) \\
-       &= T \sin\left(2 \pi t \left( f_0 + t \frac{f_{\text{ramp}}}{t_{\text{ramp}}} \right) \right)
+  s_{\text{t}}(t) &= T \sin\left(\omega_{\text{t}}(t) t\right)  && \text{$T$ is the transmitted
+                                                                   signal's amplitude.} \\
+                  &= T \sin\left(2 \pi f(t) t\right) \\
+                  &= T \sin\left(2 \pi t \left( f_0 + t \frac{f_{\text{ramp}}}{t_{\text{ramp}}}
+                    \right) \right)
 \end{align}
 
-The received signal (which is just a phase shifted version of the transmitted signal) is
-$s(t-t_{\text{d}})$. Using the mixer output we can compute the time delay:
+The corresponding received signal is:
 
 \begin{align}
-  m &= s(t) s(t-t_{\text{d}}) && \text{$m$ is the mixer output.} \\
-    &= T \sin(\omega(t) t) R \sin(\omega (t-t_{\text{d}})(t-t_{\text{d}})) && \text{$R$ is the received signal amplitude.} \\
-    &\approx T R \cos(\omega t_{\text{d}})/2 && \text{\footnotemark} \\
-  t_{\text{d}} &\approx \frac{\arccos\left(\frac{2m}{T R}\right)}{2 \pi \left(f_0 + t \frac{f_{\text{ramp}}}{t_{\text{ramp}}} \right)}
+  s_{\text{r}}(t-t_{\text{d}}) &= R \sin \left(\omega_{\text{r}}(t-t_{\text{d}})
+                                 (t-t_{\text{d}})\right) \\
+                               &= R \sin \left(2 \pi \left(f(t-t_{\text{d}}) +
+                                 f_{\text{D}}\right)(t-t_{\text{d}})\right) && \text{$f_{\text{D}}$
+                                                                               is the Doppler
+                                                                               shift.}
+\end{align}
+
+The mixer computes the product of these two signals:
+
+\begin{align}
+  m &= s_{\text{t}}(t) s_{\text{r}}(t-t_{\text{d}}) \\
+    &\approx T R \cos \left( \omega_{\text{t}}t - \omega_{\text{r}}t + \omega_{\text{r}}t_{\text{d}}
+      \right) && \text{\footnotemark} \\
+    &\approx T R \cos \left( (\omega_{\text{t}} - \omega_{\text{r}})t + \phi \right)
 \end{align}
 \footnotetext{We've used the identity
   $\sin\theta\sin\phi = \left[\cos(\theta - \phi) - \cos(\theta + \phi)\right]/2$ and the fact that
   the sum term is well outside the \hyperref[sec:adl5802]{mixer} output IF range (as well as the
   subsequent \hyperref[sec:ada4940-2]{IF amplifier} pass-band) and will therefore be filtered out.}
 
-The distance can be computed with Eq.~\ref{eq:fmcw-distance}.
+$\omega_{\text{r}}t_{\text{d}} = \phi$ is a phase term since it is not a function of $t$ and
+therefore doesn't affect the frequency. So, we see that the mixer output is a signal whose frequency
+is equal to the difference frequency between the transmitted and received signals. We can use the
+Fourier transform to determine this frequency while ignoring the irrelevant coefficient terms and
+phase shift. The Fourier transform also makes it easy to separate different objects which will each
+show up as a separate frequency difference. The one complicating factor is that the received
+frequency encodes the Doppler shift in addition to the distance. So, what we actually measure is
+$2 \pi (\Delta f - f_{\text{D}})$ instead of $2 \pi \Delta f$. To correct for the Doppler shift we
+can take multiple measurements of the object to compute its speed\footnote{The fact that the
+  individual distance calculations are inaccurate by the Doppler shift doesn't matter here since the
+  speed will be constant on the order of the ADC sampling period and will therefore only produce a
+  constant translation that is cancelled out when computing successive displacements.} and then use
+the non-relativistic equation for the Doppler shift given by Eq.~\ref{eq:doppler}.
 
 \begin{equation}
-        \label{eq:fmcw-distance}
-        d = \frac{c \arccos\left(\frac{2m}{T R}\right)}{4 \pi \left(f_0 + t
-                  \frac{f_{\text{ramp}}}{t_{\text{ramp}}} \right)}
+        \label{eq:doppler}
+        f_{\text{D}} = \frac{v_{\text{r}}}{c} f_0
 \end{equation}
 
-\fixme{The range equation needs to be adjusted for when the mixer product includes multiple received
-  signals (use a Fourier transform to separate them) and possibly also for sinusoidal
-  amplitudes. How does the sampling frequency affect the minimum detectable range? If we're
-  performing a Fourier transform anyway, it might be better to leave
-  $f_0 + t \frac{f_{\text{ramp}}}{t_{\text{ramp}}}$ as simply the frequency of the received
-  signal. This must also account for the decomposed mixer output (for multiple received signals). To
-  do this, it might be necessary to normalize all sinusoids before computing the distance.}
+$v_{\text{r}}$ is the object's computed speed and $f_0$ is the instantaneous ramp frequency. This
+must be added back in to the original result to get the true distance. \fixme{How can I track an
+  object to compute its speed?}
+
+\section{Radar Equation}
+\label{sec:radar-equation}
+
+The maximum range detectable by a radar is given by the radar equation (Eq.~\ref{eq:radar}).
+
+\begin{equation}
+        \label{eq:radar}
+        R_{\text{max}} = \sqrt[4]{\frac{P_{\text{t}} G^2 \lambda^2 \sigma}{P_{\text{min}} {(4
+              \pi)}^3}}
+\end{equation}
+
+\label{tab:radar-equation}
+\begin{tabularx}{\textwidth}{l X l}
+        \toprule
+        Variable & Description & Value \\
+        \midrule
+        $P_{\text{t}}$ & Transmitted power. & $21 \si{dBm}$\footnote{I'm using the same conservative
+        value for output power that Henrik uses, adjusted for the fact that my power amplifier has
+        higher gain and output power.} \\
+        $G$ & Antenna gain. & $14 \si{dBi}$ \\
+        $\lambda$ & Wavelength. & $5.4 \si{cm}$\footnote{Using the center frequency, $5.6 \si{GHz}$.} \\
+        $\sigma$ & Target cross section. & $1 \si{m^2}$ \\
+        $P_{\text{min}}$ & Minimum detectable signal power. & $-118 \si{dBm}$\footnote{See
+          \cref{sec:min-detectable-power}.} \\
+        \bottomrule
+\end{tabularx}
+
+Plugging these values in, we find a maximum range of about $389 \si{m}$. Using \cref{sec:range}
+above, this corresponds to a maximum difference frequency of about $1.5 \si{MHz}$.
+
+\subsection{Minimum Detectable Power}
+\label{sec:min-detectable-power}
+
+\fixme{This is calculated by Henrik on his blog post. I don't quite understand the part about FFT
+  length. Maybe this will make more sense after writing the FPGA code.}
 
 \section{Angle Calculation}
 \label{sec:angle}
 
-
+\fixme{This must be filled in.}
 
 \chapter{Schematic}
 \label{cha:schematic}
@@ -306,12 +364,12 @@ etc. See High Speed Digital Design for recommendations. Also calculate the capac
 power and ground plane. Btw, this is a great way to further filter noise from the power supplies.
 
 \fixme{I'm not exactly sure where it should go, but there should be a section that documents the use
-of vias, especially for high speed signals. Use page 258 of High Speed Logic to calculate the step
-response, and present the results here. Additionally, mention via best practices such as placing an
-adjacent ground via to any signal via to provide a current return path. Also, the use a multiple
-small vias instead of one large one to minimize inductance. While we're at it, it's probably also
-good to calculate trace inductance for certain important signals. I'm not sure where the equation
-for this is, but it should be in High Speed Design.}
+  of vias, especially for high speed signals. Use page 258 of High Speed Logic to calculate the step
+  response, and present the results here. Additionally, mention via best practices such as placing an
+  adjacent ground via to any signal via to provide a current return path. Also, the use a multiple
+  small vias instead of one large one to minimize inductance. While we're at it, it's probably also
+  good to calculate trace inductance for certain important signals. I'm not sure where the equation
+  for this is, but it should be in High Speed Design.}
 
 \section{RF Impedance Matching}
 
@@ -359,50 +417,37 @@ antennas require the ability to weld and probably modeling software (e.g. CST).
 \chapter{Antennas}
 \label{cha:antennas}
 
-There are several promising places to start in learning how to do this. Obviously, the
-\href{hforsten.com}{hforsten blog} is a good place. Contextual Electronics also has a
-\href{https://www.youtube.com/watch?v=m0B-63Q-R_8}{youtube video} about building a PCB
-antenna. Finally, \href{http://openems.de/index.php/Main_Page.html}{OpenEMS} is apparently a very
-powerful tool for simulating and designing antennas (among other things RF). This is already
-installed and can be scripted through Octave. Make sure to look at the tutorials.
+\section{Transmission}
+\label{sec:antenna-transmission}
 
-One antenna is used for transmission and two are used for reception. It might be possible to achieve
-the same effect with two overall antennas but the design would need to be significantly altered to
-do so. The transmission antenna should have high gain and high directivity. This ensures sufficient
-power for reception, longer range, and less side clutter (i.e. you don't want a wide field of
-vision, you want this to be mostly directed in a single direction). We use two reception antennas
-instead of one so that we can perform beamforming. Basically, we mix the signal picked up by each
-reception antenna individually with the transmitted signal. Each of these mixed products tells us
-the distance from the object. However, if the object is at a slight angle, the phase difference
-between the two mixed products tells us the incident angle, so we can localize the distant object.
+I'm using the
+\href{https://www.maartenbaert.be/quadcopters/antennas/triple-feed-patch-array-antenna/}{Triple Feed
+  Patch Array antenna designed by Maarten Baert} for transmission. Although I'd eventually like to
+simulate and design my own antenna, this antenna is cheap, has fairly high gain ($14 \si{dBi}$), has
+a radiation efficiency of about 75\% and has almost nonexistent side-lobes. It's also undergone
+\href{https://antennatestlab.com/antenna-examples/example-8-triple-feed-patch-array-circularly-polarized-antenna}{testing
+  at the Antenna Test Lab}.
 
-\href{https://assets.lairdtech.com/home/brandworld/files/ANT-DS-PA58\%201115.pdf}{This antenna}
-looks like it would be good for
-transmission. \href{https://shop.bizsyscon.com/rf-elements-sh-cc-5-30-symmetrical-horn-carrier-class-30-degree.html#horizontalTab1}{This
-  RF Elements} antenna looks even better, but is more than I'm willing to pay (and its gain is
-lower,
-however). \href{https://smile.amazon.com/d/Sewing-Machines-Accessories/9-4dBi-Triple-Antenna-Terminator-RJX1749/B074PR4TW3/ref=sr_1_8?ie=UTF8&qid=1544680544&sr=8-8&keywords=patch+antenna}{The
-  Triple Feed Patch Array Antenna} is a great deal for the price and is based off a clever
-open-source design,
-\href{http://www.maartenbaert.be/quadcopters/antennas/triple-feed-patch-array-antenna/}{here}. I'm
-not sure if the gain will be quite enough, however. If you're confused about the operation of that
-last one, look at the description for it on Antenna Test Lab. They provide excellent
-information. I'm mostly struggling to find a good patch array antenna for reception. I may have to
-just build this myself, but I'm worried about the quality using normal FR4.
+\section{Reception}
+\label{sec:antenna-reception}
+
+For reception, I'm using the patch array designed by Henrik Forst\'en. Again, I'd like to design and
+build my own antenna. However, Henrik's design is cheap and uses the proper spacing to allow
+beamforming.
 
 \begin{appendices}
 
-\include{pinouts}
+        \include{pinouts}
 
-\chapter{Links}
-\label{cha:links}
+        \chapter{Links}
+        \label{cha:links}
 
 
-\chapter{Full Schematic}
-\label{cha:schematic}
+        \chapter{Full Schematic}
+        \label{cha:schematic}
 
-\includepdf[pages=-, link, linkname=schematic, landscape=true, angle=-90,
-pagecommand={\refstepcounter{includepdfpage}\label{schematic.\theincludepdfpage}}]{data/fmcw-schematic.pdf}
+        \includepdf[pages=-, link, linkname=schematic, landscape=true, angle=-90,
+        pagecommand={\refstepcounter{includepdfpage}\label{schematic.\theincludepdfpage}}]{data/fmcw-schematic.pdf}
 
 \end{appendices}
 

@@ -1,8 +1,59 @@
 \chapter{Pinouts}
 \label{cha:pinouts}
 
+\section{LTC2292}
+\label{sec:ltc2292-pinout}
+
+\textit{\hyperref[sec:ltc2292]{LTC2292 Description}}
+
+\label{tab:ltc2292-pinout}
+\begin{tabularx}{\textwidth}{>{\hsize=.2\hsize}X >{\hsize=.3\hsize}X X}
+        \caption{LTC2292 pinout.} \\
+        \toprule
+        \# & Pin & Description \\
+        \midrule
+
+        1--2, 15--16       & AINA+, AINA-, AINB-, AINB+ & The differential inputs for channels A and
+        B. The input filters are explained in \cref{sec:ltc2292-component-selection}.           \\
+        3--6, 11--14       & REFHA, REFLA, REFLB, REFHB & These are the high and low reference for
+        channels A and B, respectively. Their connection is specified exactly by the datasheet. \\
+        7, 10, 18, 63      & VDD                        & 3.0V power supply.                    \\
+        8, 9, 21           & CLKA, CLKB, MUX            & 40MHz clock inputs for channels A and B. Connecting the clock
+        pins together with MUX multiplexes channels A and B together and causes the multiplexed
+        output to be available on buses A and B. Fig.~\ref{fig:ltc2292-multiplex} shows the timing
+        diagram for the multiplexed output. Since we only need one set of the identical signals, bus
+        B is left floating.                                                                    \\
+        17, 64, 65, 31, 50 & GND, OGND                  & ADC, output and power grounds are all
+        connected to the same ground plane.                                                    \\
+        39, 42             & OVDD                       & Power supply for the output drivers. \\
+        43--48, 51--56     & DA0--DA11                  & Digitized 12-bit output data.        \\
+        57                 & OFA                        & Driven high when overflow or underflow
+        occurs. This is fed to the FPGA to allow overflow/underflow detection.                 \\
+        26--30, 33--39     & DB0--DB11                  & The channel B data bus. Left floating (see
+        description for CLKA, CLKB, MUX).                                                      \\
+        40                 & OFB                        & Similar to OFA, but for channel B. Also
+        exported to the FPGA\@.                                                                \\
+        61, 20             & VCMA, VCMB                 & Exports a 1.5V signal to the IF differential amplifiers, which use it
+        to set their common mode voltage. The $2.2 \si{\mu F}$ capacitors are specified by the
+        datasheet.                                                                             \\
+        24--25, 41--42     & NC                         & No connect.                          \\
+        59, 22, 58, 23     & SHDNA, SHDNB, OEA, OEB     & Allow the FPGA to control the ADC's
+        operation. Pulling SHDNA and OEA low operates channel A normally, while bringing them both
+        high puts channel A in sleep mode. Channel B works the same way.                       \\
+        62, 19             & SENSEA, SENSEB             & Tied to VDD, which specifies that the input voltage range of the
+        differential signals for channels A and B is $1.5 \si{V} \pm 1
+        \si{V}$ (i.e. 1.5V common-mode voltage with a 2V range).                               \\
+        60                 & MODE                       & Tied to VDD, which specifies the output
+        format as 2s complement and turns off the clock duty stabilizer, which should be unnecessary
+        because the input clock has a 50\% duty cycle.                                         \\
+
+        \bottomrule
+\end{tabularx}
+
 \section{XC7A15T-FTG256}
 \label{sec:xc7a15t-ftg256-pinout}
+
+\textit{\hyperref[sec:xc7a15t-ftg256]{XC7A15T-FTG256 Description}}
 
 The FPGA pin names follow a logical syntax: they can be of the form IO\_LXXY\_ZZZ\_\#,
 IO\_XX\_ZZZ\_\#, or a specific name. If they have a specific name, they have a dedicated function
