@@ -56,11 +56,17 @@ module top #( `FMCW_DEFAULT_PARAMS )
 
         wire                 clk_adc;
         wire                 data_o;
+        wire [OW-1:0]        data_fir_o;
 
-        adc adc (.clk_i(clk),
-                 .clk_o(clk_adc),
+        fir fir (.clk(clk),
+                 .rst(1),
+                 .ce(1),
                  .data_i(adc_d),
-                 .data_o(data_o),
-                 .valid(adc_valid));
+                 .data_o(data_fir_o));
+
+        downsample downsample (.clk_i(clk_i),
+                               .clk_o(clk_adc),
+                               .data_i(data_fir_o),
+                               .data_o(data_o));
 
 endmodule // top
