@@ -46,6 +46,24 @@ numbers on the mixer datasheet. However, I'm also confused about the power input
 \subsubsection{Component Selection}
 \label{sec:ada4940-2-component-selection}
 
+The resistor selection determines the closed-loop gain according to Eq.~\ref{eq:if-amp-gain}, and
+whose values correspond to those shown in the block diagram in Fig.~\ref{fig:ada4940-2-block}. We've
+used $R_{\text{F}} = 8.2 \si{k\Omega}$ and $R_{\text{G}} = 549 \si{\Omega}$, yielding a differential
+gain of $15$.
+
+\begin{equation}
+        \label{eq:if-amp-gain}
+        V_{\text{+OUT}} - V_{\text{-OUT}} = \left(+D_{\text{IN}} - (-D_{\text{IN}})\right) \times
+        \frac{R_{\text{F}}}{R_{\text{G}}}
+\end{equation}
+
+\begin{figure}[h]
+        \centering
+        \includegraphics[width=0.5\textwidth]{data/ada4940-2-block}
+        \caption{ADA4940-2 block diagram.}
+        \label{fig:ada4940-2-block}
+\end{figure}
+
 The components between \hyperref[sec:adl5802]{ADL5802} and the IF amplifier form a high-pass filter
 with a transfer function shown in Fig.~\ref{fig:mixer-if-amp-filter}. The filter has a flat gain of
 $-10 \si{dBV}$ from about $30 \si{kHz}$ through several hundred $\si{kHz}$ and still stays below
