@@ -1,10 +1,93 @@
 \chapter{Pinouts}
 \label{cha:pinouts}
 
+\section{ADF4158}
+\label{sec:adf4158-pinout}
+
+\label{tab:adf4158-pinout}
+\begin{tabularx}{\textwidth}{l l X>{\raggedright\arraybackslash}X}
+        \caption{All ADF4158 pin connections.} \\
+        \toprule
+        \textbf{PIN} & \textbf{Mnemonic} & \textbf{DESCRIPTION} \\
+        \midrule
+
+        \endhead{}
+
+        1 & CPGND & The charge pump ground, which we set to the same ground as the rest of the circuit. \\
+        2, 3 & AGND & Prescaler ground; also set to common ground. \\
+        4 & RF\textsubscript{IN} B & The complement to the VCO output. We couple this to ground with a
+        small capacitor: in this case, 10pF. \\
+        5 & RF\textsubscript{IN} A & The VCO output. This goes through prescaling and then becomes the PLL
+        input signal. \\
+        6, 7, 8 & AV\textsubscript{DD} & The positive power supply for the RF part of the PLL. This takes
+        3.3V. \\
+        9 & REF\textsubscript{IN} & The reference input, which is our 40MHz clock signal. \\
+        10 & DGND & Digital ground. This uses the common ground. \\
+        11 & SDGND & $\Sigma-\Delta$ modulator ground. \\
+        12 & TX\textsubscript{DATA} & This pin can be used when employing FSK or PSK to transmit
+        data. Since we are not using this we connect this pin to the FPGA
+        but just set the value to GND. \\
+        13 & CE & We must set this pin to high in order to enable the device. \\
+        14 & CLK & A clock used to synchronize register configuration. \\
+        15 & DATA & Serial data input to set the configuration registers. \\
+        16 & LE & This pin is brought high in order to load data into the configuration registers. \\
+        17 & MUXOUT & This allows internal parameters of the ADF4158 to be read externally. We don't
+        currently use this in our design. \\
+        18 & SDV\textsubscript{DD} & Power supply pin for the $\Sigma-\Delta$ modulator. We also set this
+        to 3.3V. \\
+        19 & DV\textsubscript{DD} & Power supply pin for the digital circuitry. Also 3.3V. \\
+        20, 21 & SW1, SW2 & FIXME: These pins are used for the fast-locking feature, which we use in our
+        design. The typical topologies for this are shown in
+        Figure~\ref{fig:adf4158-fast-lock}. However, our design does not use either of
+        these topologies. \\
+        22 & V\textsubscript{P} & The charge pump power supply, which we set to 5V. \\
+        23 & R\textsubscript{SET} & This pin sets the maximum charge pump current according to the
+        equation $I_{\text{CPmax}}=25.5/R_{\text{SET}}$. We use
+        5.49$\si{k\Omega}$ for the resistor which gives a charge pump current
+        of 4.6mA. \\
+        24 & CP & The charge pump output that is amplified and feeds into the VCO. Obviously, because this
+        is a charge pump we need to place a bypass capacitor to ground before the
+        amplifier. Here we use 51pF. \\
+        25 & EPAD & This is connected to GND. \\
+
+        \bottomrule
+\end{tabularx}
+
+\section{FT2232H}
+\label{sec:ft2232h-pinout}
+
+\textit{\hyperref[sec:ft2232h]{FT2232H Main Section}}
+
+\label{tab:ft2232h-pinout}
+\begin{tabularx}{\textwidth}{l l l X}
+        \caption{FT2232H pinout.} \\
+        \toprule
+        \# & Pin & Type & Description \\
+        \midrule
+
+        1, 5, 11, 15 25, 35, 47, 51 & GND        & power input   & Ground.                                                        \\
+        16--24                      & ADBUS[0:7] & bidirectional & D0--D7 FIFO data.                                              \\
+        26                          & RXF\#      & output        & Low when there is data available in the FIFO to be read by the
+        FPGA\@. High otherwise.                                                                                                   \\
+        27                          & TXE\#      & output        & Low when there is room for data
+        to be written to the FIFO\@.                                                                                              \\
+        28                          & RD\#       & input         & When driven low, this places FIFO data onto D0--D7 each CLKOUT cycle
+        (RXF\# must also be low).                                                                                                 \\
+        29                          & WR\#       & input         & When low, D0--D7 is written to the FIFO for transmission every CLKOUT
+        cycle (TXE\# must also be low).                                                                                           \\
+        30                          & SIWUA      & input         & Can be driven low to flush pending FIFO data over the USB port to a
+        computer regardless of the pending packet size.                                                                           \\
+        32                          & CLKOUT     & output        & 60MHz signal generated on chip and used to synchronize FIFO\@. \\
+        33                          & OE\#       & input         & Output enable that must be driven low at least 1 period before driving
+        RD\# low to read data from FIFO\@.                                                                                        \\
+
+        \bottomrule
+\end{tabularx}
+
 \section{LTC2292}
 \label{sec:ltc2292-pinout}
 
-\textit{\hyperref[sec:ltc2292]{LTC2292 Description}}
+\textit{\hyperref[sec:ltc2292]{LTC2292 Main Section}}
 
 \label{tab:ltc2292-pinout}
 \begin{tabularx}{\textwidth}{>{\hsize=.2\hsize}X >{\hsize=.3\hsize}X X}
@@ -53,7 +136,7 @@
 \section{XC7A15T-FTG256}
 \label{sec:xc7a15t-ftg256-pinout}
 
-\textit{\hyperref[sec:xc7a15t-ftg256]{XC7A15T-FTG256 Description}}
+\textit{\hyperref[sec:xc7a15t-ftg256]{XC7A15T-FTG256 Main Section}}
 
 The FPGA pin names follow a logical syntax: they can be of the form IO\_LXXY\_ZZZ\_\#,
 IO\_XX\_ZZZ\_\#, or a specific name. If they have a specific name, they have a dedicated function

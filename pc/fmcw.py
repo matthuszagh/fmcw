@@ -6,8 +6,10 @@ import datetime
 
 
 class FMCW():
+    """Interface to the FMCW radar."""
+
     def __init__(self):
-        SYNCFF = 0x40
+        SYNCFF = 0x40  # Configures bit-bang mode for synchronous FIFO.
         SIO_RTS_CTS_HS = (0x1 << 8)
         self.device = ftdi.Device(mode='b', interface_select=ftdi.INTERFACE_A)
         self.device.open()
@@ -167,11 +169,11 @@ class Writer(Thread):
             try:
                 d = self.queue.get(True, 0.5)
             except Empty:
-                print 'Timeout', wrote
+                print('Timeout', wrote)
                 self.f.close()
                 return
             if len(d) == 0:
-                print 'Closed', wrote
+                print('Closed', wrote)
                 self.f.close()
                 return
             else:
@@ -179,65 +181,66 @@ class Writer(Thread):
                 wrote += len(d)
 
 
-fmcw = FMCW()
+if __name__ == '__main__':
+    fmcw = FMCW()
 
-f0 = 5.3e9
-bw = 600e6
-tsweep = 1e-3
-tdelay = 2e-3
-pa_off_advance = 0.2e-3
-decimate = 3
-ch_a = True
-ch_b = True
-downsampler = True
-quarter = False
+    f0 = 5.3e9
+    bw = 600e6
+    tsweep = 1e-3
+    tdelay = 2e-3
+    pa_off_advance = 0.2e-3
+    decimate = 3
+    ch_a = True
+    ch_b = True
+    downsampler = True
+    quarter = False
 
-fmcw.set_gpio(led=True, adf_ce=True)
-fmcw.set_adc(oe2=True)
-fmcw.clear_adc(oe1=True, shdn1=True, shdn2=True)
-delay = fmcw.set_sweep(f0, bw, tsweep, tdelay)
+    fmcw.set_gpio(led=True, adf_ce=True)
+    fmcw.set_adc(oe2=True)
+    fmcw.clear_adc(oe1=True, shdn1=True, shdn2=True)
+    delay = fmcw.set_sweep(f0, bw, tsweep, tdelay)
 
-fmcw.set_downsampler(enable=downsampler, quarter=quarter)
-fmcw.write_sweep_timer(tsweep)
-fmcw.write_sweep_delay(tdelay)
-fmcw.write_decimate(decimate)
-fmcw.write_pa_off_timer(tdelay - pa_off_advance)
-fmcw.clear_gpio(pa_off=True)
-fmcw.clear_buffer()
-
-q = Queue()
-
-date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-settings_dict = {'date': date, 'f0': f0, 'bw': bw, 'tsweep': tsweep, 'tdelay': tdelay,
-                 'a': ch_a, 'b': ch_b, 'decimate': decimate, 'downsampler': downsampler, 'quarter': quarter}
-
-settings = 'fmcw; {}'.format(settings_dict)
-
-ls = len(settings)
-len_settings = ''.join(map(chr, [ls & 0xff, (ls >> 8) & 0xff]))
-
-settings = len_settings+settings
-
-q.put(settings)
-
-writer = Writer('fmcw.log', q)
-writer.start()
-
-fmcw.set_channels(a=ch_a, b=ch_b)
-
-try:
-    while True:
-        r = fmcw.device.read(0x10000)
-        if len(r) != 0:
-            q.put(r)
-finally:
-    fmcw.set_adc(oe1=True, shdn1=True, shdn2=True)
-    fmcw.set_channels(a=False, b=False)
-    fmcw.clear_gpio(led=True, adf_ce=True)
-    fmcw.set_gpio(pa_off=True)
+    fmcw.set_downsampler(enable=downsampler, quarter=quarter)
+    fmcw.write_sweep_timer(tsweep)
+    fmcw.write_sweep_delay(tdelay)
+    fmcw.write_decimate(decimate)
+    fmcw.write_pa_off_timer(tdelay - pa_off_advance)
+    fmcw.clear_gpio(pa_off=True)
     fmcw.clear_buffer()
-    fmcw.close()
-    print 'Done'
-    q.put('')
-    writer.join()
+
+    q = Queue()
+
+    date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    settings_dict = {'date': date, 'f0': f0, 'bw': bw, 'tsweep': tsweep, 'tdelay': tdelay,
+                     'a': ch_a, 'b': ch_b, 'decimate': decimate, 'downsampler': downsampler, 'quarter': quarter}
+
+    settings = 'fmcw; {}'.format(settings_dict)
+
+    ls = len(settings)
+    len_settings = ''.join(map(chr, [ls & 0xff, (ls >> 8) & 0xff]))
+
+    settings = len_settings+settings
+
+    q.put(settings)
+
+    writer = Writer('fmcw.log', q)
+    writer.start()
+
+    fmcw.set_channels(a=ch_a, b=ch_b)
+
+    try:
+        while True:
+            r = fmcw.device.read(0x10000)
+            if len(r) != 0:
+                q.put(r)
+    finally:
+        fmcw.set_adc(oe1=True, shdn1=True, shdn2=True)
+        fmcw.set_channels(a=False, b=False)
+        fmcw.clear_gpio(led=True, adf_ce=True)
+        fmcw.set_gpio(pa_off=True)
+        fmcw.clear_buffer()
+        fmcw.close()
+        print('Done')
+        q.put('')
+        writer.join()

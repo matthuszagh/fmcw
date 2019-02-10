@@ -7,6 +7,9 @@ from fir_common import *
 fparams = open("hdl_params.yml", "r")
 dat = yaml.safe_load(fparams)
 
+USBDW = 8  # USB data width.
+SDDW = 4  # SD card data width.
+GPIOW = 6  # GPIO pins.
 M = 20  # Downsample.
 MW = math.ceil(math.log2(M))  # Downsample bits.
 IW = 12  # Input bit width.
@@ -28,6 +31,9 @@ f.write('TW = {0}, \\\n'.format(dat['TW']))
 f.write('IW = {0}, \\\n'.format(IW))
 f.write('OW = {0}, \\\n'.format(OW))
 f.write('IntW = {0}, \\\n'.format(compute_bits(IW, "fir_coeffs.int")))
+f.write('USBDW = {0}, \\\n'.format(USBDW))
+f.write('SDDW = {0}, \\\n'.format(SDDW))
+f.write('GPIOW = {0}, \\\n'.format(GPIOW))
 f.write('M = {0}, \\\n'.format(M))
 f.write('MW = {0}\n'.format(MW))
 f.close()

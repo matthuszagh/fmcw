@@ -66,6 +66,11 @@ parameter table for an explanation of $f_{\text{PFD}}$). The $2^{25}$ arises fro
         \bottomrule
 \end{tabularx}
 
+\subsubsection{Linked Sections}
+\label{sec:adf4158-linked-sections}
+
+\textit{\hyperref[sec:adf4158-pinout]{pinout}}
+
 \subsubsection{Waveform Generation}
 \label{sec:adf4158-waveform-generation}
 
@@ -93,8 +98,6 @@ sawtooth will ramp from 5.3GHz to 5.9GHz in 1ms. We also use a delay between bur
         \textbf{Parameter/Variable} & \textbf{Description} \\
         \midrule
 
-        \endhead
-
         $f_{\text{DEV}}$ & The frequency deviation for each frequency jump during ramp. \\
         $f_{\text{PFD}}$ & The input frequency to the PFD post prescaling. In our case this is 20MHz. \\
         DEV & A 16-bit value set in register 5. \\
@@ -116,8 +119,6 @@ sawtooth will ramp from 5.3GHz to 5.9GHz in 1ms. We also use a delay between bur
         \toprule
         \textbf{Parameter/Variable} & \textbf{Description} \\
         \midrule
-
-        \endhead
 
         Delay & The delay between bursts. This is shown graphically in Figure~\ref{fig:adf4158-delay}. \\
         $f_{\text{PFD}}$ & The input frequency to the PFD post prescaling. In our case this is 20MHz. \\
@@ -147,98 +148,95 @@ sawtooth will ramp from 5.3GHz to 5.9GHz in 1ms. We also use a delay between bur
         \label{fig:adf4158-delay}
 \end{figure}
 
+\begin{figure}[h]
+        \centering
+        \includegraphics[width=0.5\textwidth]{data/adf4158-fast-lock.png}
+        \caption{Fast lock topologies.}
+        \label{fig:adf4158-fast-lock}
+\end{figure}
+
 \subsubsection{Configuration Registers}
 \label{sec:adf4158-config-regs}
 
 The ADF4158 contains 8 configuration registers. The configurations are shown in the tables
 below. All reserved bits should be set to 0. The control bits are the least significant 3 bits of
-each register and are set to the register number for each register (e.g. register 0 is 000 and
+each register and are set to the register number for each register (e.g.\ register 0 is 000 and
 register 1 is 001). I've left these out of the tables because their values are obvious.
 
 \label{tab:adf4158-reg-map-0}
-\begin{tabularx}{\textwidth}{l l l X>{\raggedright\arraybackslash}X}
+\begin{tabularx}{\textwidth}{l l l X}
         \caption{FRAC/INT REGISTER (R0) MAP} \\
         \toprule
-        \textbf{Bits} & \textbf{Mnemonic} & \textbf{Value} & \textbf{DESCRIPTION} \\
+        Bit & Mnemonic & Value & Description \\
         \midrule
 
-        \endhead{}
-
-        3--14 & FRAC(MSB) & 0 & This sets the 12 most significant bits of FRAC. We leave the fractional
-        value at 0. \\
-        15--26 & INT & 265 & This is the feedback, or N, counter. \\
-        27--30 & MUXOUT Control & 15 & This enables ``readback to muxout'' which allows interrupting
-        waveform generation and reading back the frequency at the time of
-        interrupt. The functionality is not fully setup on the board(muxout
-        connects to a DNP NMOS) and TX\_DATA, which can trigger the
-        interrupt, is set to 0 by the FPGA HDL and left there. \\
-        31 & Ramp On & 1 & This bit enables the ramp. \\
+        3--14  & FRAC(MSB)      & 0   & This sets the 12 most significant bits of FRAC\@. We leave the
+        fractional value at 0.                                               \\
+        15--26 & INT            & 265 & This is the feedback, or N, counter. \\
+        27--30 & MUXOUT Control & 15  & This enables ``readback to muxout'' which allows interrupting
+        waveform generation and reading back the frequency at the time of interrupt. The
+        functionality is not fully setup on the board(muxout connects to a DNP NMOS) and TX\_DATA,
+        which can trigger the
+        interrupt, is set to 0 by the FPGA HDL and left there.               \\
+        31     & Ramp On        & 1   & This bit enables the ramp.           \\
 
         \bottomrule
 \end{tabularx}
 
 \label{tab:adf4158-reg-map-1}
-\begin{tabularx}{\textwidth}{l l l X>{\raggedright\arraybackslash}X}
+\begin{tabularx}{\textwidth}{l l l X}
         \caption{LSB FRAC REGISTER(R1) MAP} \\
         \toprule
-        \textbf{Bits} & \textbf{Mnemonic} & \textbf{Value} & \textbf{DESCRIPTION} \\
+        Bit & Mnemonic & Value & Description \\
         \midrule
 
-        \endhead
-
-        3-14 & Reserved & 0 & All reserved bits set to 0. \\
-        15-27 & FRAC(LSB) & 0 & This sets the 13 least significant bits of FRAC. We leave the fractional
-        value at 0. \\
-        28-31 & Reserved & 0 & All reserved bits set to 0. \\
+        3-14  & Reserved  & 0 & All reserved bits set to 0. \\
+        15-27 & FRAC(LSB) & 0 & This sets the 13 least significant bits of FRAC\@. We leave the
+        fractional value at 0.                              \\
+        28-31 & Reserved  & 0 & All reserved bits set to 0. \\
 
         \bottomrule
 \end{tabularx}
 
 \label{tab:adf4158-reg-map-2}
-\begin{tabularx}{\textwidth}{l l l X>{\raggedright\arraybackslash}X}
+\begin{tabularx}{\textwidth}{l l l X}
         \caption{R-DIVIDER REGISTER(R2) MAP} \\
         \toprule
-        \textbf{Bits} & \textbf{Mnemonic} & \textbf{Value} & \textbf{DESCRIPTION} \\
+        Bit & Mnemonic & Value & Description \\
         \midrule
 
-        \endhead
-
-        3--14 & CLK\textsubscript{1} Divider & 10 & One of the determinants of the duration of a timestep in
-        waveform generation. See
-        \cref{sec:adf4158-waveform-generation} for more
-        details. \\
-        15--19 & R-Counter & 1 & This 5-bit segment is used to divide the frequency of the reference signal
-        before it enters the PFD. We leave it at 1 and thus do not use it to
-        divide the frequency. \\
-        20 & Reference Doubler & 0 & We leave this at 0 and thus do not use the doubler to double the
-        reference signal frequency before input to the PFD. The maximum input
-        frequency for the PFD is 30MHz and so doubling our 20MHz signal (we
-        used the divider to divide the 40MHz signal by 2) would violate this
-        condition. \\
-        21 & RDIV2 & 1 & Inserts a divide-by-2 toggle flip-flop between the R-counter and PFD. This
-        provides a 50\% duty cycle that allows cycle slip reduction to be used which
-        improves lock times. \\
-        22 & Prescaler & 1 & The prescaler limits the INT value and through that the maximum frequency to
-        3GHz. Since we have an INT value of 265 and our maximum frequency is almost
-        double 3GHz we set this to 1. \\
-        23 & Reserved & 0 & All reserved bits set to 0. \\
-        24--27 & Charge Pump Current Setting & 0 & Sets the current to the minimum value which is 0.31mA
-        and is the level necessary to use cycle slip reduction
-        which we are. \\
-        28 & CSR Enable & 1 & Enables cycle slip reduction which provides better lock times. \\
-        29--31 & Reserved & 0 & All reserved bits are set to 0. \\
+        3--14  & CLK\textsubscript{1} Divider & 10 & One of the determinants of the duration of a
+        time step in waveform generation. See \cref{sec:adf4158-waveform-generation} for more
+        details.                                                                                                    \\
+        15--19 & R-Counter                    & 1  & This 5-bit segment is used to divide the frequency of the reference
+        signal
+        before it enters the PFD\@. We leave it at 1 and thus do not use it to divide the frequency.                \\
+        20     & Reference Doubler            & 0  & We leave this at 0 and thus do not use the doubler to double
+        the reference signal frequency before input to the PFD\@. The maximum input frequency for
+        the PFD is 30MHz and so doubling our 20MHz signal (we used the divider to divide the 40MHz
+        signal by 2) would violate this condition.                                                                  \\
+        21     & RDIV2                        & 1  & Inserts a divide-by-2 toggle flip-flop between the R-counter and
+        PFD\@. This provides a 50\% duty cycle that allows cycle slip reduction to be used which
+        improves lock times.                                                                                        \\
+        22     & Prescaler                    & 1  & The prescaler limits the INT value and through that the maximum
+        frequency to 3GHz. Since we have an INT value of 265 and our maximum frequency is almost
+        double 3GHz we set this to 1.                                                                               \\
+        23     & Reserved                     & 0  & All reserved bits set to 0.                                    \\
+        24--27 & Charge Pump Current Setting  & 0  & Sets the current to the minimum value which is
+        0.31mA and is the level necessary to use cycle slip reduction
+        which we are.                                                                                               \\
+        28     & CSR Enable                   & 1  & Enables cycle slip reduction which provides better lock times. \\
+        29--31 & Reserved                     & 0  & All reserved bits are set to 0.                                \\
 
         \bottomrule
 \end{tabularx}
 
 \label{tab:adf4158-reg-map-3}
-\begin{tabularx}{\textwidth}{l l l X>{\raggedright\arraybackslash}X}
+\begin{tabularx}{\textwidth}{l l l X}
         \caption{FUNCTION REGISTER(R3) MAP} \\
         \toprule
-        \textbf{Bits} & \textbf{Mnemonic} & \textbf{Value} & \textbf{DESCRIPTION} \\
+        Bit & Mnemonic & Value & Description \\
         \midrule
-
-        \endhead{}
 
         3 & Counter Reset & 0 & When this is set to 1, the synthesizer counters are held in reset. For
         normal operation we set this to 0. \\
@@ -266,13 +264,11 @@ register 1 is 001). I've left these out of the tables because their values are o
 \end{tabularx}
 
 \label{tab:adf4158-reg-map-4}
-\begin{tabularx}{\textwidth}{l l l X>{\raggedright\arraybackslash}X}
+\begin{tabularx}{\textwidth}{l l l X}
         \caption{TEST REGISTER(R4) MAP} \\
         \toprule
-        \textbf{Bits} & \textbf{Mnemonic} & \textbf{Value} & \textbf{DESCRIPTION} \\
+        Bit & Mnemonic & Value & Description \\
         \midrule
-
-        \endhead{}
 
         3--6 & Reserved & 0 & All reserved bits are set to 0. \\
         7-18 & CLK\textsubscript{2} Divider & 1 & This is used to set the timeout interval in ramp
@@ -307,13 +303,11 @@ register 1 is 001). I've left these out of the tables because their values are o
 \end{tabularx}
 
 \label{tab:adf4158-reg-map-5}
-\begin{tabularx}{\textwidth}{l l l X>{\raggedright\arraybackslash}X}
+\begin{tabularx}{\textwidth}{l l l X}
         \caption{DEVIATION REGISTER (R5) MAP} \\
         \toprule
-        \textbf{Bits} & \textbf{Mnemonic} & \textbf{Value} & \textbf{DESCRIPTION} \\
+        Bit & Mnemonic & Value & Description \\
         \midrule
-
-        \endhead{}
 
         3--18 & Deviation Word & 31457 & This is used to set the size of successive frequency jumps during
         ramp. See \cref{sec:adf4158-waveform-generation} for more
@@ -340,13 +334,11 @@ register 1 is 001). I've left these out of the tables because their values are o
 
 
 \label{tab:adf4158-reg-map-6}
-\begin{tabularx}{\textwidth}{l l l X>{\raggedright\arraybackslash}X}
+\begin{tabularx}{\textwidth}{l l l X}
         \caption{STEP REGISTER (R6) MAP} \\
         \toprule
-        \textbf{Bits} & \textbf{Mnemonic} & \textbf{Value} & \textbf{DESCRIPTION} \\
+        Bit & Mnemonic & Value & Description \\
         \midrule
-
-        \endhead{}
 
         3--22 & Step Word & 2000 & This determines the number of steps in a ramp. To understand this see
         \cref{sec:adf4158-waveform-generation} on waveform generation. \\
@@ -359,13 +351,11 @@ register 1 is 001). I've left these out of the tables because their values are o
 
 
 \label{tab:adf4158-reg-map-7}
-\begin{tabularx}{\textwidth}{l l l X>{\raggedright\arraybackslash}X}
+\begin{tabularx}{\textwidth}{l l l X}
         \caption{DELAY REGISTER (R7) MAP} \\
         \toprule
-        \textbf{Bits} & \textbf{Mnemonic} & \textbf{Value} & \textbf{DESCRIPTION} \\
+        Bit & Mnemonic & Value & Description \\
         \midrule
-
-        \endhead{}
 
         3--14 & Delayed Start Word & 4000 & Sets the ramp start delay. We do not use a start delay, but we
         do use this to delay between ramps. \\
@@ -380,60 +370,37 @@ register 1 is 001). I've left these out of the tables because their values are o
         \bottomrule
 \end{tabularx}
 
-\label{tab:adf4158-pins}
-\begin{tabularx}{\textwidth}{l l X>{\raggedright\arraybackslash}X}
-        \caption{All ADF4158 pin connections.} \\
-        \toprule
-        \textbf{PIN} & \textbf{Mnemonic} & \textbf{DESCRIPTION} \\
-        \midrule
+\subsubsection{Programming the Configuration Registers}
+\label{sec:adf4158-program}
 
-        \endhead{}
+The write timing used to program the internal configuration registers is shown in
+Fig.~\ref{fig:adf4158-write-timing}. The maximum clock frequency is $20 \si{MHz}$, which can be
+achieved by dividing the reference clock frequency by 2. Additionally, LE must be brought low at
+least half a clock period before data is clocked into the registers and held low for at least a
+quarter of a period after the write ends. It then must be pulsed high for half a period before it
+can be brought low again and another register write can occur. As shown in the diagram, the data is
+sent MSB first and the last 3 bits are the control bits (which specify the destination register),
+also sent MSB first. The registers must be configured in a specific order, detailed in the
+``INITIALIZATION SEQUENCE'' section of the datasheet, and copied below for convenience.
 
-        1 & CPGND & The charge pump ground, which we set to the same ground as the rest of the circuit. \\
-        2, 3 & AGND & Prescaler ground; also set to common ground. \\
-        4 & RF\textsubscript{IN} B & The complement to the VCO output. We couple this to ground with a
-        small capacitor: in this case, 10pF. \\
-        5 & RF\textsubscript{IN} A & The VCO output. This goes through prescaling and then becomes the PLL
-        input signal. \\
-        6, 7, 8 & AV\textsubscript{DD} & The positive power supply for the RF part of the PLL. This takes
-        3.3V. \\
-        9 & REF\textsubscript{IN} & The reference input, which is our 40MHz clock signal. \\
-        10 & DGND & Digital ground. This uses the common ground. \\
-        11 & SDGND & $\Sigma-\Delta$ modulator ground. \\
-        12 & TX\textsubscript{DATA} & This pin can be used when employing FSK or PSK to transmit
-        data. Since we are not using this we connect this pin to the FPGA
-        but just set the value to GND. \\
-        13 & CE & We must set this pin to high in order to enable the device. \\
-        14 & CLK & A clock used to synchronize register configuration. \\
-        15 & DATA & Serial data input to set the configuration registers. \\
-        16 & LE & This pin is brought high in order to load data into the configuration registers. \\
-        17 & MUXOUT & This allows internal parameters of the ADF4158 to be read externally. We don't
-        currently use this in our design. \\
-        18 & SDV\textsubscript{DD} & Power supply pin for the $\Sigma-\Delta$ modulator. We also set this
-        to 3.3V. \\
-        19 & DV\textsubscript{DD} & Power supply pin for the digital circuitry. Also 3.3V. \\
-        20, 21 & SW1, SW2 & FIXME: These pins are used for the fast-locking feature, which we use in our
-        design. The typical topologies for this are shown in
-        Figure~\ref{fig:adf4158-fast-lock}. However, our design does not use either of
-        these topologies. \\
-        22 & V\textsubscript{P} & The charge pump power supply, which we set to 5V. \\
-        23 & R\textsubscript{SET} & This pin sets the maximum charge pump current according to the
-        equation $I_{\text{CPmax}}=25.5/R_{\text{SET}}$. We use
-        5.49$\si{k\Omega}$ for the resistor which gives a charge pump current
-        of 4.6mA. \\
-        24 & CP & The charge pump output that is amplified and feeds into the VCO. Obviously, because this
-        is a charge pump we need to place a bypass capacitor to ground before the
-        amplifier. Here we use 51pF. \\
-        25 & EPAD & This is connected to GND. \\
-
-        \bottomrule
-\end{tabularx}
+\begin{enumerate}[noitemsep]
+\item Delay register (R7)
+\item Step register (R6)—load the step register (R6) twice, first with STEP SEL = 0 and then with
+        STEP SEL = 1
+\item Deviation register (R5)—load the deviation register (R5) twice, first with DEV SEL = 0 and
+        then with DEV SEL = 1
+\item Test register (R4)
+\item Function register (R3)
+\item R-divider register (R2)
+\item LSB FRAC register (R1)
+\item FRAC/INT register (R0)
+\end{enumerate}
 
 \begin{figure}[h]
         \centering
-        \includegraphics[width=0.5\textwidth]{data/adf4158-fast-lock.png}
-        \caption{Fast lock topologies.}
-        \label{fig:adf4158-fast-lock}
+        \includegraphics[width=0.75\textwidth]{data/adf4158-write-timing}
+        \caption{ADF4158 write timing diagram.}
+        \label{fig:adf4158-write-timing}
 \end{figure}
 
 \subsection{TLV172 Operational Amplifier}
