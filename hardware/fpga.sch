@@ -1,6 +1,6 @@
 EESchema Schematic File Version 4
 LIBS:fmcw-cache
-EELAYER 29 0
+EELAYER 26 0
 EELAYER END
 $Descr A3 16535 11693
 encoding utf-8
@@ -2252,9 +2252,11 @@ F 4 "XC7A15T-1FTG256C" H 0   0   50  0001 C CNN "MFN"
 	1    0    0    -1  
 $EndComp
 $Comp
-L Connector:Micro_SD_Card_Det_Hirose_DM3AT J1
+L Connector:Micro_SD_Card_Det J1
 U 1 1 5B5E6DDE
 P 10050 10400
+AR Path="/5B5E6DDE" Ref="J1"  Part="1" 
+AR Path="/59395D6A/5B5E6DDE" Ref="J1"  Part="1" 
 F 0 "J1" H 10000 9950 50  0000 C CNN
 F 1 "SD_Card" H 10000 9850 50  0000 C CNN
 F 2 "Connector_Card:microSD_HC_Hirose_DM3BT-DSF-PEJS" H 10050 10400 50  0001 C CNN
