@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import sys
 import matplotlib.pyplot as plt
 import numpy as np
@@ -40,15 +42,15 @@ def read_settings(f):
     ls = f.read(2)
     if len(ls) != 2:
         raise ValueError('Too short read when reading settings')
-    ls = map(ord, ls)
+    ls = list(map(ord, ls))
     ls = ls[0] + (ls[1] << 8)
     settings = f.read(ls)
     if len(settings) != ls:
         raise ValueError('Too short read when reading settings')
-    header = settings[:6]
+    header = settings[:5]
     if header != 'fmcw;':
         raise ValueError('Missing header')
-    settings = ast.literal_eval(settings[7:])
+    settings = ast.literal_eval(settings[6:])
     return settings
 
 
@@ -136,7 +138,7 @@ with open(sys.argv[1], 'r') as f:
         i += 2
         if len(n) != 2:
             break
-        w = map(ord, n)
+        w = list(map(ord, n))
         w = w[0] + (w[1] << 8)
         w = twos_comp(w, 16)
         l.append(w)
@@ -205,10 +207,10 @@ if 1:
     if subtract_background:
         background1 = np.zeros(len(ch1[0]))
         background2 = np.zeros(len(ch1[0]))
-        for i in xrange(len(ch1[0])):
+        for i in range(len(ch1[0])):
             x1 = 0
             x2 = 0
-            for j in xrange(len(ch1)):
+            for j in range(len(ch1)):
                 x1 += ch1[j][i]
                 x2 += ch2[j][i]
             background1[i] = (x1/len(ch1))
@@ -348,9 +350,9 @@ if 1:
 
     if subtract_background:
         background = []
-        for i in xrange(sw_len):
+        for i in range(sw_len):
             x = 0
-            for j in xrange(len(sweeps)):
+            for j in range(len(sweeps)):
                 x += sweeps[j][i]
             background.append(x/len(sweeps))
 
@@ -364,13 +366,13 @@ if 1:
     w = np.kaiser(sw_len, kaiser_beta)
     m = 0
 
-    for e in xrange(len(sweeps)):
+    for e in range(len(sweeps)):
         sw = sweeps[e]
         if subtract_clutter and e > 0:
-            sw = [sw[i] - sweeps[e-1][i] for i in xrange(sw_len)]
+            sw = [sw[i] - sweeps[e-1][i] for i in range(sw_len)]
         if subtract_background:
-            sw = [sw[i] - background[i] for i in xrange(sw_len)]
-        sw = [sw[i]*w[i] for i in xrange(len(w))]
+            sw = [sw[i] - background[i] for i in range(sw_len)]
+        sw = [sw[i]*w[i] for i in range(len(w))]
         fy = np.fft.rfft(sw)[3:max_range_index+1]
         fy = 20 * \
             np.log10(
@@ -398,5 +400,3 @@ if 1:
         # Save png of the plot
         #image.imsave('range_time_raw.png', np.flipud(im))
         #plt.savefig('range_time.png', dpi=500)
-
-plt.show()

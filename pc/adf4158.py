@@ -34,7 +34,7 @@ class ADF4158():
 
         # Check unique names
         keys = []
-        for key in self.register_def.itervalues():
+        for key in self.register_def.values():
             for r in key:
                 if r in keys:
                     raise Exception("Duplicate register {}".format(r))
@@ -129,14 +129,14 @@ class ADF4158():
 
     def find_reg(self, reg):
         """Finds register by name"""
-        for key, val in self.register_def.iteritems():
+        for key, val in iter(self.register_def.items()):
             if reg in val.keys():
                 return key, val[reg]
         return None, None
 
     def write_value(self, **kw):
         """Write value to register, doesn't update the device"""
-        for reg, val in kw.iteritems():
+        for reg, val in iter(kw.items()):
             # print "{} = {}".format(reg, val)
             reg_n, reg_def = self.find_reg(reg)
             if reg_n == None:

@@ -19,11 +19,11 @@ module data_packer #( `FMCW_DEFAULT_PARAMS )
 
         always @(posedge clk_i) begin
                 if (upper) begin
-                        upper <= 0;
+                        upper <= 1'b0;
                         data_o <= data_i[OW-1:USBDW];
                 end
                 else begin
-                        upper <= 1;
+                        upper <= 1'b1;
                         data_o <= data_i[USBDW-1:0];
                 end
         end

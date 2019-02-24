@@ -59,26 +59,35 @@ module top #( `FMCW_DEFAULT_PARAMS )
         initial begin
                 adc_oe_o = 2'b10;
                 adc_shdn_o = 2'b10;
-
                 sd_clk_o = 1'b0;
-
                 mix_enbl_n_o = 1'b0;
-
                 pa_off_o = 1'b0;
-
-                flash_cs_n_o = 1'bz;
-                flash_mosi_o = 1'bz;
+                flash_cs_n_o = 1'b1;
+                flash_mosi_o = 1'b0;
         end
 
-        assign ext1_io = {GPIOW{1'bz}};
-        assign ext2_io = {GPIOW{1'bz}};
+        assign ext1_io[0] = ft_wr_n_o;
+        assign ext1_io[1] = ft_rd_n_o;
+        assign ext1_io[2] = ft_clkout_i;
+        assign ext1_io[3] = ft_suspend_n_i;
+        assign ext1_io[4] = 1'b0;
+        assign ext1_io[5] = 1'b1;
+
+        assign ext2_io[0] = ft_wr_n_o;
+        assign ext2_io[1] = ft_rd_n_o;
+        assign ext2_io[2] = ft_clkout_i;
+        assign ext2_io[3] = ft_suspend_n_i;
+        assign ext2_io[4] = 1'b0;
+        assign ext2_io[5] = 1'b1;
+        // assign ext1_io = {GPIOW{1'b0}};
+        // assign ext2_io = {GPIOW{1'b0}};
         assign led_o = (!ft_rd_n_o || !ft_wr_n_o) ? 1'b1 : 1'b0;
 
         wire                    clk_downsampled;
         wire [OW-1:0]           data_downsampled;
         wire [OW-1:0]           data_filtered;
         wire [USBDW-1:0]        usb_rdata;
-        wire [USBDW-1:0]        usb_wdata = {USBDW{1'b0}};
+        wire [USBDW-1:0]        usb_wdata;
 
         fir fir (.clk(clk_i),
                  .rst(1),

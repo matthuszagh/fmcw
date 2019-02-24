@@ -35,3 +35,7 @@ openems/octave-workspace
 /hardware/fmcw_bom_.csv
 *__pycache__*
 *size(H).ps
+**/octave-workspace
+**/img
+*.pyc
+/pc/out.mp4

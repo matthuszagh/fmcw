@@ -1,8 +1,12 @@
+#!/usr/bin/python
+
 import pylibftdi as ftdi
 from adf4158 import ADF4158
 from queue import Queue, Empty
 from threading import Thread
 import datetime
+import keyboard
+import os
 
 
 class FMCW():
@@ -11,7 +15,7 @@ class FMCW():
     def __init__(self):
         SYNCFF = 0x40  # Configures bit-bang mode for synchronous FIFO.
         SIO_RTS_CTS_HS = (0x1 << 8)
-        self.device = ftdi.Device(mode='b', interface_select=ftdi.INTERFACE_A)
+        self.device = ftdi.Device(mode='t', interface_select=ftdi.INTERFACE_A)
         self.device.open()
         self.device.ftdi_fn.ftdi_set_bitmode(0xff, SYNCFF)
         self.device.ftdi_fn.ftdi_read_data_set_chunksize(0x10000)
@@ -37,7 +41,7 @@ class FMCW():
         header = [0xaa, l, cmd]
         b = bytearray(header+x)
         # print map(hex, map(ord, str(b)))
-        return self.device.write(str(b))
+        return self.device.write(b)
 
     def clear_gpio(self, led=False, pa_off=False, mix_enbl=False, adf_ce=False):
         w = 0
@@ -161,7 +165,7 @@ class Writer(Thread):
     def __init__(self, filename, queue):
         Thread.__init__(self)
         self.queue = queue
-        self.f = open(filename, 'wb')
+        self.f = open(filename, 'w')
 
     def run(self):
         wrote = 0
@@ -182,6 +186,10 @@ class Writer(Thread):
 
 
 if __name__ == '__main__':
+    if os.getuid() != 0:
+        raise PermissionError(
+            "Must be run with superuser privileges.")
+
     fmcw = FMCW()
 
     f0 = 5.3e9
@@ -230,10 +238,14 @@ if __name__ == '__main__':
     fmcw.set_channels(a=ch_a, b=ch_b)
 
     try:
+        print("Type 'q' to finish reading data.")
         while True:
             r = fmcw.device.read(0x10000)
             if len(r) != 0:
                 q.put(r)
+            if keyboard.is_pressed('q'):
+                break
+
     finally:
         fmcw.set_adc(oe1=True, shdn1=True, shdn2=True)
         fmcw.set_channels(a=False, b=False)
