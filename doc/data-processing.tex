@@ -1,0 +1,250 @@
+\chapter{Data Processing}
+\label{cha:data-processing}
+
+We perform processing on sweeps of data at a time. Each data point is 16 bits, downsampled to 2MHz
+over a sweep duration of 1ms (followed by a 2ms delay). However, the data is also multiplexed from 2
+channels so the number of data points per channel in a sweep is cut in half. This comes out to 1000
+samples per channel at 16 bit resolution every 3ms. It requires a full 1ms to gather the data which
+leaves only 2ms for the processing. This is a full 2ms per channel if the channels are processed in
+parallel, or only 1ms if the FPGA resources are shared. Since the clock rate is 40MHz, in the worst
+case we have 40,000 clock cycles to perform all data processing and in the best case we have double
+that.
+
+We start by applying a Kaiser window (alpha of 6) to the sample sequence. This (apparently) reduces
+artifacts that will later be produced by the FFT (see
+\href{https://dsp.stackexchange.com/a/14071/37547}{this SE} answer).  Since the window is applied to
+the time-domain sequence, it can be performed in real time as we get the samples.
+
+The better alternative would be to multiplex the 2 receiver channels from 8 antennas (just an array
+4 times larger) with an RF switch over 4 separate sweeps. I believe the only additional hardware
+needed is the physical RF switch and the circuitry needed to control it (this is probably just one
+or a few more SMA ports on the board for control, hooked up to possibly the FPGA). The data
+processing algorithms will probably need some substantial revision since the data collected is over
+4 separate sweeps. This should give much better angular resolution \fixme{show mathematically} and
+is therefore worth investigating considering that the hardware additions should be modest.
+
+The next step is to compute the FFT of the sequence from each channel. This can be performed in
+real-time using the FFT algorithm specified at
+\href{https://zipcpu.com/dsp/2018/10/02/fft.html}{this ZipCPU post}. The challenge is that the FFT
+should only be performed on the real components (it is that way in the Python code) since at this
+point we only have real components, but the ZipCPU algorithm only presently works on complex
+numbers. It's easy to add zero-valued imaginary components, but I believe it takes about twice the
+number of computations so the code should really be modified for the real-only FFT if possible. The
+output sequences should now be 501 items in length rather than the original 1000.
+
+The next step is beamforming, which is done by shifting each frequency in channel 2 by 21 degrees
+(why 21?). Then we concatenate each channel as new_array = [[b1 b2 … b501] [a1 a2 … a501]]. Yes, we
+put channel B first (why?). Then we perform a series of FFTs on these. The first FFT is on b1 and
+a1, the second is on b2 and a2, etc. Before performing the FFTs we pad each 2-point input with 98
+zeros, so we get 100 output arrays, each with 501 elements. This corresponds to 100 beams, where
+each beam has 501 frequency bins and the absolute value of the complex number in each bin (each
+element of each array) is the magnitude at that frequency and angle. Angle information can be used
+as is, frequency can be directly mapped to distance using a precomputed lookup table (see equation
+in the documentation) and the dB magnitude is $20\log(abs(val))$ where val is the value in each
+frequency / angle bin (we might need to normalize to have the max value be 0dB). We then shift the
+zero frequency to the center of the array which just means taking the last 49 arrays and moving them
+to the beginning. This effectively moves the FFT range from $[0, \pi]$ to $[-\pi/2, \pi/2]$, or
+whatever our range is.
+
+We apply a window function across the angles (the 100 angles), which just looks like a peak at the
+middle angle (straight in front). This seems to improve angular resolution somewhat but it's a bit
+weird since all it seems to do is bias the 0degree angle and mostly ignore the rest. I wonder if
+this step will be necessary, especially if we use 8 antennas. In any event, it should not be the
+most computationally intensive task.
+
+The FT2232H's synchronous FIFO mode supports data rates of 40MB/s. Since we collect a new sweep each
+3ms, this supports 501 frequency bins but not 1000 (for 100 angles at 16bit resolution). So, the
+question is, how does the real FFT cut out half of the frequency bins, presumably without losing any
+information. For the time being, let's assume the computer can plot the data at the rate it's
+received.
+
+Use
+\href{https://matplotlib.org/api/animation_api.html#matplotlib.animation.FuncAnimation}{matplotlib's
+FuncAnimation} to update the plot in realtime as data is collected. This also supports recording as
+a video.
+
+\section{FPGA Resources Required}
+\label{sec:fpga-resources}
+
+The first task performed by the FPGA is the 120-tap FIR filter. This is already implemented (but
+needs some modification because it doesn't currently distinguish between the 2 channels). This uses
+basically none of the FPGA's resources (see below). In fact, it's so little that I'm skeptical it's
+right.
+
+After filtering, each sample from each channel is 16 bits.
+
+\begin{minted}{text}
+1. Slice Logic
+--------------
+
++----------------------------+------+-------+-----------+-------+
+|          Site Type         | Used | Fixed | Available | Util% |
++----------------------------+------+-------+-----------+-------+
+| Slice LUTs                 |   96 |     0 |     10400 |  0.92 |
+|   LUT as Logic             |   32 |     0 |     10400 |  0.31 |
+|   LUT as Memory            |   64 |     0 |      9600 |  0.67 |
+|     LUT as Distributed RAM |   64 |     0 |           |       |
+|     LUT as Shift Register  |    0 |     0 |           |       |
+| Slice Registers            |   22 |     0 |     20800 |  0.11 |
+|   Register as Flip Flop    |   22 |     0 |     20800 |  0.11 |
+|   Register as Latch        |    0 |     0 |     20800 |  0.00 |
+| F7 Muxes                   |    6 |     0 |     16300 |  0.04 |
+| F8 Muxes                   |    0 |     0 |      8150 |  0.00 |
++----------------------------+------+-------+-----------+-------+
+
+
+1.1 Summary of Registers by Type
+--------------------------------
+
++-------+--------------+-------------+--------------+
+| Total | Clock Enable | Synchronous | Asynchronous |
++-------+--------------+-------------+--------------+
+| 0     |            _ |           - |            - |
+| 0     |            _ |           - |          Set |
+| 0     |            _ |           - |        Reset |
+| 0     |            _ |         Set |            - |
+| 0     |            _ |       Reset |            - |
+| 0     |          Yes |           - |            - |
+| 10    |          Yes |           - |          Set |
+| 0     |          Yes |           - |        Reset |
+| 0     |          Yes |         Set |            - |
+| 12    |          Yes |       Reset |            - |
++-------+--------------+-------------+--------------+
+
+
+2. Slice Logic Distribution
+---------------------------
+
++-------------------------------------------+------+-------+-----------+-------+
+|                 Site Type                 | Used | Fixed | Available | Util% |
++-------------------------------------------+------+-------+-----------+-------+
+| Slice                                     |   40 |     0 |      8150 |  0.49 |
+|   SLICEL                                  |   21 |     0 |           |       |
+|   SLICEM                                  |   19 |     0 |           |       |
+| LUT as Logic                              |   32 |     0 |     10400 |  0.31 |
+|   using O5 output only                    |    0 |       |           |       |
+|   using O6 output only                    |   32 |       |           |       |
+|   using O5 and O6                         |    0 |       |           |       |
+| LUT as Memory                             |   64 |     0 |      9600 |  0.67 |
+|   LUT as Distributed RAM                  |   64 |     0 |           |       |
+|     using O5 output only                  |    0 |       |           |       |
+|     using O6 output only                  |   64 |       |           |       |
+|     using O5 and O6                       |    0 |       |           |       |
+|   LUT as Shift Register                   |    0 |     0 |           |       |
+| LUT Flip Flop Pairs                       |   12 |     0 |     10400 |  0.12 |
+|   fully used LUT-FF pairs                 |    0 |       |           |       |
+|   LUT-FF pairs with one unused LUT output |   12 |       |           |       |
+|   LUT-FF pairs with one unused Flip Flop  |   12 |       |           |       |
+| Unique Control Sets                       |    5 |       |           |       |
++-------------------------------------------+------+-------+-----------+-------+
+* Note: Review the Control Sets Report for more information regarding control sets.
+
+
+3. Memory
+---------
+
++----------------+------+-------+-----------+-------+
+|    Site Type   | Used | Fixed | Available | Util% |
++----------------+------+-------+-----------+-------+
+| Block RAM Tile |    0 |     0 |        25 |  0.00 |
+|   RAMB36/FIFO* |    0 |     0 |        25 |  0.00 |
+|   RAMB18       |    0 |     0 |        50 |  0.00 |
++----------------+------+-------+-----------+-------+
+* Note: Each Block RAM Tile only has one FIFO logic available and therefore can accommodate only one FIFO36E1 or one FIFO18E1. However, if a FIFO1
+8E1 occupies a Block RAM Tile, that tile can still accommodate a RAMB18E1
+
+
+4. DSP
+------
+
++-----------+------+-------+-----------+-------+
+| Site Type | Used | Fixed | Available | Util% |
++-----------+------+-------+-----------+-------+
+| DSPs      |    0 |     0 |        45 |  0.00 |
++-----------+------+-------+-----------+-------+
+
+
+5. IO and GT Specific
+---------------------
+
++-----------------------------+------+-------+-----------+-------+
+|          Site Type          | Used | Fixed | Available | Util% |
++-----------------------------+------+-------+-----------+-------+
+| Bonded IOB                  |   44 |    44 |       170 | 25.88 |
+|   IOB Master Pads           |   19 |       |           |       |
+|   IOB Slave Pads            |   25 |       |           |       |
+| Bonded IPADs                |    0 |     0 |         2 |  0.00 |
+| PHY_CONTROL                 |    0 |     0 |         5 |  0.00 |
+| PHASER_REF                  |    0 |     0 |         5 |  0.00 |
+| OUT_FIFO                    |    0 |     0 |        20 |  0.00 |
+| IN_FIFO                     |    0 |     0 |        20 |  0.00 |
+| IDELAYCTRL                  |    0 |     0 |         5 |  0.00 |
+| IBUFDS                      |    0 |     0 |       163 |  0.00 |
+| PHASER_OUT/PHASER_OUT_PHY   |    0 |     0 |        20 |  0.00 |
+| PHASER_IN/PHASER_IN_PHY     |    0 |     0 |        20 |  0.00 |
+| IDELAYE2/IDELAYE2_FINEDELAY |    0 |     0 |       250 |  0.00 |
+| ILOGIC                      |    0 |     0 |       170 |  0.00 |
+| OLOGIC                      |    0 |     0 |       170 |  0.00 |
++-----------------------------+------+-------+-----------+-------+
+
+
+6. Clocking
+-----------
+
++------------+------+-------+-----------+-------+
+|  Site Type | Used | Fixed | Available | Util% |
++------------+------+-------+-----------+-------+
+| BUFGCTRL   |    0 |     0 |        32 |  0.00 |
+| BUFIO      |    0 |     0 |        20 |  0.00 |
+| MMCME2_ADV |    0 |     0 |         5 |  0.00 |
+| PLLE2_ADV  |    0 |     0 |         5 |  0.00 |
+| BUFMRCE    |    0 |     0 |        10 |  0.00 |
+| BUFHCE     |    0 |     0 |        72 |  0.00 |
+| BUFR       |    0 |     0 |        20 |  0.00 |
++------------+------+-------+-----------+-------+
+
+
+7. Specific Feature
+-------------------
+
++-------------+------+-------+-----------+-------+
+|  Site Type  | Used | Fixed | Available | Util% |
++-------------+------+-------+-----------+-------+
+| BSCANE2     |    0 |     0 |         4 |  0.00 |
+| CAPTUREE2   |    0 |     0 |         1 |  0.00 |
+| DNA_PORT    |    0 |     0 |         1 |  0.00 |
+| EFUSE_USR   |    0 |     0 |         1 |  0.00 |
+| FRAME_ECCE2 |    0 |     0 |         1 |  0.00 |
+| ICAPE2      |    0 |     0 |         2 |  0.00 |
+| PCIE_2_1    |    0 |     0 |         1 |  0.00 |
+| STARTUPE2   |    0 |     0 |         1 |  0.00 |
+| XADC        |    0 |     0 |         1 |  0.00 |
++-------------+------+-------+-----------+-------+
+
+
+8. Primitives
+-------------
+
++----------+------+---------------------+
+| Ref Name | Used | Functional Category |
++----------+------+---------------------+
+| RAMD64E  |   64 |  Distributed Memory |
+| OBUF     |   39 |                  IO |
+| FDRE     |   12 |        Flop & Latch |
+| FDPE     |   10 |        Flop & Latch |
+| LUT2     |    8 |                 LUT |
+| LUT4     |    7 |                 LUT |
+| LUT1     |    7 |                 LUT |
+| MUXF7    |    6 |               MuxFx |
+| LUT6     |    6 |                 LUT |
+| IBUF     |    5 |                  IO |
+| CARRY4   |    5 |          CarryLogic |
+| LUT5     |    3 |                 LUT |
+| LUT3     |    1 |                 LUT |
++----------+------+---------------------+
+\end{minted}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "fmcw-radar"
+%%% End:

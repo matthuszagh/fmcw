@@ -3,7 +3,7 @@ DEVICE    = xc7a15tftg256-1
 FILES = hdl/*
 OPENOCD_DIR = openocd
 
-all: | synth vivado prog
+all: | synth vivado prog_fpga
 
 synth:
 	yosys run_yosys.ys

@@ -70,7 +70,7 @@ module top #( `FMCW_DEFAULT_PARAMS )
         assign ext1_io[1] = ft_rd_n_o;
         assign ext1_io[2] = ft_clkout_i;
         assign ext1_io[3] = ft_suspend_n_i;
-        assign ext1_io[4] = 1'b0;
+        assign ext1_io[4] = adf_muxout_i;
         assign ext1_io[5] = 1'b1;
 
         assign ext2_io[0] = ft_wr_n_o;

@@ -2,6 +2,11 @@ See doc/fmcw-radar.pdf
 
 #### TODO
 
+* Investigate the possibility of performing FFT processing on the FPGA. This may require an FPGA
+  with a higher LUT count. Investigate if the e.g. 50T is pin compatible with the current 15T. The
+  goal would be to have the host computer plot the radar output in real-time rather than relying on
+  post-processing. It might also be worth looking at the ECP5 FPGA, which seems to give you more per
+  dollar and has better open source support.
 * Formally verify FPGA code with [SymbiYosys](https://symbiyosys.readthedocs.io/en/latest/quickstart.html).
 * Write PC code.
 * Consider using a soft processor

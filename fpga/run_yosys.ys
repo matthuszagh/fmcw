@@ -1,4 +1,4 @@
-read_verilog hdl/*.v
+read_verilog -I ./fir hdl/*.v
 synth_xilinx -top top
 hilomap -hicell VCC P -locell GND G
 write_edif -nogndvcc top.edif

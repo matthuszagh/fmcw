@@ -204,6 +204,24 @@ Putting all these values together gives a minimum detectable power of $-118 \si{
 
 \fixme{Complete section.}
 
+Angle calculation is based on the principle that we can use the spatial separation between the
+receiving antennas and the time separation between when the signal is received at each to compute
+the incident angle to the detected object. Eq.~\ref{eq:incident-angle} gives this relationship. We
+can detect the time difference indirectly by measuring the phase difference between the signals.
+
+\begin{equation}
+        \label{eq:incident-angle}
+        t = \frac{d\cos\theta}{c}
+\end{equation}
+
+In order to avoid aliasing, the separation between the receiver antennas can be no greater than
+$\lambda/2$. This follows from the fact that when the incident angle is at a minimum at $-\pi/2$ or
+a maximum at $+\pi/2$, the phase separation will be the full antenna separation, $d$. When the phase
+separation is less than $-\pi$ or greater than $+\pi$, the function relating incident angle to phase
+separation is no longer monotonic. I.e.\ the values of phase separation outside the range
+$[-\pi, +\pi]$ can be produced by two different incident angles and it's impossible to work out
+which it was. \fixme{verify that this is correct and show the math to back it up.}
+
 %%% Local Variables:
 %%% mode: latex
 %%% TeX-master: "fmcw-radar"

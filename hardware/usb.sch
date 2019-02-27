@@ -7,7 +7,7 @@ encoding utf-8
 Sheet 3 10
 Title "FMCW"
 Date ""
-Rev "v2.0"
+Rev "v2.0c"
 Comp ""
 Comment1 ""
 Comment2 ""
@@ -250,7 +250,7 @@ F 3 "" H 3300 5950 60  0000 C CNN
 	1    3300 5950
 	1    0    0    -1  
 $EndComp
-Text Label 2950 6950 2    60   ~ 0
+Text Label 2950 7050 2    60   ~ 0
 EECS
 Text Label 4000 6950 0    60   ~ 0
 EECLK
@@ -554,7 +554,7 @@ Wire Wire Line
 Wire Wire Line
 	1300 4350 1300 4400
 Wire Wire Line
-	2950 6950 3100 6950
+	2950 7050 3100 7050
 Wire Wire Line
 	4000 6950 3900 6950
 Wire Wire Line
@@ -702,14 +702,14 @@ $EndComp
 Wire Wire Line
 	5100 6050 5100 6550
 Wire Wire Line
-	5150 4950 5050 4950
+	5150 4950 4950 4950
 Wire Wire Line
-	5150 5050 5050 5050
+	5150 5050 4300 5050
 Wire Wire Line
 	5150 5150 5050 5150
-Text Label 5050 4950 2    60   ~ 0
+Text Label 4800 4950 2    60   ~ 0
 EECS
-Text Label 5050 5050 2    60   ~ 0
+Text Label 4150 5050 2    60   ~ 0
 EECLK
 Text Label 5050 5150 2    60   ~ 0
 EEDATA
@@ -924,18 +924,6 @@ NoConn ~ 7550 5650
 NoConn ~ 7550 5950
 Wire Wire Line
 	7550 5750 8600 5750
-$Comp
-L Memory_EEPROM:93LCxxB U8
-U 1 1 6321F24D
-P 3500 7050
-F 0 "U8" H 3750 6800 50  0000 C CNN
-F 1 "93LCxxB" H 3700 7300 50  0000 C CNN
-F 2 "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm" H 3500 7050 50  0001 C CNN
-F 3 "http://ww1.microchip.com/downloads/en/DeviceDoc/20001749K.pdf" H 3500 7050 50  0001 C CNN
-F 4 "93LC46BT-I/SN" H 3500 7050 50  0001 C CNN "MFN"
-	1    3500 7050
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
 	3500 6750 3500 6450
 Wire Wire Line
@@ -1134,4 +1122,58 @@ F 3 "" H 3700 1700 50  0001 C CNN
 $EndComp
 Wire Wire Line
 	3700 1700 3700 1650
+$Comp
+L Device:R R82
+U 1 1 5C8A2FB6
+P 4950 4750
+F 0 "R82" H 5020 4796 50  0000 L CNN
+F 1 "10k" H 5020 4705 50  0000 L CNN
+F 2 "Resistor_SMD:R_0402_1005Metric" V 4880 4750 30  0001 C CNN
+F 3 "" H 4950 4750 30  0000 C CNN
+F 4 "ERJ-2RKF1002X" H 3650 550 50  0001 C CNN "MFN"
+	1    4950 4750
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	4950 4600 4950 4550
+Text Label 4950 4550 0    60   ~ 0
+3V3D
+Wire Wire Line
+	4950 4900 4950 4950
+Connection ~ 4950 4950
+Wire Wire Line
+	4950 4950 4800 4950
+$Comp
+L Device:R R3
+U 1 1 5C8AFF9B
+P 4300 4850
+F 0 "R3" H 4370 4896 50  0000 L CNN
+F 1 "10k" H 4370 4805 50  0000 L CNN
+F 2 "Resistor_SMD:R_0402_1005Metric" V 4230 4850 30  0001 C CNN
+F 3 "" H 4300 4850 30  0000 C CNN
+F 4 "ERJ-2RKF1002X" H 3000 650 50  0001 C CNN "MFN"
+	1    4300 4850
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	4300 5000 4300 5050
+Connection ~ 4300 5050
+Wire Wire Line
+	4300 5050 4150 5050
+Wire Wire Line
+	4300 4700 4300 4650
+Text Label 4300 4650 0    60   ~ 0
+3V3D
+$Comp
+L Memory_EEPROM:93LCxxBxxOT U8
+U 1 1 5C920D7F
+P 3500 7050
+F 0 "U8" H 3250 7300 50  0000 C CNN
+F 1 "93LCxxBxxOT" H 3800 6800 50  0000 C CNN
+F 2 "Package_TO_SOT_SMD:SOT-23-6" H 3500 7050 50  0001 C CNN
+F 3 "http://ww1.microchip.com/downloads/en/DeviceDoc/20001749K.pdf" H 3500 7050 50  0001 C CNN
+F 4 "93LC46BT-I/OT" H 3500 7050 50  0001 C CNN "MFN"
+	1    3500 7050
+	1    0    0    -1  
+$EndComp
 $EndSCHEMATC

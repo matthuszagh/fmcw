@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import ast
 from scipy.signal import butter, filtfilt
+import time
 
 
 def butter_highpass(cutoff, fs, order=4):
@@ -246,6 +247,7 @@ if 1:
             else:
                 a = w*ch1[plot_i]
                 b = w*ch2[plot_i]
+
             a = np.fft.rfft(a)
             b = np.fft.rfft(b)
 
@@ -255,7 +257,9 @@ if 1:
                 x = np.concatenate((b, a)).reshape(2, -1)
             else:
                 x = np.concatenate((a, b)).reshape(2, -1)
+
             fx = np.fft.fftshift(np.fft.fft(x, axis=0, n=angle_pad), axes=0)
+            # fx = np.fft.fftshift(np.fft.fft(x, axis=0), axes=0)
 
             fx = r4_normalize(fx, d)
 
@@ -321,7 +325,6 @@ if 0:
     x1 = np.array(ch1[plot_i], dtype=np.float)
     x2 = np.array(ch2[plot_i], dtype=np.float)
 
-    x1 *= w/(fir_gain*2**(adc_bits-1))
     x2 *= w/(fir_gain*2**(adc_bits-1))
     fx1 = 2*np.fft.rfft(x1)/(len(x1))
     fx2 = 2*np.fft.rfft(x2)/(len(x2))
@@ -341,7 +344,7 @@ if 0:
 
 
 if 1:
-    sweeps = ch2
+    sweeps = ch1
 
     subtract_clutter = True
     subtract_background = False
@@ -400,3 +403,4 @@ if 1:
         # Save png of the plot
         #image.imsave('range_time_raw.png', np.flipud(im))
         #plt.savefig('range_time.png', dpi=500)
+plt.show()

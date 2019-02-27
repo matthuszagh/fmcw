@@ -16,7 +16,7 @@ module fir #( `FMCW_DEFAULT_PARAMS )
         reg [CntW-1:0]        i;
 
         initial begin
-                $readmemh("../fir/taps.hex", h);
+                $readmemh("taps.hex", h);
                 for (i=0; i<NTAPS; i=i+1) begin
                         y[i] = 0;
                 end
