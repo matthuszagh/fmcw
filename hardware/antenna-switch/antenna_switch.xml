@@ -1,0 +1,655 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<export version="D">
+  <design>
+    <source>/home/matt/developer/src/personal/fmcw-radar/hardware/antenna-switch/antenna_switch.sch</source>
+    <date>Wed 27 Feb 2019 08:02:08 PM PST</date>
+    <tool>Eeschema 5.0.1</tool>
+    <sheet number="1" name="/" tstamps="/">
+      <title_block>
+        <title>FMCW</title>
+        <company/>
+        <rev>v2.0c</rev>
+        <date/>
+        <source>antenna_switch.sch</source>
+        <comment number="1" value=""/>
+        <comment number="2" value=""/>
+        <comment number="3" value=""/>
+        <comment number="4" value=""/>
+      </title_block>
+    </sheet>
+    <sheet number="2" name="/RF Switch/" tstamps="/5C9D6C4E/">
+      <title_block>
+        <title/>
+        <company/>
+        <rev/>
+        <date/>
+        <source>RF_Switch.sch</source>
+        <comment number="1" value=""/>
+        <comment number="2" value=""/>
+        <comment number="3" value=""/>
+        <comment number="4" value=""/>
+      </title_block>
+    </sheet>
+  </design>
+  <components>
+    <comp ref="RXb4">
+      <value>Conn_Coaxial</value>
+      <footprint>fmcw:CONSMA003.062</footprint>
+      <datasheet> ~</datasheet>
+      <fields>
+        <field name="MFN">CONSMA003.062</field>
+      </fields>
+      <libsource lib="Connector" part="Conn_Coaxial" description="coaxial connector (BNC, SMA, SMB, SMC, Cinch/RCA, ...)"/>
+      <sheetpath names="/RF Switch/" tstamps="/5C9D6C4E/"/>
+      <tstamp>5C9D8345</tstamp>
+    </comp>
+    <comp ref="RXb3">
+      <value>Conn_Coaxial</value>
+      <footprint>fmcw:CONSMA003.062</footprint>
+      <datasheet> ~</datasheet>
+      <fields>
+        <field name="MFN">CONSMA003.062</field>
+      </fields>
+      <libsource lib="Connector" part="Conn_Coaxial" description="coaxial connector (BNC, SMA, SMB, SMC, Cinch/RCA, ...)"/>
+      <sheetpath names="/RF Switch/" tstamps="/5C9D6C4E/"/>
+      <tstamp>5C9D8361</tstamp>
+    </comp>
+    <comp ref="RXb2">
+      <value>Conn_Coaxial</value>
+      <footprint>fmcw:CONSMA003.062</footprint>
+      <datasheet> ~</datasheet>
+      <fields>
+        <field name="MFN">CONSMA003.062</field>
+      </fields>
+      <libsource lib="Connector" part="Conn_Coaxial" description="coaxial connector (BNC, SMA, SMB, SMC, Cinch/RCA, ...)"/>
+      <sheetpath names="/RF Switch/" tstamps="/5C9D6C4E/"/>
+      <tstamp>5C9D83CC</tstamp>
+    </comp>
+    <comp ref="RXb1">
+      <value>Conn_Coaxial</value>
+      <footprint>fmcw:CONSMA003.062</footprint>
+      <datasheet> ~</datasheet>
+      <fields>
+        <field name="MFN">CONSMA003.062</field>
+      </fields>
+      <libsource lib="Connector" part="Conn_Coaxial" description="coaxial connector (BNC, SMA, SMB, SMC, Cinch/RCA, ...)"/>
+      <sheetpath names="/RF Switch/" tstamps="/5C9D6C4E/"/>
+      <tstamp>5C9D83E0</tstamp>
+    </comp>
+    <comp ref="RXa1">
+      <value>Conn_Coaxial</value>
+      <footprint>fmcw:CONSMA003.062</footprint>
+      <datasheet> ~</datasheet>
+      <fields>
+        <field name="MFN">CONSMA003.062</field>
+      </fields>
+      <libsource lib="Connector" part="Conn_Coaxial" description="coaxial connector (BNC, SMA, SMB, SMC, Cinch/RCA, ...)"/>
+      <sheetpath names="/RF Switch/" tstamps="/5C9D6C4E/"/>
+      <tstamp>5C9D83F6</tstamp>
+    </comp>
+    <comp ref="RXa2">
+      <value>Conn_Coaxial</value>
+      <footprint>fmcw:CONSMA003.062</footprint>
+      <datasheet> ~</datasheet>
+      <fields>
+        <field name="MFN">CONSMA003.062</field>
+      </fields>
+      <libsource lib="Connector" part="Conn_Coaxial" description="coaxial connector (BNC, SMA, SMB, SMC, Cinch/RCA, ...)"/>
+      <sheetpath names="/RF Switch/" tstamps="/5C9D6C4E/"/>
+      <tstamp>5C9D840E</tstamp>
+    </comp>
+    <comp ref="RXa3">
+      <value>Conn_Coaxial</value>
+      <footprint>fmcw:CONSMA003.062</footprint>
+      <datasheet> ~</datasheet>
+      <fields>
+        <field name="MFN">CONSMA003.062</field>
+      </fields>
+      <libsource lib="Connector" part="Conn_Coaxial" description="coaxial connector (BNC, SMA, SMB, SMC, Cinch/RCA, ...)"/>
+      <sheetpath names="/RF Switch/" tstamps="/5C9D6C4E/"/>
+      <tstamp>5C9D8428</tstamp>
+    </comp>
+    <comp ref="RXa4">
+      <value>Conn_Coaxial</value>
+      <footprint>fmcw:CONSMA003.062</footprint>
+      <datasheet> ~</datasheet>
+      <fields>
+        <field name="MFN">CONSMA003.062</field>
+      </fields>
+      <libsource lib="Connector" part="Conn_Coaxial" description="coaxial connector (BNC, SMA, SMB, SMC, Cinch/RCA, ...)"/>
+      <sheetpath names="/RF Switch/" tstamps="/5C9D6C4E/"/>
+      <tstamp>5C9D8444</tstamp>
+    </comp>
+    <comp ref="RCF2">
+      <value>Conn_Coaxial</value>
+      <footprint>fmcw:CONSMA003.062</footprint>
+      <datasheet> ~</datasheet>
+      <fields>
+        <field name="MFN">CONSMA003.062</field>
+      </fields>
+      <libsource lib="Connector" part="Conn_Coaxial" description="coaxial connector (BNC, SMA, SMB, SMC, Cinch/RCA, ...)"/>
+      <sheetpath names="/RF Switch/" tstamps="/5C9D6C4E/"/>
+      <tstamp>5C9D8462</tstamp>
+    </comp>
+    <comp ref="RCF1">
+      <value>Conn_Coaxial</value>
+      <footprint>fmcw:CONSMA003.062</footprint>
+      <datasheet> ~</datasheet>
+      <fields>
+        <field name="MFN">CONSMA003.062</field>
+      </fields>
+      <libsource lib="Connector" part="Conn_Coaxial" description="coaxial connector (BNC, SMA, SMB, SMC, Cinch/RCA, ...)"/>
+      <sheetpath names="/RF Switch/" tstamps="/5C9D6C4E/"/>
+      <tstamp>5C9D8542</tstamp>
+    </comp>
+    <comp ref="J8">
+      <value>Conn_01x04</value>
+      <footprint>Connector_PinHeader_1.27mm:PinHeader_1x04_P1.27mm_Vertical</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Connector_Generic" part="Conn_01x04" description="Generic connector, single row, 01x04, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <sheetpath names="/RF Switch/" tstamps="/5C9D6C4E/"/>
+      <tstamp>5C9F4420</tstamp>
+    </comp>
+    <comp ref="C125">
+      <value>22p</value>
+      <footprint>Capacitor_SMD:C_0402_1005Metric</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="MFN">500R07S220GV4T</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <sheetpath names="/RF Switch/" tstamps="/5C9D6C4E/"/>
+      <tstamp>5CA12776</tstamp>
+    </comp>
+    <comp ref="C192">
+      <value>22p</value>
+      <footprint>Capacitor_SMD:C_0402_1005Metric</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="MFN">500R07S220GV4T</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <sheetpath names="/RF Switch/" tstamps="/5C9D6C4E/"/>
+      <tstamp>5CA1BB76</tstamp>
+    </comp>
+    <comp ref="C143">
+      <value>22p</value>
+      <footprint>Capacitor_SMD:C_0402_1005Metric</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="MFN">500R07S220GV4T</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <sheetpath names="/RF Switch/" tstamps="/5C9D6C4E/"/>
+      <tstamp>5CA1BBC8</tstamp>
+    </comp>
+    <comp ref="C158">
+      <value>22p</value>
+      <footprint>Capacitor_SMD:C_0402_1005Metric</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="MFN">500R07S220GV4T</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <sheetpath names="/RF Switch/" tstamps="/5C9D6C4E/"/>
+      <tstamp>5CA1BC2E</tstamp>
+    </comp>
+    <comp ref="C155">
+      <value>22p</value>
+      <footprint>Capacitor_SMD:C_0402_1005Metric</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="MFN">500R07S220GV4T</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <sheetpath names="/RF Switch/" tstamps="/5C9D6C4E/"/>
+      <tstamp>5CA1BC7C</tstamp>
+    </comp>
+    <comp ref="C126">
+      <value>22p</value>
+      <footprint>Capacitor_SMD:C_0402_1005Metric</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="MFN">500R07S220GV4T</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <sheetpath names="/RF Switch/" tstamps="/5C9D6C4E/"/>
+      <tstamp>5CA1BCD6</tstamp>
+    </comp>
+    <comp ref="C167">
+      <value>22p</value>
+      <footprint>Capacitor_SMD:C_0402_1005Metric</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="MFN">500R07S220GV4T</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <sheetpath names="/RF Switch/" tstamps="/5C9D6C4E/"/>
+      <tstamp>5CA1BD2E</tstamp>
+    </comp>
+    <comp ref="C146">
+      <value>22p</value>
+      <footprint>Capacitor_SMD:C_0402_1005Metric</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="MFN">500R07S220GV4T</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <sheetpath names="/RF Switch/" tstamps="/5C9D6C4E/"/>
+      <tstamp>5CA1BD82</tstamp>
+    </comp>
+    <comp ref="C85">
+      <value>22p</value>
+      <footprint>Capacitor_SMD:C_0402_1005Metric</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="MFN">500R07S220GV4T</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <sheetpath names="/RF Switch/" tstamps="/5C9D6C4E/"/>
+      <tstamp>5CA1BDE4</tstamp>
+    </comp>
+    <comp ref="C86">
+      <value>22p</value>
+      <footprint>Capacitor_SMD:C_0402_1005Metric</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="MFN">500R07S220GV4T</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <sheetpath names="/RF Switch/" tstamps="/5C9D6C4E/"/>
+      <tstamp>5CA1BE4E</tstamp>
+    </comp>
+    <comp ref="C117">
+      <value>10n</value>
+      <footprint>Capacitor_SMD:C_0402_1005Metric</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="MFN">GRM155R71E103KA01D</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <sheetpath names="/RF Switch/" tstamps="/5C9D6C4E/"/>
+      <tstamp>5CA1E0EB</tstamp>
+    </comp>
+    <comp ref="C111">
+      <value>1u</value>
+      <footprint>Capacitor_SMD:C_0603_1608Metric</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="MFN">CL10B105MO8NNWC</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <sheetpath names="/RF Switch/" tstamps="/5C9D6C4E/"/>
+      <tstamp>5CA23583</tstamp>
+    </comp>
+    <comp ref="C250">
+      <value>10n</value>
+      <footprint>Capacitor_SMD:C_0402_1005Metric</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="MFN">GRM155R71E103KA01D</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <sheetpath names="/RF Switch/" tstamps="/5C9D6C4E/"/>
+      <tstamp>5CA2F04A</tstamp>
+    </comp>
+    <comp ref="C193">
+      <value>1u</value>
+      <footprint>Capacitor_SMD:C_0603_1608Metric</footprint>
+      <datasheet>~</datasheet>
+      <fields>
+        <field name="MFN">CL10B105MO8NNWC</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <sheetpath names="/RF Switch/" tstamps="/5C9D6C4E/"/>
+      <tstamp>5CA2F05C</tstamp>
+    </comp>
+    <comp ref="U40">
+      <value>SN74LVC2G14</value>
+      <footprint>Package_TO_SOT_SMD:SOT-23-6</footprint>
+      <fields>
+        <field name="MFN">SN74LVC2G14DBVR</field>
+      </fields>
+      <libsource lib="fmcw-rescue" part="SN74LVC2G14" description=""/>
+      <sheetpath names="/RF Switch/" tstamps="/5C9D6C4E/"/>
+      <tstamp>5CA527B6</tstamp>
+    </comp>
+    <comp ref="U41">
+      <value>HMC7992</value>
+      <footprint>Package_CSP:LFCSP-16-1EP_3x3mm_P0.5mm_EP1.7x1.7mm</footprint>
+      <datasheet>https://www.analog.com/media/en/technical-documentation/data-sheets/HMC7992.pdf</datasheet>
+      <fields>
+        <field name="MFN">HMC7992LP3DETR</field>
+      </fields>
+      <libsource lib="RF_Switch" part="HMC7992" description="SP4T 100MHz-6GHz absorptive switch, 50 Ohm, LFCSP-16"/>
+      <sheetpath names="/RF Switch/" tstamps="/5C9D6C4E/"/>
+      <tstamp>5CA73414</tstamp>
+    </comp>
+    <comp ref="U42">
+      <value>HMC7992</value>
+      <footprint>Package_CSP:LFCSP-16-1EP_3x3mm_P0.5mm_EP1.7x1.7mm</footprint>
+      <datasheet>https://www.analog.com/media/en/technical-documentation/data-sheets/HMC7992.pdf</datasheet>
+      <fields>
+        <field name="MFN">HMC7992LP3DETR</field>
+      </fields>
+      <libsource lib="RF_Switch" part="HMC7992" description="SP4T 100MHz-6GHz absorptive switch, 50 Ohm, LFCSP-16"/>
+      <sheetpath names="/RF Switch/" tstamps="/5C9D6C4E/"/>
+      <tstamp>5CA735D6</tstamp>
+    </comp>
+    <comp ref="H6">
+      <value>MountingHole_Pad</value>
+      <footprint>MountingHole:MountingHole_2.5mm_Pad_Via</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Mechanical" part="MountingHole_Pad" description="Mounting Hole with connection"/>
+      <sheetpath names="/RF Switch/" tstamps="/5C9D6C4E/"/>
+      <tstamp>5CA79747</tstamp>
+    </comp>
+    <comp ref="H7">
+      <value>MountingHole_Pad</value>
+      <footprint>MountingHole:MountingHole_2.5mm_Pad_Via</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Mechanical" part="MountingHole_Pad" description="Mounting Hole with connection"/>
+      <sheetpath names="/RF Switch/" tstamps="/5C9D6C4E/"/>
+      <tstamp>5CA797BF</tstamp>
+    </comp>
+    <comp ref="H4">
+      <value>MountingHole_Pad</value>
+      <footprint>MountingHole:MountingHole_2.5mm_Pad_Via</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Mechanical" part="MountingHole_Pad" description="Mounting Hole with connection"/>
+      <sheetpath names="/RF Switch/" tstamps="/5C9D6C4E/"/>
+      <tstamp>5CA79847</tstamp>
+    </comp>
+    <comp ref="H5">
+      <value>MountingHole_Pad</value>
+      <footprint>MountingHole:MountingHole_2.5mm_Pad_Via</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Mechanical" part="MountingHole_Pad" description="Mounting Hole with connection"/>
+      <sheetpath names="/RF Switch/" tstamps="/5C9D6C4E/"/>
+      <tstamp>5CA798DD</tstamp>
+    </comp>
+  </components>
+  <libparts>
+    <libpart lib="Connector" part="Conn_Coaxial">
+      <description>coaxial connector (BNC, SMA, SMB, SMC, Cinch/RCA, ...)</description>
+      <docs> ~</docs>
+      <footprints>
+        <fp>*BNC*</fp>
+        <fp>*SMA*</fp>
+        <fp>*SMB*</fp>
+        <fp>*SMC*</fp>
+        <fp>*Cinch*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">J</field>
+        <field name="Value">Conn_Coaxial</field>
+      </fields>
+      <pins>
+        <pin num="1" name="In" type="passive"/>
+        <pin num="2" name="Ext" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Connector_Generic" part="Conn_01x04">
+      <description>Generic connector, single row, 01x04, script generated (kicad-library-utils/schlib/autogen/connector/)</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>Connector*:*_1x??_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">J</field>
+        <field name="Value">Conn_01x04</field>
+      </fields>
+      <pins>
+        <pin num="1" name="Pin_1" type="passive"/>
+        <pin num="2" name="Pin_2" type="passive"/>
+        <pin num="3" name="Pin_3" type="passive"/>
+        <pin num="4" name="Pin_4" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Device" part="C">
+      <description>Unpolarized capacitor</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>C_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">C</field>
+        <field name="Value">C</field>
+      </fields>
+      <pins>
+        <pin num="1" name="~" type="passive"/>
+        <pin num="2" name="~" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Mechanical" part="MountingHole_Pad">
+      <description>Mounting Hole with connection</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>MountingHole*Pad*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">H</field>
+        <field name="Value">MountingHole_Pad</field>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="input"/>
+      </pins>
+    </libpart>
+    <libpart lib="RF_Switch" part="HMC7992">
+      <description>SP4T 100MHz-6GHz absorptive switch, 50 Ohm, LFCSP-16</description>
+      <docs>https://www.analog.com/media/en/technical-documentation/data-sheets/HMC7992.pdf</docs>
+      <footprints>
+        <fp>LFCSP*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">U</field>
+        <field name="Value">HMC7992</field>
+        <field name="Footprint">Package_CSP:LFCSP-16-1EP_3x3mm_P0.5mm_EP1.7x1.7mm</field>
+      </fields>
+      <pins>
+        <pin num="1" name="RF4" type="passive"/>
+        <pin num="2" name="GND" type="power_in"/>
+        <pin num="3" name="GND" type="passive"/>
+        <pin num="4" name="RF3" type="passive"/>
+        <pin num="5" name="GND" type="passive"/>
+        <pin num="6" name="VDD" type="power_in"/>
+        <pin num="7" name="B" type="input"/>
+        <pin num="8" name="A" type="input"/>
+        <pin num="9" name="RF2" type="passive"/>
+        <pin num="10" name="GND" type="passive"/>
+        <pin num="11" name="GND" type="passive"/>
+        <pin num="12" name="RF1" type="passive"/>
+        <pin num="13" name="GND" type="passive"/>
+        <pin num="14" name="GND" type="passive"/>
+        <pin num="15" name="RFC" type="passive"/>
+        <pin num="16" name="GND" type="passive"/>
+        <pin num="17" name="GND" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="fmcw-rescue" part="SN74LVC2G14">
+      <fields>
+        <field name="Reference">U</field>
+        <field name="Value">SN74LVC2G14</field>
+        <field name="Footprint">Package_TO_SOT_SMD:SOT-23-6</field>
+      </fields>
+      <pins>
+        <pin num="1" name="1A" type="input"/>
+        <pin num="2" name="GND" type="power_in"/>
+        <pin num="3" name="2A" type="input"/>
+        <pin num="4" name="2Y" type="output"/>
+        <pin num="5" name="VCC" type="power_in"/>
+        <pin num="6" name="1Y" type="output"/>
+      </pins>
+    </libpart>
+  </libparts>
+  <libraries>
+    <library logical="Connector">
+      <uri>/home/matt/developer/src/collab/kicad/kicad-symbols/Connector.lib</uri>
+    </library>
+    <library logical="Connector_Generic">
+      <uri>/home/matt/developer/src/collab/kicad/kicad-symbols/Connector_Generic.lib</uri>
+    </library>
+    <library logical="Device">
+      <uri>/home/matt/developer/src/collab/kicad/kicad-symbols/Device.lib</uri>
+    </library>
+    <library logical="Mechanical">
+      <uri>/home/matt/developer/src/collab/kicad/kicad-symbols/Mechanical.lib</uri>
+    </library>
+    <library logical="RF_Switch">
+      <uri>/home/matt/developer/src/collab/kicad/kicad-symbols/RF_Switch.lib</uri>
+    </library>
+    <library logical="fmcw-rescue">
+      <uri>/home/matt/developer/src/personal/fmcw-radar/hardware/antenna-switch/fmcw-rescue.lib</uri>
+    </library>
+  </libraries>
+  <nets>
+    <net code="1" name="Net-(C143-Pad2)">
+      <node ref="U41" pin="4"/>
+      <node ref="C143" pin="2"/>
+    </net>
+    <net code="2" name="Net-(U40-Pad6)">
+      <node ref="U41" pin="7"/>
+      <node ref="U40" pin="6"/>
+    </net>
+    <net code="3" name="Net-(C158-Pad2)">
+      <node ref="U41" pin="1"/>
+      <node ref="C158" pin="2"/>
+    </net>
+    <net code="4" name="Net-(C125-Pad2)">
+      <node ref="C125" pin="2"/>
+      <node ref="U41" pin="12"/>
+    </net>
+    <net code="5" name="Net-(U40-Pad4)">
+      <node ref="U40" pin="4"/>
+      <node ref="U41" pin="8"/>
+    </net>
+    <net code="6" name="Net-(C192-Pad2)">
+      <node ref="U41" pin="9"/>
+      <node ref="C192" pin="2"/>
+    </net>
+    <net code="7" name="Net-(C146-Pad2)">
+      <node ref="C146" pin="2"/>
+      <node ref="U42" pin="1"/>
+    </net>
+    <net code="8" name="Net-(C155-Pad2)">
+      <node ref="U42" pin="12"/>
+      <node ref="C155" pin="2"/>
+    </net>
+    <net code="9" name="VDD">
+      <node ref="C117" pin="2"/>
+      <node ref="U41" pin="6"/>
+      <node ref="U40" pin="5"/>
+      <node ref="U42" pin="6"/>
+      <node ref="C111" pin="2"/>
+      <node ref="J8" pin="2"/>
+      <node ref="C250" pin="2"/>
+      <node ref="C193" pin="2"/>
+    </net>
+    <net code="10" name="GND">
+      <node ref="U41" pin="13"/>
+      <node ref="U41" pin="14"/>
+      <node ref="U41" pin="11"/>
+      <node ref="U42" pin="11"/>
+      <node ref="RXb4" pin="2"/>
+      <node ref="RXb1" pin="2"/>
+      <node ref="U41" pin="5"/>
+      <node ref="U41" pin="3"/>
+      <node ref="U41" pin="2"/>
+      <node ref="U41" pin="17"/>
+      <node ref="J8" pin="1"/>
+      <node ref="RCF1" pin="2"/>
+      <node ref="U41" pin="16"/>
+      <node ref="RCF2" pin="2"/>
+      <node ref="RXa3" pin="2"/>
+      <node ref="RXa2" pin="2"/>
+      <node ref="C117" pin="1"/>
+      <node ref="RXa1" pin="2"/>
+      <node ref="U42" pin="10"/>
+      <node ref="RXb2" pin="2"/>
+      <node ref="RXb3" pin="2"/>
+      <node ref="RXa4" pin="2"/>
+      <node ref="U42" pin="13"/>
+      <node ref="U41" pin="10"/>
+      <node ref="U40" pin="2"/>
+      <node ref="U42" pin="2"/>
+      <node ref="C250" pin="1"/>
+      <node ref="C193" pin="1"/>
+      <node ref="U42" pin="17"/>
+      <node ref="U42" pin="16"/>
+      <node ref="U42" pin="14"/>
+      <node ref="C111" pin="1"/>
+      <node ref="H5" pin="1"/>
+      <node ref="H4" pin="1"/>
+      <node ref="H7" pin="1"/>
+      <node ref="H6" pin="1"/>
+      <node ref="U42" pin="5"/>
+      <node ref="U42" pin="3"/>
+    </net>
+    <net code="11" name="Net-(C167-Pad2)">
+      <node ref="C167" pin="2"/>
+      <node ref="U42" pin="4"/>
+    </net>
+    <net code="12" name="Net-(C126-Pad2)">
+      <node ref="C126" pin="2"/>
+      <node ref="U42" pin="9"/>
+    </net>
+    <net code="13" name="Net-(C143-Pad1)">
+      <node ref="C143" pin="1"/>
+      <node ref="RXb2" pin="1"/>
+    </net>
+    <net code="14" name="Net-(C85-Pad2)">
+      <node ref="C85" pin="2"/>
+      <node ref="RCF1" pin="1"/>
+    </net>
+    <net code="15" name="Net-(C86-Pad2)">
+      <node ref="RCF2" pin="1"/>
+      <node ref="C86" pin="2"/>
+    </net>
+    <net code="16" name="/RF Switch/A">
+      <node ref="U40" pin="3"/>
+      <node ref="J8" pin="3"/>
+      <node ref="U42" pin="8"/>
+    </net>
+    <net code="17" name="/RF Switch/B">
+      <node ref="U42" pin="7"/>
+      <node ref="J8" pin="4"/>
+      <node ref="U40" pin="1"/>
+    </net>
+    <net code="18" name="Net-(C158-Pad1)">
+      <node ref="RXb1" pin="1"/>
+      <node ref="C158" pin="1"/>
+    </net>
+    <net code="19" name="Net-(C155-Pad1)">
+      <node ref="RXa1" pin="1"/>
+      <node ref="C155" pin="1"/>
+    </net>
+    <net code="20" name="Net-(C126-Pad1)">
+      <node ref="RXa2" pin="1"/>
+      <node ref="C126" pin="1"/>
+    </net>
+    <net code="21" name="Net-(C167-Pad1)">
+      <node ref="RXa3" pin="1"/>
+      <node ref="C167" pin="1"/>
+    </net>
+    <net code="22" name="Net-(C146-Pad1)">
+      <node ref="C146" pin="1"/>
+      <node ref="RXa4" pin="1"/>
+    </net>
+    <net code="23" name="Net-(C85-Pad1)">
+      <node ref="U42" pin="15"/>
+      <node ref="C85" pin="1"/>
+    </net>
+    <net code="24" name="Net-(C86-Pad1)">
+      <node ref="C86" pin="1"/>
+      <node ref="U41" pin="15"/>
+    </net>
+    <net code="25" name="Net-(C125-Pad1)">
+      <node ref="RXb4" pin="1"/>
+      <node ref="C125" pin="1"/>
+    </net>
+    <net code="26" name="Net-(C192-Pad1)">
+      <node ref="RXb3" pin="1"/>
+      <node ref="C192" pin="1"/>
+    </net>
+  </nets>
+</export>

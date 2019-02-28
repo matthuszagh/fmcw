@@ -1,3 +1,0 @@
-(fp_lib_table
-  (lib (name fmcw)(type KiCad)(uri "$(KIPRJMOD)/fmcw.pretty")(options "")(descr ""))
-)

@@ -31,7 +31,6 @@ doc/auto
 *.vtr
 openems/tmp
 openems/octave-workspace
-/hardware/fmcw
 /hardware/fmcw_bom_.csv
 *__pycache__*
 *size(H).ps
