@@ -22,7 +22,7 @@ module downsample_tb #( `FMCW_DEFAULT_PARAMS );
                 data_i <= data_i + 1;
         end
 
-        always #25 clk_i = !clk_i;
+        always #12.5 clk_i = !clk_i;
 
         downsample downsample (.clk_i(clk_i),
                                .clk_o(clk_o),

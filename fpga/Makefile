@@ -1,7 +1,7 @@
-PROJ      = top
-DEVICE    = xc7a15tftg256-1
-FILES = hdl/*
-OPENOCD_DIR = openocd
+PROJ		= top
+DEVICE		= xc7a15tftg256-1
+FILES		= hdl/*
+OPENOCD_DIR	= openocd
 
 all: | synth vivado prog_fpga
 

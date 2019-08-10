@@ -1,0 +1,224 @@
+#+title: FMCW Radar
+
+* overview
+** block diagram
+\begin{tikzpicture}
+\draw
+(1,1) -- (0,0) -- (-1,1);
+\draw[thick,rounded corners=8pt]
+(0,0) -- (0,-2);
+\end{tikzpicture}
+** physics
+This FMCW radar can compute the 2-dimensional position to remote
+objects. It does this by computing the range and angle. Unlike some
+other radars, this radar does not measure doppler shift and as a
+result does not directly measure the speed of remote objects. However,
+the speed can be computed by taking the change in position over time.
+
+*** range
+The distance computation is performed by measuring the time between
+when a signal is transmitted and when it is received after having
+bounced off a remote object. Using the relationship between the speed
+of light and time of travel, we can back out the distance to a remote
+target.
+
+\begin{equation*}
+d = \frac{ct_d}{2}
+\end{equation*}
+
+In order to measure the round-trip travel time, we transmit a
+sinusoidal signal that ramps in frequency at a predetermined rate
+between predetermined start and stop frequencies. The frequency-time
+graph of the transmitted and received signals is shown below.
+
+#+caption: FMCW frequency ramp.
+[[./data/fmcw-principle.png]]
+
+Since we know the ramp rate and duration of one ramp, we can replace
+our dependence on round-trip time with a dependence on frequency
+difference between our transmitted and received signals.
+
+\begin{equation*}
+d = \frac{ct_{\text{ramp}} \Delta f}{2f_{\text{ramp}}}
+\end{equation*}
+
+Take the equation for a transmitted signal as
+
+\begin{align*}
+  s_{\text{t}}(t) &= T \sin\left(\omega_{\text{t}}(t) t\right)  && \text{$T$ is the transmitted
+                                                                   signal's amplitude.} \\
+                  &= T \sin\left(2 \pi f(t) t\right) \\
+                  &= T \sin\left(2 \pi t \left( f_0 + t \frac{f_{\text{ramp}}}{t_{\text{ramp}}}
+                    \right) \right)
+\end{align*}
+
+The corresponding received signal is (ignoring the doppler shift which
+is insignificant at the speeds we care about)
+
+\begin{align*}
+  s_{\text{r}}(t) &= R \sin\left(\omega_{\text{r}}(t) t\right) \\
+                  &= R \sin\left(\omega_{\text{t}}(t-t_d) t\right) \\
+                  &= R \sin\left(2 \pi f(t-t_d) t\right) \\
+                  &= R \sin\left(2 \pi t \left( f_0 + (t-t_d) \frac{f_{\text{ramp}}}{t_{\text{ramp}}}
+                    \right) \right)
+\end{align*}
+
+Mixing the transmitted and received signals gives
+
+\begin{align*}
+  m &= TR \sin\left(2 \pi t \left( f_0 + t \frac{f_{\text{ramp}}}{t_{\text{ramp}}}
+                    \right) \right)
+      \sin\left(2 \pi t \left( f_0 + (t-t_d) \frac{f_{\text{ramp}}}{t_{\text{ramp}}}
+      \right) \right) \\
+  \sin\theta\sin\phi &= \frac{1}{2} \left(\cos(\theta-\phi) -
+                       \cos(\theta+\phi)\right) \\
+  &\approx \frac{1}{2}\cos(\theta-\phi) \\
+  m &\approx \frac{1}{2}TR\cos(2\pi\Delta f t)
+\end{align*}
+
+$\cos(\theta+\phi)$ falls out of the equation because its frequency is too
+high for our receivers to detect. We can compute the fourier transform
+of the mixer output to get the frequency and then plug that into the
+range equation above to get the distance to the target. The amplitude
+of the mixer output is related to strength of the signal.
+
+*** angle
+The angle to the target is computed by beamforming
+(i.e. phase-shifting one channel and summing both channels). See
+hforsten's blog post for a description of this.
+
+**** WRONG
+To compute the angle to our target we can find the difference in
+distance computed by each channel. Naively, we could try to do this by
+using the same method as for the range calculation (i.e. compute the
+difference in the difference frequencies). However, the difference
+between the frequencies picked up by each receiver channel would be
+too small to detect. To see this, solve the distance equation above
+using a max distance difference of $\lambda/2$ (the distance between the
+receiver antennas). Using a center frequency of 5.6GHz and a ramp
+bandwidth of 600MHz, we get a maximum difference frequency of
+200Hz. When we compute the [[id:9a522962-63bc-4569-b042-3b691549b8a6][fourier transform]], the frequency bins will
+be spaced at 600kHz, which is way too crude to detect a 200Hz
+difference frequency.
+
+Instead, we can use the phase difference between the signals
+
+* components
+** USB interface
+A FT2232H chip is used to pass data between the host PC and FPGA. It
+is used in 245 synchronous FIFO mode, which allows USB 2.0 high-speed
+transfer rates (480Mb/s).
+
+*** write transaction
+A write transaction transmits data from the FPGA to the host PC.
+
+**** timing details
+The FPGA sends the FT2232H chip data for transmission using the 8-bit
+ADBUS channel. The FT2232H registers this data and sends it over the
+DM and DP USB data lines to the PC. FT2232H signals that it can
+receive new data for transmission by driving the TXE# line low. When
+the TXE# line is low, the FPGA can signal data for transmission by
+driving the WR# line low and making the data available on the ADBUS
+channel.
+
+#+caption: FT2232H write transaction timing diagram. The setup time
+#+caption: for WR# and ADBUS0 is between 1/2 and 1 clock period.
+
+\begin{tikztimingtable}[%
+  timing/dslope=0.1,
+  timing/.style={x=5ex,y=2ex},
+  x=5ex,
+  timing/rowdist=3ex,
+  timing/name/.style={font=\sffamily\scriptsize}
+]
+\busref{CLKOUT (60MHz)} & 25{c} \\
+\busref{TXE\#}          & 3h 20l 2h \\
+\busref{WR\#}           & 5h 18l 2h \\
+\busref{ADBUS[7:0]}     & 5x 3d{0} 2d{1} 2d{2} 2d{3} 2d{4} 2d{5} 2d{6} 2d{7} 3x \\
+\extracode
+  \begin{pgfonlayer}{background}
+    \begin{scope}[thick]
+      \vertlines[blue]{3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5, 10.5}
+    \end{scope}
+  \end{pgfonlayer}
+\end{tikztimingtable}
+
+*** read transaction
+A read transaction sends data from the host PC to the FPGA.
+
+** receiver
+** digitization
+The ADC reads both analog input channels simultaneously and
+multiplexes the digital output on its 12-bit digital output
+channel. Channel A data is output roughly in line with the clock at
+high voltage and channel B is output roughly in line with the clock at
+low voltage.
+
+** signal processing
+The FPGA receives a 12-bit sample from each channel every 25ns (40MHz)
+over a sweep duration of 1ms. Following the 1ms sweep, no data is
+received for 2ms after which the process repeats.
+
+*** filters
+**** finite-impulse response
+The FPGA first performs an FIR filter on the input data from each
+channel. This reduces the strength of any signal frequencies above
+2MHz. The filter is implemented as a timewise convolution in real-time
+as the singal is sampled.
+
+**** kaiser window
+After the FIR filter, a kaiser window is applied to the sample. This
+also occurs in real-time on the sample and involves a simple pointwise
+multiplication of each kaiser window coefficient by each sample.
+
+Should this be performed before decimating?
+
+***** TODO clarify
+Usually, kaiser windows are used to create FIRs. How is it that we can
+pointwise multiply the sample by the window coefficients rather than
+computing a convolution? Check the numpy documentation and the kiaser
+window section in Discrete-Time Signal Processing.
+
+*** downsampling
+In order to make our data easier to process, we decimate it down to
+2MHz. This leaves us with 2000 samples per channel per 3ms.
+
+**** TODO correspondence b/e new frequency and max distance
+
+*** fft
+:PROPERTIES:
+:ID:       9a522962-63bc-4569-b042-3b691549b8a6
+:END:
+After downsampling we perform a real FFT. By pipelining, we can
+perform this in real-time as the signal is sampled. See the ZipCPU
+tutorial on how to do this.
+
+**** broad strokes
+We sample each receiver channel at a frequency of 2MHz over 1ms. This
+corresponds to 2000 samples per channel per sweep. We then take the
+FFT of each channel, which yields 2000 frequency bins. Since frequency
+resolution is equal to $\Delta f = f_s/N$, the frequency resolution is
+1kHz. However, only the first half of the bins give real results
+(critical sampling rate is twice nyquist frequency), so we are left
+with 1000 freq bins of 1kHz resolution. Using the range equation we
+can translate these frequency bins into distance bins, spaced 0.25m
+apart. The max distance is 250m. The magnitude in each bin corresponds
+to the strength of the signal at that distance.
+
+Now we have 2 rows of 1000 elements each. If we add 98 rows of 1000
+zeros each, and compute the fft for each column of 100, the first
+column represents the signal strength between 0 and 0.25m for each
+angle between -\pi and \pi radians?? The starting angle is the first row
+and the ending angle is the last row. The last column is the 250m
+distance for the same angles. Basically, we're left with the signal
+strength at each angle and distance.
+
+** graphical rendering
+The host PC takes the range/angle data from the FPGA and plots it
+using matplotlib. See [[https://matplotlib.org/3.1.1/api/animation_api.html][this example]] and the [[https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.animation.FuncAnimation.html#matplotlib.animation.FuncAnimation][FuncAnimation]] documentation
+for how to perform realtime plots with matplotlib. The host PC
+simultaneously plots the realtime range and angle (using a polar plot,
+where each point is a dB strength) and an incrementally updated (also
+realtime) range-time plot. It provides the option to record both.
+
+* antennas

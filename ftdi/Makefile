@@ -1,4 +1,4 @@
-LIBFTDI_DIR = /home/matt/developer/src/third-party/libftdi/build/examples
+LIBFTDI_DIR = /home/matt/src/libftdi/build/examples
 CONF_FILE = eeprom.conf
 
 all:

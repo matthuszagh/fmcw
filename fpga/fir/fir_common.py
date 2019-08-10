@@ -1,16 +1,20 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 import math
 
 
 def quantize(dbl, w):
-    """Quantize a double precision floating point for a given bit width."""
+    """Quantize a double precision floating point for a given bit
+    width."""
     return round(dbl*(2**w))
 
 
 def compute_bits(iw, fname):
-    """Compute number of bits needed to hold output for a given input width. Use the actual impulse
-    values rather than log2(NTAPS) guard bits, which is usually excessive."""
+    """Compute number of bits needed to hold output for a given input
+    width. Use the actual impulse values rather than log2(NTAPS) guard
+    bits, which is usually excessive.
+
+    """
     max_input = 2**(iw-1)-1
     acc = 0
 

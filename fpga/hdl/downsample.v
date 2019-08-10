@@ -18,7 +18,7 @@ module downsample #( `FMCW_DEFAULT_PARAMS )
         end
 
         always @(posedge clk_i) begin
-                if (cnt == (M>>1)-1) begin
+                if (cnt == (M>>1)-1) begin /* M is the downsampling rate */
                         cnt <= 0;
                         clk_o <= !clk_o;
                         data_o <= data_i;

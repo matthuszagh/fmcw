@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 import getopt
 import sys
@@ -20,7 +20,8 @@ def help():
 
 
 def rms_err(dbl_arr, w):
-    """Compute the RMS error of a bit quantization compared to the double precision floating point representation."""
+    """Compute the RMS error of a bit quantization compared to the double
+    precision floating point representation."""
     err_acc = 0
     for dbl in dbl_arr:
         err_acc += (dbl - (quantize(dbl, w)/2**w))**2

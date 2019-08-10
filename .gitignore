@@ -38,3 +38,7 @@ openems/octave-workspace
 **/img
 *.pyc
 /pc/out.mp4
+/doc/_minted*
+*.vcd
+*.mp4
+**/ltximg

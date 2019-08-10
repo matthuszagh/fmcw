@@ -5,26 +5,26 @@
 module top #( `FMCW_DEFAULT_PARAMS )
         (
          // clocks, resets, LEDs, connectors
-         input wire             clk_i, /* 40MHz */
-         output wire            led_o, /* Indicates packet sent between PC and FPGA. */
+         input wire             clk_i,   /* 40MHz */
+         output wire            led_o,   /* Indicates packet sent between PC and FPGA. */
          inout wire [GPIOW-1:0] ext1_io, /* General-purpose I/O. */
          inout wire [GPIOW-1:0] ext2_io, /* General-purpose I/O. */
 
          // FT2232H USB interface.
-         inout wire [USBDW-1:0] ft_data_io, /* FIFO data */
-         input wire             ft_rxf_n_i, /* Low when there is data in the buffer that can be read. */
-         input wire             ft_txe_n_i, /* Low when there is room for transmission data in the FIFO. */
-         output wire            ft_rd_n_o, /* Drive low to load read data to ft_data_io each clock cycle. */
-         output wire            ft_wr_n_o, /* Drive low to write ft_data_io to FIFO for transmission. */
-         output wire            ft_siwua_n_o, /* Flush transmission data to USB immediately. */
-         input wire             ft_clkout_i, /* 60MHz clock used to synchronize data transfers. */
-         output wire            ft_oe_n_o, /* Drive low one period before ft_rd_n_o to signal read. */
+         inout wire [USBDW-1:0] ft_data_io,     /* FIFO data */
+         input wire             ft_rxf_n_i,     /* Low when there is data in the buffer that can be read. */
+         input wire             ft_txe_n_i,     /* Low when there is room for transmission data in the FIFO. */
+         output wire            ft_rd_n_o,      /* Drive low to load read data to ft_data_io each clock cycle. */
+         output wire            ft_wr_n_o,      /* Drive low to write ft_data_io to FIFO for transmission. */
+         output wire            ft_siwua_n_o,   /* Flush transmission data to USB immediately. */
+         input wire             ft_clkout_i,    /* 60MHz clock used to synchronize data transfers. */
+         output wire            ft_oe_n_o,      /* Drive low one period before ft_rd_n_o to signal read. */
          input wire             ft_suspend_n_i, /* Low when USB in suspend mode. */
 
          // ADC
-         input wire [IW-1:0]    adc_d_i, /* Input data from ADC. */
-         input wire [1:0]       adc_of_i, /* High value indicates overflow or underflow. */
-         output reg [1:0]       adc_oe_o, /* 10 turns on channel A and turns off channel B. */
+         input wire [IW-1:0]    adc_d_i,    /* Input data from ADC. */
+         input wire [1:0]       adc_of_i,   /* High value indicates overflow or underflow. */
+         output reg [1:0]       adc_oe_o,   /* 10 turns on channel A and turns off channel B. */
          output reg [1:0]       adc_shdn_o, /* Same state as adc_oe. */
 
          // SD card
@@ -57,11 +57,11 @@ module top #( `FMCW_DEFAULT_PARAMS )
          );
 
         initial begin
-                adc_oe_o = 2'b10;
-                adc_shdn_o = 2'b10;
-                sd_clk_o = 1'b0;
+                adc_oe_o     = 2'b10;
+                adc_shdn_o   = 2'b10;
+                sd_clk_o     = 1'b0;
                 mix_enbl_n_o = 1'b0;
-                pa_off_o = 1'b0;
+                pa_off_o     = 1'b0;
                 flash_cs_n_o = 1'b1;
                 flash_mosi_o = 1'b0;
         end
@@ -83,22 +83,57 @@ module top #( `FMCW_DEFAULT_PARAMS )
         // assign ext2_io = {GPIOW{1'b0}};
         assign led_o = (!ft_rd_n_o || !ft_wr_n_o) ? 1'b1 : 1'b0;
 
-        wire                    clk_downsampled;
-        wire [OW-1:0]           data_downsampled;
-        wire [OW-1:0]           data_filtered;
+        wire                    clk_a_downsampled;
+        wire                    clk_b_downsampled;
+        wire                    clk_20mhz;
+        wire [IW-1:0]           chan_a;
+        wire [IW-1:0]           chan_b;
+        wire [OW-1:0]           chan_a_filtered;
+        wire [OW-1:0]           chan_b_filtered;
+        wire [OW-1:0]           chan_a_downsampled;
+        wire [OW-1:0]           chan_b_downsampled;
+        wire [OW-1:0]           chan_a_kaisered;
+        wire [OW-1:0]           chan_b_kaisered;
         wire [USBDW-1:0]        usb_rdata;
         wire [USBDW-1:0]        usb_wdata;
 
-        fir fir (.clk(clk_i),
-                 .rst(1),
-                 .ce(1),
-                 .data_i(adc_d_i),
-                 .data_o(data_filtered));
+        chan_split chan_split (.clk_i(clk_i),
+                               .clk_o(clk_20mhz),
+                               .data_i(adc_d_i),
+                               .chan_a(chan_a),
+                               .chan_b(chan_b));
 
-        downsample downsample (.clk_i(clk_i),
-                               .clk_o(clk_downsampled),
-                               .data_i(data_filtered),
-                               .data_o(data_downsampled));
+        // TODO can probably share filter across both channels and
+        // save resources
+        fir fir_a (.clk(clk_20mhz),
+                   .rst(1),
+                   .ce(1),
+                   .data_i(chan_a),
+                   .data_o(chan_a_filtered));
+
+        fir fir_b (.clk(clk_20mhz),
+                   .rst(1),
+                   .ce(1),
+                   .data_i(chan_b),
+                   .data_o(chan_b_filtered));
+
+        downsample downsample_a (.clk_i(clk_20mhz),
+                                 .clk_o(clk_a_downsampled),
+                                 .data_i(chan_a_filtered),
+                                 .data_o(chan_a_downsampled));
+
+        downsample downsample_b (.clk_i(clk_20mhz),
+                                 .clk_o(clk_b_downsampled),
+                                 .data_i(chan_b_filtered),
+                                 .data_o(chan_b_downsampled));
+
+        kaiser kaiser_a (.clk_i(clk_a_downsampled),
+                         .data_i(clk_i),
+                         .data_o(chan_a_kaisered));
+
+        kaiser kaiser_b (.clk_i(clk_b_downsampled),
+                         .data_i(clk_i),
+                         .data_o(chan_b_kaisered));
 
         data_packer data_packer (.clk_i(clk_downsampled),
                                  .data_i(data_downsampled),
@@ -114,7 +149,8 @@ module top #( `FMCW_DEFAULT_PARAMS )
                  .siwua_n_o(ft_siwua_n_o),
                  .clk_i(ft_clkout_i),
                  .oe_n_o(ft_oe_n_o),
-                 .suspend_n_i(ft_suspend_n_i));
+                 .suspend_n_i(ft_suspend_n_i),
+                 .clk_data(clk_downsampled));
 
         adf4158 adf4158 (.clk_i(clk_i),
                          .ce_o(adf_ce_o),

@@ -15,7 +15,13 @@ module data_packer #( `FMCW_DEFAULT_PARAMS )
                 data_o = {USBDW{1'b0}};
         end
 
-        reg upper = 1'b1; /* Signals that upper half of input data should be sent to output. */
+        // Data has 16-bit precision and must be sent over USB in
+        // 8-bit bytes. Send the most significant 8 bits first, then
+        // the least significant, then the next 16 bit sample, and so
+        // on.  `upper' is a control bit. When 1, indicates the upper
+        // 8 bits are sent and when 0, indicates lower 8 bits are
+        // sent.
+        reg upper = 1'b1;
 
         always @(posedge clk_i) begin
                 if (upper) begin
