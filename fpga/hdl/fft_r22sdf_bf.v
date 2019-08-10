@@ -23,15 +23,12 @@ module fft_r22sdf_bf #(
    wire                        sel1;
    wire                        sel2;
    reg [FFT_NLOG2-1:0]         ctrii;
-   // wire [FFT_NLOG2-1:0]        ctrii_shift = ctrii + 1'b1;
    reg                         start_ctrii;
    reg                         start_ctr_o;
 
    wire signed [DW-1:0]  z_re;
    wire signed [DW-1:0]  z_im;
 
-   // assign sel1 = (cnt_i[FFT_NLOG2-1-2*STAGE:0] > FFT_N/2**(2*STAGE+1)-1) ? 1'b1 : 1'b0;
-   // assign sel2 = (ctrii[FFT_NLOG2-2-2*STAGE:0] > FFT_N/2**(2*STAGE+2)-1) ? 1'b1 : 1'b0;
    assign sel1 = cnt_i[FFT_NLOG2-1-2*STAGE];
    assign sel2 = ctrii[FFT_NLOG2-2-2*STAGE];
 
@@ -69,13 +66,13 @@ module fft_r22sdf_bf #(
    end
 
    always @(posedge clk_i) begin
-      if (sel1 || start_ctrii) begin
+      if (start_ctrii) begin
          ctrii <= ctrii + 1'b1;
       end else begin
          ctrii <= {FFT_NLOG2{1'b0}};
       end
 
-      if (sel2 || start_ctr_o) begin
+      if (start_ctr_o) begin
          cnt_o <= cnt_o + 1'b1;
       end
       else begin

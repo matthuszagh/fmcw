@@ -65,7 +65,7 @@ module fft_r22sdf_tb #( `FMCW_DEFAULT_PARAMS );
    fft_r22sdf tb (.clk_i     (clk),
                   .ce_i      (1'b1),
                   .sync_o    (sync),
-                  .data_cnt  (data_cnt),
+                  .data_ctr  (data_cnt),
                   .data_re_i ($signed(data_i)),
                   .data_im_i (0),
                   .data_re_o (data_re_o),
