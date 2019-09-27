@@ -1,5 +1,6 @@
-EESchema Schematic File Version 4
-EELAYER 26 0
+EESchema Schematic File Version 5
+LIBS:antenna_switch-cache
+EELAYER 30 0
 EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
@@ -12,6 +13,11 @@ Comment1 ""
 Comment2 ""
 Comment3 ""
 Comment4 ""
+Comment5 ""
+Comment6 ""
+Comment7 ""
+Comment8 ""
+Comment9 ""
 $EndDescr
 $Comp
 L Connector:Conn_Coaxial RXb4
@@ -139,7 +145,7 @@ U 1 1 5C9F4420
 P 6250 5800
 F 0 "J8" H 6330 5792 50  0000 L CNN
 F 1 "Conn_01x04" H 6330 5701 50  0000 L CNN
-F 2 "Connector_PinHeader_1.27mm:PinHeader_1x04_P1.27mm_Vertical" H 6250 5800 50  0001 C CNN
+F 2 "Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical" H 6250 5800 50  0001 C CNN
 F 3 "~" H 6250 5800 50  0001 C CNN
 	1    6250 5800
 	1    0    0    -1  

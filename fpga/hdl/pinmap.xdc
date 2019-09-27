@@ -67,7 +67,7 @@ set_property -dict {IOSTANDARD LVCMOS33 PACKAGE_PIN H16} [get_ports sd_detect_i]
 
 set_property -dict {IOSTANDARD LVCMOS33 PACKAGE_PIN J4} [get_ports mix_enbl_n_o]
 
-set_property -dict {IOSTANDARD LVCMOS33 PACKAGE_PIN T2} [get_ports pa_off_o]
+set_property -dict {IOSTANDARD LVCMOS33 PACKAGE_PIN T2} [get_ports pa_en_n_o]
 
 set_property -dict {IOSTANDARD LVCMOS33 PACKAGE_PIN R3} [get_ports adf_ce_o]
 set_property -dict {IOSTANDARD LVCMOS33 PACKAGE_PIN N1} [get_ports adf_le_o]

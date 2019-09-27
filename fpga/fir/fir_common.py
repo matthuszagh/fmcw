@@ -5,8 +5,17 @@ import math
 
 def quantize(dbl, w):
     """Quantize a double precision floating point for a given bit
-    width."""
+    width. 0 <= dbl <= 1."""
     return round(dbl*(2**w))
+
+
+def quantize_signed(dbl, w):
+    """Quantize a signed double precision floating point for a given bit
+    width. -1 <= dbl <= 1."""
+    if (dbl < 0):
+        return round(dbl*(2**(w-1)))
+    else:
+        return round(dbl*(2**(w-1)-1))
 
 
 def compute_bits(iw, fname):

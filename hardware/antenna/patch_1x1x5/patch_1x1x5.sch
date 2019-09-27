@@ -1,4 +1,4 @@
-EESchema Schematic File Version 4
+EESchema Schematic File Version 5
 LIBS:patch_1x1x5-cache
 EELAYER 29 0
 EELAYER END

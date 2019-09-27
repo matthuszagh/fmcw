@@ -5,7 +5,8 @@ all:
 	iverilog kaiser_tb.v -I ../ -o kaiser_tb
 	iverilog chan_split_tb.v -I ../ -o chan_split_tb
 
-fir: all fir_tb.v
+fir: fir_tb.v ../taps.hex
+	iverilog fir_tb.v -I ../ -o fir_tb
 	./fir_tb
 	gtkwave fir.vcd
 

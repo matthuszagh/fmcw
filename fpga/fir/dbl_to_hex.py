@@ -16,8 +16,8 @@ dbl_arr = list(filter(None, dbl_arr))
 dbl_arr = [float(i) for i in dbl_arr]
 
 for dbl in dbl_arr:
-    val = quantize(dbl, quantization_bits)
+    val = quantize_signed(dbl, quantization_bits)
     fint.write(str(val))
     fint.write('\n')
-    fout.write(format(val % (1 << quantization_bits), 'x'))
+    fout.write(format(val % (1 << (quantization_bits-1)), 'x'))
     fout.write('\n')

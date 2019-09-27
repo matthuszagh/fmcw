@@ -43,3 +43,5 @@ openems/octave-workspace
 *.mp4
 **/ltximg
 **/fft_r22sdf_tb
+**/.Xil
+**/tb

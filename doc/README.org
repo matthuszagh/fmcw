@@ -103,7 +103,24 @@ difference frequency.
 
 Instead, we can use the phase difference between the signals
 
-* components
+* modules
+** fpga
+At startup, configure the ADF4158. Then, perform 8 consecutive signal
+ramps where each ramp delay is 2us and each duration is 0.512ms
+(0.512ms to pick up all 1024 desired samples, plus a delay at the
+beginning to avoid picking up any signals from the previous ramp,
+corresponding to the max distance of 250m). The first ramp is for
+antennas 1 and 2. The second is for antennas 3 and 4. The third and
+fourth are for antennas 5 and 6, and 7 and 8, respectively. The fifth
+ramp is for antennas 1 and 2 again. And so on until 8 ramps have
+completed. The FIR polyphase decomposition filter is performed in
+realtime during sampling. Additionally, since each antenna is recorded
+twice and averaged, we store 4x 1024, 16-bit samples (i.e. 65kb
+total).
+
+** frequency synthesizer
+Each frequency step is 300kHz and lasts $0.5\si{\mu s}$. There are 1028 steps.
+
 ** USB interface
 A FT2232H chip is used to pass data between the host PC and FPGA. It
 is used in 245 synchronous FIFO mode, which allows USB 2.0 high-speed
@@ -145,7 +162,6 @@ channel.
 
 *** read transaction
 A read transaction sends data from the host PC to the FPGA.
-
 ** receiver
 ** digitization
 The ADC reads both analog input channels simultaneously and
@@ -159,12 +175,37 @@ The FPGA receives a 12-bit sample from each channel every 25ns (40MHz)
 over a sweep duration of 1ms. Following the 1ms sweep, no data is
 received for 2ms after which the process repeats.
 
+*** big picture
+There are 8 antennas multiplexed over 2 receiver channels. Data is
+sampled at 40MHz with a twos complement precision of 12 bits. The data
+is filtered in real time by a polyphase decomposition FIR filter that
+removes signals over 1MHz (transition band from 0.95-1MHz). The
+polyphase filter downsamples to 2MHz. The reason for filtering >1MHz
+and downsampling to 2MHz is that once we downsample, our new sampling
+frequency will be 2MHz and so we won't be able to detect any
+frequencies above 1MHz. In fact, I believe any frequencies >1MHz will
+show up (incorrectly) as frequencies below 1MHz (this is aliasing). We
+want 1024 samples per channel (for the FFT) which, at 2MHz, means a
+sweep duration of just over 0.5ms (set with the ADF4158
+registers). There should then be a short delay of about 2us so that we
+don't sample a signal transmitted in a previous sweep. We sample every
+antenna twice and average over both sample sets, leaving 8 sequences
+of 1024 12-bit data points stored in block ram. We then perform an FFT
+on each of these 8 sequences. Then we perform an FFT across the angle
+dimension.
+
 *** filters
-**** finite-impulse response
-The FPGA first performs an FIR filter on the input data from each
-channel. This reduces the strength of any signal frequencies above
-2MHz. The filter is implemented as a timewise convolution in real-time
-as the singal is sampled.
+**** FIR
+Use a polyphase decimation filter as described in Discrete-Time Signal
+Processing page 182.
+
+\begin{latex}
+  \def\dff(#1){
+  }
+  \begin{circuitikz}
+    \node at (0,-2) [twoport,draw,t=$\texttt{M}$] {};
+  \end{circuitikz}
+\end{latex}
 
 **** kaiser window
 After the FIR filter, a kaiser window is applied to the sample. This

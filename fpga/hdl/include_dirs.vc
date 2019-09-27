@@ -1,0 +1,3 @@
+-y /home/matt/.nix-profile/opt/Vivado/2017.2/data/verilog/src/unisims/
+-y /home/matt/.nix-profile/opt/Vivado/2017.2/data/verilog/src/
+-y /home/matt/.nix-profile/opt/Vivado/2017.2/data/verilog/src/unimacro/
