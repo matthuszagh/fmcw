@@ -1,0 +1,49 @@
+How can I perform beamforming on a linear array of 8 antennas?
+
+-----------------
+
+I start with 8 signals, with 1024 samples each. Then I perform a FFT
+to get 8 arrays each with 1024 elements. For each array, this
+corresponds to the frequency spectrum (0 to 1MHz) with bins of
+resolution 1MHz/1024 (i.e. <1kHz).
+
+Now I'd like to find the angular dependence of the signal. This
+apparently can be done with another FFT over the angle dimension. The
+FFT has the form:
+
+\begin{equation*}
+  X_k = \sum_{n=0}^{N-1} x_n e^{-2\pi i kn/N}
+\end{equation*}
+
+$N$ corresponds to the total number of angles (i.e. it determines the
+angular resolution). We perform this FFT 1024 times, for each
+frequency bin. Therefore, $x_n$ corresponds to the magnitude and phase
+of the current frequency bin for antenna $n$. For all $n$'s that aren't
+antennas, we use 0s.
+
+To understand how this results in the angular dependence of the
+signal, start with $k=0$. This gives
+
+\begin{equation*}
+  X_0 = \sum_{n=0}^{N-1} x_n
+\end{equation*}
+
+In other words, it is the simple summation of the frequency spectra of
+each antenna. This corresponds to a signal that is straight ahead,
+since the signals hit each antenna at the same time. Let's call that
+$\theta=0$. When $k=1$, we get
+
+\begin{align*}
+  X_1 &= \sum_{n=0}^{N-1} x_n e^{-2\pi i n/N} \\
+  &= \sum_{n=0}^{N-1} x_n \left[\cos\left(\frac{2\pi n}{N}\right) - i\sin\left(\frac{2\pi n}{N}\right) \right]
+\end{align*}
+
+This looks like it corresponds to an angle $\theta=2\pi/N$ (to the left of
+straight ahead). Generalizing, we get that $X_k$ corresponds to an
+angle $\theta=2\pi k/N$.
+
+This would yield the angular dependence from 0 to $2\pi$. However, we
+want the angular dependence from $-\pi/2$ to $\pi/2$. How can we get this?
+We should be able to take the first quarter and last quarter of the
+values and discard the rest (i.e. take $n=0$ to $n=63$ and $n=191$ to
+$n=255$).
