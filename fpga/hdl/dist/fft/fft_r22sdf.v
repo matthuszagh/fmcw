@@ -17,7 +17,6 @@ module fft_r22sdf #(
    // +1 comes from complex multiply, which is really 2 multiplies.
    parameter OUTPUT_WIDTH   = 25   /* ceil(log_2(N)) + INPUT_WIDTH + 1 */
 ) (
-   output wire signed [TWIDDLE_WIDTH-1:0] FFT_TEST,
    input wire                           clk_i,
    input wire                           clk_3x_i,
    input wire                           rst_n,
@@ -29,8 +28,6 @@ module fft_r22sdf #(
    output reg signed [OUTPUT_WIDTH-1:0] data_re_o,
    output reg signed [OUTPUT_WIDTH-1:0] data_im_o
 );
-
-   assign FFT_TEST = bf0_re;
 
    localparam N_LOG2 = $clog2(N);
    localparam N_STAGES = N_LOG2/2;

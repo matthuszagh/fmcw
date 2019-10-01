@@ -176,9 +176,6 @@ module top #(
    wire signed [FIR_OUTPUT_WIDTH-1:0] chan_a_filtered;
    wire                               fir_dvalid;
 
-   // TODO tmp
-   wire signed [15:0]                 FIR_TEST;
-
    fir_poly #(
       .N_TAPS         (120),
       .M              (20),
@@ -189,7 +186,6 @@ module top #(
       .NORM_SHIFT     (4),
       .OUTPUT_WIDTH   (14)
    ) fir (
-      .FIR_TEST        (FIR_TEST),
       .clk             (clk_i),
       .rst_n           (adf_config_done),
       .clk_2mhz_pos_en (clk_2mhz_pos_en),
@@ -260,15 +256,12 @@ module top #(
    wire signed [FFT_OUTPUT_WIDTH-1:0] fft_re_o;
    wire signed [FFT_OUTPUT_WIDTH-1:0] fft_im_o;
 
-   wire [FFT_OUTPUT_WIDTH-1:0] FFT_TEST;
-
    fft_r22sdf #(
       .N             (1024),
       .INPUT_WIDTH   (14),
       .TWIDDLE_WIDTH (10),
       .OUTPUT_WIDTH  (FFT_OUTPUT_WIDTH)
    ) fft (
-      .FFT_TEST   (FFT_TEST),
       .clk_i      (clk_7_5mhz),
       .clk_3x_i   (clk_22_5mhz),
       .rst_n      (fft_en),
@@ -295,72 +288,30 @@ module top #(
    reg [USB_DATA_WIDTH-1:0]    ft_data;
    assign ft_data_io = !ft_wr_n_o ? ft_data : 1'bz;
 
-   reg [0:0]                   tmp;
    always @(negedge ft_clkout_i) begin
       if (!rst_n) begin
          tx_byte_ctr <= 3'd0;
          ft_wr_n_o   <= 1'b1;
       end else begin
          ft_wr_n_o <= 1'b0;
-         // if (start) begin
-         //    tx_byte_ctr <= tx_byte_ctr + 1'b1;
-         // end
+         if (start) begin
+            tx_byte_ctr <= tx_byte_ctr + 1'b1;
+         end
 
-         // if (fft_en) begin
-         //    case (tx_byte_ctr)
-         //    3'd0:
-         //      begin
-         //         ft_data   <= 8'h00;
-         //         // ft_wr_n_o <= 1'b0;
-         //      end
-         //    3'd1: ft_data <= 8'h00;
-         //    3'd2: ft_data <= fft_in[13:8];
-         //    3'd3: ft_data <= fft_in[7:0];
-         //    // 3'd1: ft_data <= FFT_TEST[23:16];
-         //    // 3'd2: ft_data <= FFT_TEST[15:8];
-         //    // 3'd3: ft_data <= FFT_TEST[7:0];
-         //    default:
-         //      begin
-         //         ft_data <= 8'hff;
-         //         // ft_wr_n_o <= 1'b0;
-         //      end
-         //    endcase
-         // end else begin
-         //    ft_wr_n_o <= 1'b1;
-         // end
-
-         // if (fir_dvalid) begin
-         ft_data <= FIR_TEST[7:0];
-            // tmp <= tmp + 1'b1;
-            // case (tmp)
-            // // 2'd0: ft_data <= 8'hff;
-            // 2'd0: ft_data <= FIR_TEST[15:8];
-            // 2'd1: ft_data <= FIR_TEST[7:0];
-            // // 2'd3: ft_data <= 8'd0;
-            // endcase
-         // end else begin
-         //    ft_data <= 8'd0;
-         // end
-
-         // TODO this should be correct
-         // if (start) begin
-         //    tx_byte_ctr <= tx_byte_ctr + 1'b1;
-         // end
-
-         // if (fft_valid) begin
-         //    case (tx_byte_ctr)
-         //    3'd0: ft_data <= {{4{1'b1}}, fft_ctr[9:6]};
-         //    3'd1: ft_data <= {fft_ctr[5:0], fft_re_o[24:23]};
-         //    3'd2: ft_data <= fft_re_o[22:15];
-         //    3'd3: ft_data <= fft_re_o[14:7];
-         //    3'd4: ft_data <= {fft_im_o[6:0], fft_im_o[24:24]};
-         //    3'd5: ft_data <= fft_im_o[23:16];
-         //    3'd6: ft_data <= fft_im_o[15:8];
-         //    3'd7: ft_data <= fft_im_o[7:0];
-         //    endcase
-         // end else begin
-         //    ft_data <= {USB_DATA_WIDTH{1'b0}};
-         // end
+         if (fft_valid) begin
+            case (tx_byte_ctr)
+            3'd0: ft_data <= {{4{1'b1}}, fft_ctr[9:6]};
+            3'd1: ft_data <= {fft_ctr[5:0], fft_re_o[24:23]};
+            3'd2: ft_data <= fft_re_o[22:15];
+            3'd3: ft_data <= fft_re_o[14:7];
+            3'd4: ft_data <= {fft_im_o[6:0], fft_im_o[24:24]};
+            3'd5: ft_data <= fft_im_o[23:16];
+            3'd6: ft_data <= fft_im_o[15:8];
+            3'd7: ft_data <= fft_im_o[7:0];
+            endcase
+         end else begin
+            ft_data <= {USB_DATA_WIDTH{1'b0}};
+         end
       end
    end
 

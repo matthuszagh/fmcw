@@ -15,8 +15,6 @@ module fir_poly #(
    parameter NORM_SHIFT     = 4,
    parameter OUTPUT_WIDTH   = 14
 ) (
-   // TODO temp
-   output wire signed [TAP_WIDTH-1:0]   FIR_TEST,
    input wire                           clk,
    input wire                           rst_n,
    input wire                           clk_2mhz_pos_en,
@@ -24,9 +22,6 @@ module fir_poly #(
    output reg signed [OUTPUT_WIDTH-1:0] dout,
    output reg                           dvalid
 );
-
-   // assign FIR_TEST = tap0;
-   assign FIR_TEST = tap_addr[BANK_LEN_LOG2-1:0];
 
    localparam M_LOG2        = $clog2(M);
    localparam BANK_LEN_LOG2 = $clog2(BANK_LEN);
