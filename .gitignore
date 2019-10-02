@@ -48,3 +48,4 @@ openems/octave-workspace
 **/_autosave*
 **/*.bit
 **/usage_statistics_webtalk*
+**/*.bin

@@ -1,8 +1,8 @@
 `default_nettype none
 
 `include "adc.v"
-`include "fir/fir_poly.v"
-`include "fft/fft_r22sdf.v"
+`include "fir_poly.v"
+`include "fft_r22sdf.v"
 `include "ram_tdp_18k.v"
 `include "adf4158.v"
 
