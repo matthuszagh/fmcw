@@ -67,9 +67,10 @@ module fir_poly #(
       if (!rst_n) begin
          tap_addr <= {M_LOG2+1{1'b0}};
       end else begin
-         tap_addr <= tap_addr + 1'b1;
          if (clk_2mhz_pos_en) begin
             tap_addr <= {M_LOG2+1{1'b0}};
+         end else begin
+            tap_addr <= tap_addr + 1'b1;
          end
       end
    end

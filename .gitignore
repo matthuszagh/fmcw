@@ -46,3 +46,5 @@ openems/octave-workspace
 **/.Xil
 **/tb
 **/_autosave*
+**/*.bit
+**/usage_statistics_webtalk*
