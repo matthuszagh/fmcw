@@ -304,7 +304,7 @@ module top #(
             3'd1: ft_data <= {fft_ctr[5:0], fft_re_o[24:23]};
             3'd2: ft_data <= fft_re_o[22:15];
             3'd3: ft_data <= fft_re_o[14:7];
-            3'd4: ft_data <= {fft_im_o[6:0], fft_im_o[24:24]};
+            3'd4: ft_data <= {fft_re_o[6:0], fft_im_o[24:24]};
             3'd5: ft_data <= fft_im_o[23:16];
             3'd6: ft_data <= fft_im_o[15:8];
             3'd7: ft_data <= fft_im_o[7:0];
