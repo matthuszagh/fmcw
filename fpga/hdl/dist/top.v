@@ -300,7 +300,7 @@ module top #(
 
          if (fft_valid) begin
             case (tx_byte_ctr)
-            3'd0: ft_data <= {{4{1'b1}}, fft_ctr[9:6]};
+            3'd0: ft_data <= {4'hf, fft_ctr[9:6]};
             3'd1: ft_data <= {fft_ctr[5:0], fft_re_o[24:23]};
             3'd2: ft_data <= fft_re_o[22:15];
             3'd3: ft_data <= fft_re_o[14:7];
