@@ -49,3 +49,4 @@ openems/octave-workspace
 **/*.bit
 **/usage_statistics_webtalk*
 **/*.bin
+**/compile_commands.json
