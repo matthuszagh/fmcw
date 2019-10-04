@@ -7,19 +7,27 @@ int fft_re_valid(int val, int last_val, int override) { return 1; }
 
 int fft_im_valid(int val, int last_val, int override) { return 1; }
 
+static int num_empty_bytes = 0;
+
 int fft_ctr_valid(int val, int last_val, int override)
 {
 	if (override) {
 		return 1;
 	} else {
-		if (val == 0) {
+		if (val == 0 && num_empty_bytes > 10) {
 			return 1;
 		} else {
-			int nbits = 10;
-			if (bitrev(last_val, nbits) + 1 == bitrev(val, nbits))
-				return 1;
-			else
+			if (num_empty_bytes > 0) {
 				return 0;
+			} else {
+				int nbits = 10;
+				if (bitrev(last_val, nbits) + 1 == bitrev(val, nbits)) {
+					return 1;
+				} else {
+					num_empty_bytes = 0;
+					return 0;
+				}
+			}
 		}
 	}
 }
@@ -176,10 +184,17 @@ int main()
 					} else {
 						payloads[i].override = 1;
 						for (int j = i; j < num_payloads; ++j) {
-							ftruncate(fileno(fout_dec[j]),
-								  fout_dec_last[j]);
-							ftruncate(fileno(fout_hex[j]),
-								  fout_hex_last[j]);
+							fseek(fout_dec[j],
+							      fout_dec_last[j] - ftell(fout_dec[j]),
+							      SEEK_END);
+							long dec_pos = ftell(fout_dec[j]);
+							ftruncate(fileno(fout_dec[j]), dec_pos);
+
+							fseek(fout_hex[j],
+							      fout_hex_last[j] - ftell(fout_hex[j]),
+							      SEEK_END);
+							long hex_pos = ftell(fout_hex[j]);
+							ftruncate(fileno(fout_hex[j]), hex_pos);
 						}
 						i = 3;
 					}
@@ -187,11 +202,14 @@ int main()
 					free(byte_array);
 					free(hex_str);
 				}
+				num_empty_bytes = 0;
 			}
 		} else {
 			if (bitset_array(c, header, COUNT_OF(header))) {
 				dvalid = 1;
 				bit_pos = add_byte_bits_to_bit_array(c, bit_array, 0);
+			} else {
+				++num_empty_bytes;
 			}
 		}
 	}
