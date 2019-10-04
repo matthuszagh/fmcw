@@ -50,3 +50,12 @@ openems/octave-workspace
 **/usage_statistics_webtalk*
 **/*.bin
 **/compile_commands.json
+/fpga/fir/math
+/fpga/fir/np
+**/tmp*
+*.edif
+**/sim*
+*.stl
+/fpga/hdl/dist/scripts/read_bytes
+/fpga/hdl/dist/read
+/fpga/hdl/dist/scripts/data
