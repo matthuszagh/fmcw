@@ -1,4 +1,5 @@
 #include <bitmanip.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -220,4 +221,45 @@ int main()
 		fclose(fout_dec[i]);
 	}
 	fclose(fin);
+
+	// compute FFT magnitude. Once the data looks right, this
+	// should be made realtime.
+	if (strncmp(payloads[1].name, "fft_re", strlen("fft_re")) == 0 &&
+	    strncmp(payloads[2].name, "fft_im", strlen("fft_im")) == 0) {
+
+		FILE *f_fft_re = fopen("data/fft_re.dec", "r");
+		if (!f_fft_re) {
+			fputs("Failed to open data/fft_re.dec.\n", stderr);
+			return EXIT_FAILURE;
+		}
+
+		FILE *f_fft_im = fopen("data/fft_im.dec", "r");
+		if (!f_fft_im) {
+			fputs("Failed to open data/fft_im.dec.\n", stderr);
+			return EXIT_FAILURE;
+		}
+
+		FILE *f_fft = fopen("data/fft.dec", "w");
+		if (!f_fft) {
+			fputs("Failed to open data/fft.dec\n", stderr);
+			return EXIT_FAILURE;
+		}
+
+		char *re_line = malloc(100);
+		char *im_line = malloc(100);
+		while (fgets(re_line, 100, f_fft_re) != NULL &&
+		       fgets(im_line, 100, f_fft_im) != NULL) {
+			double mag = sqrt(atoi(re_line) ^ 2 + atoi(im_line) ^ 2);
+			if (mag != mag) {
+				fprintf(f_fft, "%d\n", 0);
+			} else {
+				fprintf(f_fft, "%f\n", mag);
+			}
+		}
+		free(re_line);
+		free(im_line);
+		fclose(f_fft);
+		fclose(f_fft_re);
+		fclose(f_fft_im);
+	}
 }
