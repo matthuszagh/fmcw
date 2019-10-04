@@ -1,155 +1,28 @@
 #include <bitmanip.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
-// Return 1 if the nth bit in a byte is set. Return 0 otherwise.
-/* #define BITSET(c, n) ((c & (1u << n)) == (1u << n)) */
+int fft_re_valid(int val, int last_val, int override) { return 1; }
 
-/* int read_samples(char *fin, char *fout, size_t n_packet_bytes) */
-/* { */
-/* 	unsigned char c; */
-/* 	FILE *fp = fopen(fin, "rb"); */
-/* 	if (!fp) { */
-/* 		fputs("Failed to open input file.\n", stderr); */
-/* 		return EXIT_FAILURE; */
-/* 	} */
+int fft_im_valid(int val, int last_val, int override) { return 1; }
 
-/* 	FILE *fpout = fopen(fout, "w"); */
-/* 	if (!fpout) { */
-/* 		fputs("Failed to open output file.\n", stderr); */
-/* 		return EXIT_FAILURE; */
-/* 	} */
-
-/* 	fseek(fp, 0, SEEK_END); */
-/* 	long flen = ftell(fp); */
-/* 	rewind(fp); */
-
-/* 	size_t byte_ctr = 0; */
-/* 	char *indata = malloc(n_packet_bytes + 1); */
-/* 	indata[n_packet_bytes] = '\0'; */
-/* 	char *outdata = malloc(2 * n_packet_bytes + 1); */
-/* 	outdata[2 * n_packet_bytes] = '\0'; */
-/* 	while (ftell(fp) != flen) { */
-/* 		c = getc(fp); */
-/* 		if (byte_ctr >= 1 && byte_ctr <= n_packet_bytes) { */
-/* 			indata[byte_ctr - 1] = c; */
-/* 			++byte_ctr; */
-/* 		} else { */
-/* 			if (byte_ctr == n_packet_bytes + 1) { */
-/* 				byte_ctr = 0; */
-/* 				for (size_t i = 0; i < n_packet_bytes; ++i) { */
-/* 					byte_2_hex(indata[i], &outdata[2 * i]); */
-/* 				} */
-/* 				fprintf(fpout, "%s\n", outdata); */
-/* 			} else { */
-/* 				if (c == 255) { */
-/* 					byte_ctr = 1; */
-/* 				} */
-/* 			} */
-/* 		} */
-/* 	} */
-
-/* 	fclose(fp); */
-/* 	fclose(fpout); */
-/* 	free(indata); */
-/* 	free(outdata); */
-
-/* 	return 0; */
-/* } */
-
-/* void read_samples(char *fname, int header, int num_payload_bits) {} */
-
-/* int gen_dec_file(char *fin, char *fout, int nbits) */
-/* { */
-/* 	char c; */
-/* 	FILE *fp = fopen(fin, "r"); */
-/* 	if (!fp) { */
-/* 		fputs("Failed to open input file.\n", stderr); */
-/* 		return EXIT_FAILURE; */
-/* 	} */
-
-/* 	FILE *fpout = fopen(fout, "w"); */
-/* 	if (!fpout) { */
-/* 		fputs("Failed to open output file.\n", stderr); */
-/* 		return EXIT_FAILURE; */
-/* 	} */
-
-/* 	char *line = malloc(100); */
-/* 	memset(line, 0, 100); */
-/* 	size_t row = 0; */
-/* 	while ((c = getc(fp)) != EOF) { */
-/* 		if (c != '\n') { */
-/* 			line[row] = c; */
-/* 			++row; */
-/* 		} else { */
-/* 			int val = hex_str_2_int(line, nbits); */
-/* 			int min = -(1 << (nbits - 1)); */
-/* 			int max = (1 << (nbits - 1)) - 1; */
-/* 			// crude means of error detection */
-/* 			if (val >= min && val <= max) { */
-/* 				fprintf(stderr, */
-/* 					"Error: value %d outside valid range of %d to %d.\n", val,
- */
-/* 					min, max); */
-/* 				free(line); */
-/* 				return EXIT_FAILURE; */
-/* 			} */
-
-/* 			fprintf(fpout, "%d\n", hex_str_2_int(line, nbits)); */
-
-/* 			memset(line, 0, 100); */
-/* 			row = 0; */
-/* 		} */
-/* 	} */
-/* 	free(line); */
-/* 	fclose(fp); */
-/* 	fclose(fpout); */
-
-/* 	return 0; */
-/* } */
-
-/* int fft_in() */
-/* { */
-/* 	FILE *fin = fopen("data.bin", "rb"); */
-/* 	if (!fin) { */
-/* 		fputs("Failed to open input file.\n", stderr); */
-/* 		return EXIT_FAILURE; */
-/* 	} */
-
-/* 	FILE *fout_hex = fopen("fft_in.hex", "w"); */
-/* 	if (!fout_hex) { */
-/* 		fputs("Failed to open output hex file.\n", stderr); */
-/* 		return EXIT_FAILURE; */
-/* 	} */
-
-/* 	FILE *fout_dec = fopen("fft_in.dec", "w"); */
-/* 	if (!fout_dec) { */
-/* 		fputs("Failed to open output dec file.\n", stderr); */
-/* 		return EXIT_FAILURE; */
-/* 	} */
-
-/* 	fseek(fin, 0, SEEK_END); */
-/* 	long flen = ftell(fin); */
-/* 	rewind(fin); */
-
-/* 	unsigned char c; */
-/* 	int dvalid = 0; */
-/* 	while (ftell(fin) != flen) { */
-/* 		c = getc(fin); */
-/* 		if (!dvalid && c == 255) { */
-/* 			dvalid = 1; */
-/* 		} else { */
-/* 			if (dvalid) { */
-
-/* 			} */
-/* 		} */
-/* 	} */
-
-/* 	fclose(fin); */
-/* 	fclose(fout_hex); */
-/* 	fclose(fout_dec); */
-/* 	return 0; */
-/* } */
+int fft_ctr_valid(int val, int last_val, int override)
+{
+	if (override) {
+		return 1;
+	} else {
+		if (val == 0) {
+			return 1;
+		} else {
+			int nbits = 10;
+			if (bitrev(last_val, nbits) + 1 == bitrev(val, nbits))
+				return 1;
+			else
+				return 0;
+		}
+	}
+}
 
 struct payload {
 	// Payload identifier. Used to name output files.
@@ -160,6 +33,15 @@ struct payload {
 	int upper_idx;
 	// 0 for unsigned value, 1 for signed value.
 	int sign;
+	// current value
+	int val;
+	// override validity check (if 1)
+	int override;
+	// check whether retrieved payload data is valid. If yes,
+	// return 1, otherwise return 0. An invalid payload also
+	// invalidates any other data in the same payload as well as
+	// the payloads surrounding it.
+	int (*valid)();
 };
 
 int main()
@@ -169,8 +51,27 @@ int main()
 	char *fname = "../read.bin";
 	char *data_dir = "data/";
 
-	struct payload payloads[3] = {
-		{"fft_ctr", 4, 13, 0}, {"fft_re", 14, 38, 1}, {"fft_im", 39, 63, 1}};
+	struct payload payloads[3] = {{.name = "fft_ctr",
+				       .lower_idx = 4,
+				       .upper_idx = 13,
+				       .sign = 0,
+				       .val = 0,
+				       .override = 0,
+				       .valid = &fft_ctr_valid},
+				      {.name = "fft_re",
+				       .lower_idx = 14,
+				       .upper_idx = 38,
+				       .sign = 1,
+				       .val = 0,
+				       .override = 0,
+				       .valid = &fft_re_valid},
+				      {.name = "fft_im",
+				       .lower_idx = 39,
+				       .upper_idx = 63,
+				       .sign = 1,
+				       .val = 0,
+				       .override = 0,
+				       .valid = &fft_im_valid}};
 
 	FILE *fin = fopen(fname, "rb");
 	if (!fin) {
@@ -191,12 +92,16 @@ int main()
 	}
 
 	FILE *fout_hex[num_payloads];
+	// tracks start position of last write. Useful for removing
+	// last written value.
+	long fout_hex_last[num_payloads];
 	for (int i = 0; i < num_payloads; ++i) {
 		fout_hex[i] = fopen(fout_hex_names[i], "w");
 		if (!fout_hex[i]) {
 			fprintf(stderr, "Failed to open output file: %s.\n", fout_hex_names[i]);
 			return EXIT_FAILURE;
 		}
+		fout_hex_last[i] = 0;
 	}
 
 	char fout_dec_names[num_payloads][20];
@@ -207,12 +112,14 @@ int main()
 	}
 
 	FILE *fout_dec[num_payloads];
+	long fout_dec_last[num_payloads];
 	for (int i = 0; i < num_payloads; ++i) {
 		fout_dec[i] = fopen(fout_dec_names[i], "w");
 		if (!fout_dec[i]) {
 			fprintf(stderr, "Failed to open output file: %s.\n", fout_dec_names[i]);
 			return EXIT_FAILURE;
 		}
+		fout_dec_last[i] = 0;
 	}
 
 	int header[4] = {7, 6, 5, 4};
@@ -233,22 +140,50 @@ int main()
 					int nbits =
 						payloads[i].upper_idx - (payloads[i].lower_idx - 1);
 					int byte_array_sz = round_up(nbits, 8);
+
 					unsigned char *byte_array = malloc(byte_array_sz);
 					memset(byte_array, 0, byte_array_sz);
+
 					char *hex_str = malloc(2 * byte_array_sz + 1);
 					hex_str[2 * byte_array_sz] = '\0';
+
 					bit_subarray_to_byte_array(bit_array, payloads[i].lower_idx,
 								   payloads[i].upper_idx,
 								   byte_array);
+
+					int new_val;
+
 					if (payloads[i].sign) {
-						fprintf(fout_dec[i], "%d\n",
-							byte_array_to_int(byte_array, nbits));
+						new_val = byte_array_to_int(byte_array, nbits);
 					} else {
-						fprintf(fout_dec[i], "%d\n",
-							byte_arr_2_uint(byte_array, byte_array_sz));
+						new_val =
+							byte_arr_2_uint(byte_array, byte_array_sz);
 					}
-					byte_array_to_hex_str(byte_array, byte_array_sz, hex_str);
-					fprintf(fout_hex[i], "%s\n", hex_str);
+
+					if (payloads[i].valid(new_val, payloads[i].val,
+							      payloads[i].override)) {
+						if (payloads[i].override) {
+							payloads[i].override = 0;
+						}
+						fout_hex_last[i] = ftell(fout_hex[i]);
+						fout_dec_last[i] = ftell(fout_dec[i]);
+
+						payloads[i].val = new_val;
+						fprintf(fout_dec[i], "%d\n", new_val);
+						byte_array_to_hex_str(byte_array, byte_array_sz,
+								      hex_str);
+						fprintf(fout_hex[i], "%s\n", hex_str);
+					} else {
+						payloads[i].override = 1;
+						for (int j = i; j < num_payloads; ++j) {
+							ftruncate(fileno(fout_dec[j]),
+								  fout_dec_last[j]);
+							ftruncate(fileno(fout_hex[j]),
+								  fout_hex_last[j]);
+						}
+						i = 3;
+					}
+
 					free(byte_array);
 					free(hex_str);
 				}
@@ -256,7 +191,7 @@ int main()
 		} else {
 			if (bitset_array(c, header, COUNT_OF(header))) {
 				dvalid = 1;
-				bit_pos += add_byte_bits_to_bit_array(c, bit_array, 0);
+				bit_pos = add_byte_bits_to_bit_array(c, bit_array, 0);
 			}
 		}
 	}
