@@ -96,41 +96,28 @@ module top #(
    //    end
    // end
 
-   PLLE2_BASE #(
-      .CLKFBOUT_MULT  (24),
-      .DIVCLK_DIVIDE  (1),
-      .CLKOUT0_DIVIDE (8),
-      .CLKOUT1_DIVIDE (48),
-      .CLKIN1_PERIOD  (25)
-   ) pll (
-      .CLKOUT0  (clk_120mhz),
-      .CLKOUT1  (clk_20mhz),
-      .LOCKED   (pll_lock),
-      .CLKIN1   (clk_i),
-      .RST      (1'b0),
-      .CLKFBOUT (pll_fb),
-      .CLKFBIN  (pll_fb)
-   );
-
    wire                            clk_7_5mhz;
    wire                            clk_22_5mhz;
-   wire                            pll2_lock;
-   wire                            pll2_fb;
 
-   PLLE2_BASE #(
-      .CLKFBOUT_MULT  (15),
-      .DIVCLK_DIVIDE  (1),
-      .CLKOUT0_DIVIDE (120),
-      .CLKOUT1_DIVIDE (40),
-      .CLKIN1_PERIOD  (16.67)
-   ) pll2 (
-      .CLKOUT0  (clk_7_5mhz),
-      .CLKOUT1  (clk_22_5mhz),
-      .LOCKED   (pll2_lock),
-      .CLKIN1   (ft_clkout_i),
-      .RST      (1'b0),
-      .CLKFBOUT (pll2_fb),
-      .CLKFBIN  (pll2_fb)
+   MMCME2_BASE #(
+     .CLKFBOUT_MULT_F  (22.5),
+     .CLKIN1_PERIOD    (25),
+     .DIVCLK_DIVIDE    (1),
+     .CLKOUT0_DIVIDE_F (7.5),
+     .CLKOUT1_DIVIDE   (45),
+     .CLKOUT2_DIVIDE   (120),
+     .CLKOUT3_DIVIDE   (40)
+   ) pll (
+     .CLKIN1   (clk_i),
+     .RST      (1'b0),
+     .PWRDWN   (1'b0),
+     .LOCKED   (pll_lock),
+     .CLKFBIN  (pll_fb),
+     .CLKFBOUT (pll_fb),
+     .CLKOUT0  (clk_120mhz),
+     .CLKOUT1  (clk_20mhz),
+     .CLKOUT2  (clk_7_5mhz),
+     .CLKOUT3  (clk_22_5mhz)
    );
 
    // Generate 2MHz and 4MHz clock enables.
@@ -277,7 +264,7 @@ module top #(
    // Data is transmitted to the host PC in packets of 8 bytes.
    reg                         start;
    always @(posedge clk_7_5mhz) begin
-      if (!rst_n || !pll2_lock) begin
+      if (!rst_n) begin
          start <= 1'b0;
       end else begin
          start <= 1'b1;
@@ -287,6 +274,11 @@ module top #(
    reg [2:0]                   tx_byte_ctr;
    reg [USB_DATA_WIDTH-1:0]    ft_data;
    assign ft_data_io = !ft_wr_n_o ? ft_data : 1'bz;
+
+
+   (* ASYNC_REG = "TRUE" *) reg [N_WIDTH-1:0]           fft_ctr_cdc;
+   (* ASYNC_REG = "TRUE" *) reg signed [FFT_OUTPUT_WIDTH-1:0] fft_re_cdc;
+   (* ASYNC_REG = "TRUE" *) reg signed [FFT_OUTPUT_WIDTH-1:0] fft_im_cdc;
 
    always @(negedge ft_clkout_i) begin
       if (!rst_n) begin
@@ -298,16 +290,20 @@ module top #(
             tx_byte_ctr <= tx_byte_ctr + 1'b1;
          end
 
+         fft_ctr_cdc <= fft_ctr;
+         fft_re_cdc <= fft_re_o;
+         fft_im_cdc <= fft_im_o;
+
          if (fft_valid) begin
             case (tx_byte_ctr)
-            3'd0: ft_data <= {4'hf, fft_ctr[9:6]};
-            3'd1: ft_data <= {fft_ctr[5:0], fft_re_o[24:23]};
-            3'd2: ft_data <= fft_re_o[22:15];
-            3'd3: ft_data <= fft_re_o[14:7];
-            3'd4: ft_data <= {fft_re_o[6:0], fft_im_o[24:24]};
-            3'd5: ft_data <= fft_im_o[23:16];
-            3'd6: ft_data <= fft_im_o[15:8];
-            3'd7: ft_data <= fft_im_o[7:0];
+            3'd0: ft_data <= {4'hf, fft_ctr_cdc[9:6]};
+            3'd1: ft_data <= {fft_ctr_cdc[5:0], fft_re_cdc[24:23]};
+            3'd2: ft_data <= fft_re_cdc[22:15];
+            3'd3: ft_data <= fft_re_cdc[14:7];
+            3'd4: ft_data <= {fft_re_cdc[6:0], fft_im_cdc[24:24]};
+            3'd5: ft_data <= fft_im_cdc[23:16];
+            3'd6: ft_data <= fft_im_cdc[15:8];
+            3'd7: ft_data <= fft_im_cdc[7:0];
             endcase
          end else begin
             ft_data <= {USB_DATA_WIDTH{1'b0}};
@@ -319,8 +315,8 @@ endmodule
 
 `ifdef TOP_SIMULATE
 
-`include "PLLE2_BASE.v"
-`include "PLLE2_ADV.v"
+`include "MMCME2_BASE.v"
+`include "MMCME2_ADV.v"
 `include "BRAM_SINGLE_MACRO.v"
 `include "BRAM_SDP_MACRO.v"
 `include "BRAM_TDP_MACRO.v"
@@ -342,7 +338,7 @@ module top_tb;
       $dumpvars(2, top_tb);
       $readmemh("tb/sample_in.hex", samples);
 
-      #2000000 $finish;
+      #20000 $finish;
    end
 
    reg clk_40mhz = 0;
