@@ -35,7 +35,7 @@ int fft_ctr_valid(int val, int last_val, int override)
 
 struct payload {
 	// Payload identifier. Used to name output files.
-	char name[10];
+	char name[20];
 	// Index of MSB bit (big endian). Indices start at 0.
 	int lower_idx;
 	// Index of LSB bit.
@@ -60,6 +60,99 @@ int main()
 	char *fname = "../read.bin";
 	char *data_dir = "data/";
 
+	// ADC output
+	/* struct payload payloads[2] = {{.name = "chan_a", */
+	/* 			       .lower_idx = 4, */
+	/* 			       .upper_idx = 15, */
+	/* 			       .sign = 1, */
+	/* 			       .val = 0, */
+	/* 			       .override = 0, */
+	/* 			       .valid = &fft_re_valid}, */
+	/* 			      {.name = "discard", */
+	/* 			       .lower_idx = 16, */
+	/* 			       .upper_idx = 63, */
+	/* 			       .sign = 0, */
+	/* 			       .val = 0, */
+	/* 			       .override = 0, */
+	/* 			       .valid = &fft_re_valid}}; */
+
+	// FIR-filtered output
+	/* struct payload payloads[2] = {{.name = "chan_filtered", */
+	/* 			       .lower_idx = 4, */
+	/* 			       .upper_idx = 17, */
+	/* 			       .sign = 1, */
+	/* 			       .val = 0, */
+	/* 			       .override = 0, */
+	/* 			       .valid = &fft_re_valid}, */
+	/* 			      {.name = "discard", */
+	/* 			       .lower_idx = 18, */
+	/* 			       .upper_idx = 63, */
+	/* 			       .sign = 0, */
+	/* 			       .val = 0, */
+	/* 			       .override = 0, */
+	/* 			       .valid = &fft_re_valid}}; */
+
+	// FFT input
+	/* struct payload payloads[4] = {{.name = "fft_in", */
+	/* 			       .lower_idx = 4, */
+	/* 			       .upper_idx = 17, */
+	/* 			       .sign = 1, */
+	/* 			       .val = 0, */
+	/* 			       .override = 0, */
+	/* 			       .valid = &fft_re_valid}, */
+	/* 			      {.name = "fft_en", */
+	/* 			       .lower_idx = 18, */
+	/* 			       .upper_idx = 18, */
+	/* 			       .sign = 0, */
+	/* 			       .val = 0, */
+	/* 			       .override = 0, */
+	/* 			       .valid = &fft_re_valid}, */
+	/* 			      {.name = "fft_sync", */
+	/* 			       .lower_idx = 19, */
+	/* 			       .upper_idx = 19, */
+	/* 			       .sign = 0, */
+	/* 			       .val = 0, */
+	/* 			       .override = 0, */
+	/* 			       .valid = &fft_re_valid}, */
+	/* 			      {.name = "discard", */
+	/* 			       .lower_idx = 20, */
+	/* 			       .upper_idx = 63, */
+	/* 			       .sign = 0, */
+	/* 			       .val = 0, */
+	/* 			       .override = 0, */
+	/* 			       .valid = &fft_re_valid}}; */
+
+	// FFT w0_re
+	/* struct payload payloads[4] = {{.name = "fft_w0_re", */
+	/* 			       .lower_idx = 4, */
+	/* 			       .upper_idx = 28, */
+	/* 			       .sign = 1, */
+	/* 			       .val = 0, */
+	/* 			       .override = 0, */
+	/* 			       .valid = &fft_re_valid}, */
+	/* 			      {.name = "fft_en", */
+	/* 			       .lower_idx = 29, */
+	/* 			       .upper_idx = 29, */
+	/* 			       .sign = 0, */
+	/* 			       .val = 0, */
+	/* 			       .override = 0, */
+	/* 			       .valid = &fft_re_valid}, */
+	/* 			      {.name = "fft_sync", */
+	/* 			       .lower_idx = 30, */
+	/* 			       .upper_idx = 30, */
+	/* 			       .sign = 0, */
+	/* 			       .val = 0, */
+	/* 			       .override = 0, */
+	/* 			       .valid = &fft_re_valid}, */
+	/* 			      {.name = "discard", */
+	/* 			       .lower_idx = 31, */
+	/* 			       .upper_idx = 63, */
+	/* 			       .sign = 0, */
+	/* 			       .val = 0, */
+	/* 			       .override = 0, */
+	/* 			       .valid = &fft_re_valid}}; */
+
+	// FFT output
 	struct payload payloads[3] = {{.name = "fft_ctr",
 				       .lower_idx = 4,
 				       .upper_idx = 13,
@@ -93,7 +186,7 @@ int main()
 
 	int num_payloads = COUNT_OF(payloads);
 
-	char fout_hex_names[num_payloads][30];
+	char fout_hex_names[num_payloads][40];
 	for (int i = 0; i < num_payloads; ++i) {
 		strcpy(fout_hex_names[i], data_dir);
 		strcat(fout_hex_names[i], payloads[i].name);
@@ -113,7 +206,7 @@ int main()
 		fout_hex_last[i] = 0;
 	}
 
-	char fout_dec_names[num_payloads][20];
+	char fout_dec_names[num_payloads][40];
 	for (int i = 0; i < num_payloads; ++i) {
 		strcpy(fout_dec_names[i], data_dir);
 		strcat(fout_dec_names[i], payloads[i].name);
@@ -224,7 +317,7 @@ int main()
 
 	// compute FFT magnitude. Once the data looks right, this
 	// should be made realtime.
-	if (strncmp(payloads[1].name, "fft_re", strlen("fft_re")) == 0 &&
+	if (num_payloads > 2 && strncmp(payloads[1].name, "fft_re", strlen("fft_re")) == 0 &&
 	    strncmp(payloads[2].name, "fft_im", strlen("fft_im")) == 0) {
 
 		FILE *f_fft_re = fopen("data/fft_re.dec", "r");
@@ -249,7 +342,7 @@ int main()
 		char *im_line = malloc(100);
 		while (fgets(re_line, 100, f_fft_re) != NULL &&
 		       fgets(im_line, 100, f_fft_im) != NULL) {
-			double mag = sqrt(atoi(re_line) ^ 2 + atoi(im_line) ^ 2);
+			double mag = sqrt((atoi(re_line) ^ 2) + (atoi(im_line) ^ 2));
 			if (mag != mag) {
 				fprintf(f_fft, "%d\n", 0);
 			} else {

@@ -1,7 +1,7 @@
 STRICT_FLAGS    = -Wall -Wextra -Wshadow -Wstrict-aliasing -ansi -pedantic -std=gnu11
 FLAGS		= -O2 $(STRICT_FLAGS)
 DEBUG_FLAGS	= -O0 -g $(STRICT_FLAGS)
-LINK_FLAGS      = -lm -lbitmanip
+LINK_FLAGS      = -lbitmanip -lm
 
 exec: read_bytes
 	./read_bytes
