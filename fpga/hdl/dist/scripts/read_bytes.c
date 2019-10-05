@@ -123,7 +123,7 @@ int main()
 	/* 			       .valid = &fft_re_valid}}; */
 
 	// FFT w0_re
-	/* struct payload payloads[4] = {{.name = "fft_w0_re", */
+	/* struct payload payloads[6] = {{.name = "fft_w0_re", */
 	/* 			       .lower_idx = 4, */
 	/* 			       .upper_idx = 28, */
 	/* 			       .sign = 1, */
@@ -140,6 +140,20 @@ int main()
 	/* 			      {.name = "fft_sync", */
 	/* 			       .lower_idx = 30, */
 	/* 			       .upper_idx = 30, */
+	/* 			       .sign = 0, */
+	/* 			       .val = 0, */
+	/* 			       .override = 0, */
+	/* 			       .valid = &fft_re_valid}, */
+	/* 			      {.name = "pll_lock", */
+	/* 			       .lower_idx = 31, */
+	/* 			       .upper_idx = 31, */
+	/* 			       .sign = 0, */
+	/* 			       .val = 0, */
+	/* 			       .override = 0, */
+	/* 			       .valid = &fft_re_valid}, */
+	/* 			      {.name = "pll2_lock", */
+	/* 			       .lower_idx = 32, */
+	/* 			       .upper_idx = 32, */
 	/* 			       .sign = 0, */
 	/* 			       .val = 0, */
 	/* 			       .override = 0, */
@@ -342,7 +356,7 @@ int main()
 		char *im_line = malloc(100);
 		while (fgets(re_line, 100, f_fft_re) != NULL &&
 		       fgets(im_line, 100, f_fft_im) != NULL) {
-			double mag = sqrt((atoi(re_line) ^ 2) + (atoi(im_line) ^ 2));
+			double mag = sqrt(pow(atoi(re_line), 2) + pow(atoi(im_line), 2));
 			if (mag != mag) {
 				fprintf(f_fft, "%d\n", 0);
 			} else {
