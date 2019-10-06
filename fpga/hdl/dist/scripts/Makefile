@@ -12,4 +12,10 @@ read_bytes: read_bytes.c Makefile
 debug: read_bytes.c Makefile
 	gcc $(DEBUG_FLAGS) read_bytes.c -o read_bytes $(LINK_FLAGS)
 
-.PHONY: exec debug
+missed_reads: missed_reads.c
+	gcc $(FLAGS) missed_reads.c -o missed_reads
+
+debug_missed_reads: missed_reads.c
+	gcc $(DEBUG_FLAGS) missed_reads.c -o missed_reads
+
+.PHONY: exec debug debug_missed_reads

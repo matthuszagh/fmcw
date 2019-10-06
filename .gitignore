@@ -59,3 +59,4 @@ openems/octave-workspace
 /fpga/hdl/dist/scripts/read_bytes
 /fpga/hdl/dist/read
 /fpga/hdl/dist/scripts/data
+/fpga/hdl/dist/scripts/missed_reads
