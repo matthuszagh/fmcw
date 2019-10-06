@@ -1,6 +1,6 @@
 `default_nettype none
 
-`include "adc.v"
+`include "ltc2292.v"
 `include "fir_poly.v"
 `include "fft_r22sdf.v"
 `include "ram_tdp_18k.v"
@@ -151,14 +151,13 @@ module top #(
    );
 
    wire signed [ADC_DATA_WIDTH-1:0] chan_a;
+   wire signed [ADC_DATA_WIDTH-1:0] chan_b;
 
-   adc #(
-      .DATA_WIDTH (ADC_DATA_WIDTH)
-   ) adc (
-      .clk_i   (clk_i),
-      .ce_i    (adf_config_done),
-      .data_i  (adc_d_i),
-      .chan_a  (chan_a)
+   ltc2292 (
+      .clk (clk_i),
+      .di  (adc_d_i),
+      .dao (chan_a),
+      .dbo (chan_b)
    );
 
    wire signed [FIR_OUTPUT_WIDTH-1:0] chan_a_filtered;

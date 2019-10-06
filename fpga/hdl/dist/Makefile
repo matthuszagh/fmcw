@@ -8,6 +8,7 @@ SOURCES		= top.v \
 		  adc.v \
 		  usb.v \
 		  $(ADF4158_DIR)/adf4158.v \
+		  $(LTC2292_DIR)/ltc2292.v \
 	 	  $(MULT_ADD_DIR)/mult_add.v \
 		  $(RAM_SINGLE_DIR)/ram_single_18k.v \
 		  $(RAM_DUAL_DIR)/ram_tdp_18k.v \

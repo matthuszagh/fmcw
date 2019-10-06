@@ -8,6 +8,7 @@ LIBDIGITAL_PATH := /home/matt/src/libdigital/libdigital/hdl
 FFT_DIR         := $(LIBDIGITAL_PATH)/fft/r22sdf/verilog/single
 FIR_DIR         := $(LIBDIGITAL_PATH)/filters/fir/poly/verilog/120taps/1-channel
 ADF4158_DIR     := $(LIBDIGITAL_PATH)/device_interfaces/adf4158
+LTC2292_DIR     := $(LIBDIGITAL_PATH)/device_interfaces/ltc2292
 MULT_ADD_DIR    := $(LIBDIGITAL_PATH)/dsp/multiply_add
 RAM_SINGLE_DIR  := $(LIBDIGITAL_PATH)/memory/ram/single_port
 RAM_DUAL_DIR    := $(LIBDIGITAL_PATH)/memory/ram/dual_port
