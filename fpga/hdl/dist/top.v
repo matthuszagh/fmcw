@@ -5,6 +5,7 @@
 `include "fft_r22sdf.v"
 `include "ram_tdp_18k.v"
 `include "adf4158.v"
+`include "ft245.v"
 
 module top #(
    parameter GPIO_WIDTH       = 6,
@@ -153,7 +154,7 @@ module top #(
    wire signed [ADC_DATA_WIDTH-1:0] chan_a;
    wire signed [ADC_DATA_WIDTH-1:0] chan_b;
 
-   ltc2292 (
+   ltc2292 ltc2292 (
       .clk (clk_i),
       .di  (adc_d_i),
       .dao (chan_a),
