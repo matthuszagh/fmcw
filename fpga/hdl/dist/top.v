@@ -98,28 +98,52 @@ module top #(
    //    end
    // end
 
+   /**
+    * Drives onboard logic.
+    */
+   wire                            clk_120mhz;
+   wire                            clk_20mhz;
+   wire                            pll_lock;
+   wire                            pll_fb;
+   PLLE2_BASE #(
+      .CLKFBOUT_MULT  (24 ),
+      .DIVCLK_DIVIDE  (1  ),
+      .CLKOUT0_DIVIDE (8  ),
+      .CLKOUT1_DIVIDE (48 ),
+      .CLKIN1_PERIOD  (25 )
+   ) main_pll (
+      .CLKOUT0  (clk_120mhz ),
+      .CLKOUT1  (clk_20mhz  ),
+      .LOCKED   (pll_lock   ),
+      .CLKIN1   (clk_i      ),
+      .RST      (1'b0       ),
+      .CLKFBOUT (pll_fb     ),
+      .CLKFBIN  (pll_fb     )
+   );
+   wire                            rst_n = pll_lock;
+
+   /**
+    * Drives FT2232H side of data transmission between FPGA and
+    * FT2232H.
+    */
    wire                            clk_7_5mhz;
    wire                            clk_22_5mhz;
-
-   MMCME2_BASE #(
-     .CLKFBOUT_MULT_F  (22.5),
-     .CLKIN1_PERIOD    (25),
-     .DIVCLK_DIVIDE    (1),
-     .CLKOUT0_DIVIDE_F (7.5),
-     .CLKOUT1_DIVIDE   (45),
-     .CLKOUT2_DIVIDE   (120),
-     .CLKOUT3_DIVIDE   (40)
-   ) pll (
-     .CLKIN1   (clk_i),
-     .RST      (1'b0),
-     .PWRDWN   (1'b0),
-     .LOCKED   (pll_lock),
-     .CLKFBIN  (pll_fb),
-     .CLKFBOUT (pll_fb),
-     .CLKOUT0  (clk_120mhz),
-     .CLKOUT1  (clk_20mhz),
-     .CLKOUT2  (clk_7_5mhz),
-     .CLKOUT3  (clk_22_5mhz)
+   wire                            ft_pll_lock;
+   wire                            ft_pll_fb;
+   PLLE2_BASE #(
+      .CLKFBOUT_MULT  (15    ),
+      .DIVCLK_DIVIDE  (1     ),
+      .CLKOUT0_DIVIDE (120   ),
+      .CLKOUT1_DIVIDE (40    ),
+      .CLKIN1_PERIOD  (16.67 )
+   ) ft_pll (
+      .CLKOUT0  (clk_7_5mhz  ),
+      .CLKOUT1  (clk_22_5mhz ),
+      .LOCKED   (ft_pll_lock ),
+      .CLKIN1   (ft_clkout_i ),
+      .RST      (1'b0        ),
+      .CLKFBOUT (ft_pll_fb   ),
+      .CLKFBIN  (ft_pll_fb   )
    );
 
    // Generate 2MHz and 4MHz clock enables.
