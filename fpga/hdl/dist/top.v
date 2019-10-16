@@ -46,10 +46,10 @@ module top #(
    input wire                             sd_detect_i,
 
    // mixer
-   output reg                             mix_enbl_n_o = 1'b0, /* Low voltage enables mixer. */
+   output wire                            mix_enbl_n_o, /* Low voltage enables mixer. */
 
    // power amplifier
-   output reg                             pa_en_n_o = 1'b0,
+   output wire                            pa_en_n_o,
 
    // frequency synthesizer
    output wire                            adf_ce_o,
@@ -70,23 +70,12 @@ module top #(
    localparam FFT_N   = 1024;
    localparam N_WIDTH = $clog2(FFT_N);
 
-   wire                            clk_120mhz;
-   wire                            clk_20mhz;
-   wire                            pll_lock;
-   wire                            pll_fb;
-
-   wire                            rst_n = pll_lock;
-
-   // assign mix_enbl_n_o = !pll_lock;
-   // assign pa_en_n_o    = !pll_lock;
+   assign mix_enbl_n_o = !pll_lock;
+   assign pa_en_n_o    = !pll_lock;
    assign led_o        = !pa_en_n_o;
 
-   assign ext1_io[0] = ft_wr_n_o;
-   assign ext1_io[1] = clk_7_5mhz;
-   assign ext1_io[2] = clk_22_5mhz;
-   assign ext1_io[3] = fft_en;
-   assign ext1_io[4] = start;
-   assign ext1_io[5] = fft_valid;
+   assign ext1_io[0] = ft245_wrfifo_full;
+   assign ext1_io[1] = ft_wr_n_o;
 
    // always @(posedge clk_i) begin
    //    if (!rst_n) begin
