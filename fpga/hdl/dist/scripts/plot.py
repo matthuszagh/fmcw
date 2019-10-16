@@ -27,13 +27,13 @@ def plot_fft():
     plt.show()
 
 
-def plot_fft_re():
+def plot_fft_mag():
     y = []
     y2 = []
-    with open("data/fft_re.dec", "r") as f:
+    with open("data/fft.dec", "r") as f:
         for _, line in enumerate(f):
             line = line.strip("\n")
-            val = int(line)
+            val = float(line)
             y.append(val)
 
     with open("data/fft_ctr.dec", "r") as f:
@@ -114,24 +114,27 @@ def plot_fft_w0_re():
             val = int(line)
             y4.append(150 * val)
 
-    with open("data/pll2_lock.dec", "r") as f:
+    with open("data/fft_in.dec", "r") as f:
         for _, line in enumerate(f):
             line = line.strip("\n")
             val = int(line)
-            y5.append(200 * val)
+            y5.append(val)
 
     x = np.linspace(0, len(y), len(y))
-    xlim = x[10000:100000]
-    ylim = y[10000:100000]
-    y2lim = y2[10000:100000]
-    y3lim = y3[10000:100000]
-    y4lim = y4[10000:100000]
-    y5lim = y5[10000:100000]
-    plt.plot(xlim, ylim)
-    plt.plot(xlim, y2lim)
-    plt.plot(xlim, y3lim)
-    plt.plot(xlim, y4lim)
-    plt.plot(xlim, y5lim)
+    xlim = x[10000:30000]
+    ylim = y[10000:30000]
+    y2lim = y2[10000:30000]
+    y3lim = y3[10000:30000]
+    y4lim = y4[10000:30000]
+    y5lim = y5[10000:30000]
+    fig = plt.figure()
+    ax = fig.add_subplot()
+    # ax.plot(xlim, ylim)
+    ax.plot(xlim, y2lim)
+    ax.plot(xlim, y5lim)
+    ax.set_ylim([-1000, 1000])
+    # plt.plot(xlim, y3lim)
+    # plt.plot(xlim, y4lim)
     plt.show()
 
 
@@ -147,6 +150,60 @@ def plot_chan_filtered():
     xlim = x[0:10000]
     ylim = y[0:10000]
     plt.plot(xlim, ylim)
+    plt.show()
+
+
+def plot_pre_post_fir():
+    y = []
+    y2 = []
+    with open("data/chan.dec", "r") as f:
+        for _, line in enumerate(f):
+            line = line.strip("\n")
+            val = int(line)
+            y.append(val)
+
+    with open("data/chan_filtered.dec", "r") as f:
+        for _, line in enumerate(f):
+            line = line.strip("\n")
+            val = int(line)
+            y2.append(val)
+
+    x = np.linspace(0, len(y), len(y))
+    xlim = x[0:10000]
+    ylim = y[0:10000]
+    y2lim = y2[0:10000]
+    fig = plt.figure()
+    ax = fig.add_subplot()
+    ax.plot(xlim, ylim)
+    ax.plot(xlim, y2lim)
+    ax.legend(["pre", "post"])
+    plt.show()
+
+
+def plot_chan_a_chan_b():
+    y = []
+    y2 = []
+    with open("data/chan_a.dec", "r") as f:
+        for _, line in enumerate(f):
+            line = line.strip("\n")
+            val = int(line)
+            y.append(val)
+
+    with open("data/chan_b.dec", "r") as f:
+        for _, line in enumerate(f):
+            line = line.strip("\n")
+            val = int(line)
+            y2.append(val)
+
+    x = np.linspace(0, len(y), len(y))
+    xlim = x[0:10000]
+    ylim = y[0:10000]
+    y2lim = y2[0:10000]
+    fig = plt.figure()
+    ax = fig.add_subplot()
+    ax.plot(xlim, ylim)
+    ax.plot(xlim, y2lim)
+    ax.legend(["pre", "post"])
     plt.show()
 
 
@@ -166,4 +223,4 @@ def plot_chan_a():
 
 
 if __name__ == "__main__":
-    plot_fft_re()
+    plot_chan_a_chan_b()

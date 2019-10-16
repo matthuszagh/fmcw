@@ -92,6 +92,52 @@ int main()
 	/* 			       .override = 0, */
 	/* 			       .valid = &fft_re_valid}}; */
 
+	// chan_a + chan_b
+	struct payload payloads[3] = {{.name = "chan_a",
+				       .lower_idx = 4,
+				       .upper_idx = 15,
+				       .sign = 1,
+				       .val = 0,
+				       .override = 0,
+				       .valid = &fft_re_valid},
+				      {.name = "chan_b",
+				       .lower_idx = 16,
+				       .upper_idx = 27,
+				       .sign = 1,
+				       .val = 0,
+				       .override = 0,
+				       .valid = &fft_re_valid},
+				      {.name = "discard",
+				       .lower_idx = 28,
+				       .upper_idx = 63,
+				       .sign = 0,
+				       .val = 0,
+				       .override = 0,
+				       .valid = &fft_re_valid}};
+
+	// pre+post FIR
+	/* struct payload payloads[3] = {{.name = "chan", */
+	/* 			       .lower_idx = 4, */
+	/* 			       .upper_idx = 15, */
+	/* 			       .sign = 1, */
+	/* 			       .val = 0, */
+	/* 			       .override = 0, */
+	/* 			       .valid = &fft_re_valid}, */
+	/* 			      {.name = "chan_filtered", */
+	/* 			       .lower_idx = 16, */
+	/* 			       .upper_idx = 29, */
+	/* 			       .sign = 1, */
+	/* 			       .val = 0, */
+	/* 			       .override = 0, */
+	/* 			       .valid = &fft_re_valid}, */
+	/* 			      {.name = "discard", */
+	/* 			       .lower_idx = 30, */
+	/* 			       .upper_idx = 63, */
+	/* 			       .sign = 0, */
+	/* 			       .val = 0, */
+	/* 			       .override = 0, */
+	/* 			       .valid = &fft_re_valid}}; */
+
 	// FFT input
 	/* struct payload payloads[4] = {{.name = "fft_in", */
 	/* 			       .lower_idx = 4, */
@@ -151,15 +197,15 @@ int main()
 	/* 			       .val = 0, */
 	/* 			       .override = 0, */
 	/* 			       .valid = &fft_re_valid}, */
-	/* 			      {.name = "pll2_lock", */
+	/* 			      {.name = "fft_in", */
 	/* 			       .lower_idx = 32, */
-	/* 			       .upper_idx = 32, */
-	/* 			       .sign = 0, */
+	/* 			       .upper_idx = 45, */
+	/* 			       .sign = 1, */
 	/* 			       .val = 0, */
 	/* 			       .override = 0, */
 	/* 			       .valid = &fft_re_valid}, */
 	/* 			      {.name = "discard", */
-	/* 			       .lower_idx = 31, */
+	/* 			       .lower_idx = 46, */
 	/* 			       .upper_idx = 63, */
 	/* 			       .sign = 0, */
 	/* 			       .val = 0, */
@@ -167,27 +213,27 @@ int main()
 	/* 			       .valid = &fft_re_valid}}; */
 
 	// FFT output
-	struct payload payloads[3] = {{.name = "fft_ctr",
-				       .lower_idx = 4,
-				       .upper_idx = 13,
-				       .sign = 0,
-				       .val = 0,
-				       .override = 0,
-				       .valid = &fft_ctr_valid},
-				      {.name = "fft_re",
-				       .lower_idx = 14,
-				       .upper_idx = 38,
-				       .sign = 1,
-				       .val = 0,
-				       .override = 0,
-				       .valid = &fft_re_valid},
-				      {.name = "fft_im",
-				       .lower_idx = 39,
-				       .upper_idx = 63,
-				       .sign = 1,
-				       .val = 0,
-				       .override = 0,
-				       .valid = &fft_im_valid}};
+	/* struct payload payloads[3] = {{.name = "fft_ctr", */
+	/* 			       .lower_idx = 4, */
+	/* 			       .upper_idx = 13, */
+	/* 			       .sign = 0, */
+	/* 			       .val = 0, */
+	/* 			       .override = 0, */
+	/* 			       .valid = &fft_ctr_valid}, */
+	/* 			      {.name = "fft_re", */
+	/* 			       .lower_idx = 14, */
+	/* 			       .upper_idx = 38, */
+	/* 			       .sign = 1, */
+	/* 			       .val = 0, */
+	/* 			       .override = 0, */
+	/* 			       .valid = &fft_re_valid}, */
+	/* 			      {.name = "fft_im", */
+	/* 			       .lower_idx = 39, */
+	/* 			       .upper_idx = 63, */
+	/* 			       .sign = 1, */
+	/* 			       .val = 0, */
+	/* 			       .override = 0, */
+	/* 			       .valid = &fft_im_valid}}; */
 
 	FILE *fin = fopen(fname, "rb");
 	if (!fin) {
