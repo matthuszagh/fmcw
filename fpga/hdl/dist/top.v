@@ -34,8 +34,8 @@ module top #(
    // ADC
    input wire signed [ADC_DATA_WIDTH-1:0] adc_d_i, /* Input data from ADC. */
    input wire [1:0]                       adc_of_i, /* High value indicates overflow or underflow. */
-   output reg [1:0]                       adc_oe_o = 2'b00, /* 10 turns on channel A and turns off channel B. */
-   output reg [1:0]                       adc_shdn_o = 2'b00, /* Same state as adc_oe. */
+   output reg [1:0]                       adc_oe_o, /* 10 turns on channel A and turns off channel B. */
+   output reg [1:0]                       adc_shdn_o, /* Same state as adc_oe. */
 
    // SD card
    // TODO: Setup option to load bitstream from SD card.
@@ -77,15 +77,15 @@ module top #(
    assign ext1_io[0] = ft245_wrfifo_full;
    assign ext1_io[1] = ft_wr_n_o;
 
-   // always @(posedge clk_i) begin
-   //    if (!rst_n) begin
-   //       adc_oe_o <= 2'b11;
-   //       adc_shdn_o <= 2'b11;
-   //    end else begin
-   //       adc_oe_o <= 2'b10;
-   //       adc_shdn_o <= 2'b10;
-   //    end
-   // end
+   always @(posedge clk_i) begin
+      if (!rst_n) begin
+         adc_oe_o <= 2'b11;
+         adc_shdn_o <= 2'b11;
+      end else begin
+         adc_oe_o <= 2'b10;
+         adc_shdn_o <= 2'b10;
+      end
+   end
 
    /**
     * Drives onboard logic.
