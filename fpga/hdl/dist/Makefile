@@ -5,7 +5,6 @@ include Makefile.inc
 SYNTHESIS_TOOL  = vivado
 
 SOURCES		= top.v \
-		  adc.v \
 		  usb.v \
 		  $(ADF4158_DIR)/adf4158.v \
 		  $(LTC2292_DIR)/ltc2292.v \
