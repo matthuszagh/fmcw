@@ -1,5 +1,4 @@
 # vivado paths
-VIVADO_SRC_PATH	:= -I/home/matt/src/vivado/2019_libs
 UNIMACRO_PATH	:= $(VIVADO_SRC_PATH)/unimacro
 UNISIMS_PATH	:= $(VIVADO_SRC_PATH)/unisims
 
@@ -8,18 +7,20 @@ FFT_DIR         := $(LIBDIGITAL_PATH)/fft/r22sdf/verilog/single
 FIR_DIR         := $(LIBDIGITAL_PATH)/filters/fir/poly/verilog/120taps/1-channel
 ADF4158_DIR     := $(LIBDIGITAL_PATH)/device_interfaces/adf4158
 LTC2292_DIR     := $(LIBDIGITAL_PATH)/device_interfaces/ltc2292
+FT245_DIR       := $(LIBDIGITAL_PATH)/device_interfaces/ft2232h/ft245
 MULT_ADD_DIR    := $(LIBDIGITAL_PATH)/dsp/multiply_add
 RAM_SINGLE_DIR  := $(LIBDIGITAL_PATH)/memory/ram/single_port
 RAM_DUAL_DIR    := $(LIBDIGITAL_PATH)/memory/ram/dual_port
 SHIFT_REG_DIR   := $(LIBDIGITAL_PATH)/memory/shift_reg
 
-LOCAL_DIRS      := -I$(FFT_DIR) \
-                   -I$(FIR_DIR) \
-                   -I$(ADF4158_DIR) \
-                   -I$(MULT_ADD_DIR) \
-                   -I$(RAM_SINGLE_DIR) \
-                   -I$(RAM_DUAL_DIR) \
-                   -I$(SHIFT_REG_DIR)
+LOCAL_DIRS      := $(FFT_DIR) \
+                   $(FIR_DIR) \
+                   $(ADF4158_DIR) \
+                   $(FT245_DIR) \
+                   $(MULT_ADD_DIR) \
+                   $(RAM_SINGLE_DIR) \
+                   $(RAM_DUAL_DIR) \
+                   $(SHIFT_REG_DIR)
 
 INCLUDE_DIRS	:= $(VIVADO_SRC_PATH) $(UNIMACRO_PATH) $(UNISIMS_PATH) $(LOCAL_DIRS)
 
@@ -28,16 +29,7 @@ INCLUDE_DIRS	:= $(VIVADO_SRC_PATH) $(UNIMACRO_PATH) $(UNISIMS_PATH) $(LOCAL_DIRS
 # planned for yosys.
 SYNTHESIS_TOOL  = vivado
 
-SOURCES		= top.v \
-		  usb.v \
-		  $(ADF4158_DIR)/adf4158.v \
-		  $(LTC2292_DIR)/ltc2292.v \
-	 	  $(MULT_ADD_DIR)/mult_add.v \
-		  $(RAM_SINGLE_DIR)/ram_single_18k.v \
-		  $(RAM_DUAL_DIR)/ram_tdp_18k.v \
-		  $(SHIFT_REG_DIR)/shift_reg.v \
-		  $(FFT_DIR)/*.v \
-		  $(FIR_DIR)/*.v
+SOURCES		= $(shell find . $(INCLUDE_DIRS) -name '*.v')
 
 CONSTRAINTS	= pinmap.xdc
 
@@ -70,7 +62,7 @@ timing: $(SOURCES) $(VIVADO_DIR)/timing.tcl
 	vivado -nolog -nojournal -mode batch -source $(VIVADO_DIR)/timing.tcl
 
 test:
-	iverilog $(INCLUDE_DIRS) -DTOP_SIMULATE top.v -o tb/top_tb
+	iverilog $(addprefix -I,$(INCLUDE_DIRS)) -DTOP_SIMULATE top.v -o tb/top_tb
 	./tb/top_tb
 	gtkwave tb/top_tb.vcd
 
