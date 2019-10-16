@@ -8,7 +8,9 @@ FIR_DIR         := $(LIBDIGITAL_PATH)/filters/fir/poly/verilog/120taps/1-channel
 ADF4158_DIR     := $(LIBDIGITAL_PATH)/device_interfaces/adf4158
 LTC2292_DIR     := $(LIBDIGITAL_PATH)/device_interfaces/ltc2292
 FT245_DIR       := $(LIBDIGITAL_PATH)/device_interfaces/ft2232h/ft245
+ASYNC_FIFO_DIR  := $(LIBDIGITAL_PATH)/memory/fifo/async
 MULT_ADD_DIR    := $(LIBDIGITAL_PATH)/dsp/multiply_add
+RAM_DIR         := $(LIBDIGITAL_PATH)/memory/ram
 RAM_SINGLE_DIR  := $(LIBDIGITAL_PATH)/memory/ram/single_port
 RAM_DUAL_DIR    := $(LIBDIGITAL_PATH)/memory/ram/dual_port
 SHIFT_REG_DIR   := $(LIBDIGITAL_PATH)/memory/shift_reg
@@ -16,8 +18,11 @@ SHIFT_REG_DIR   := $(LIBDIGITAL_PATH)/memory/shift_reg
 LOCAL_DIRS      := $(FFT_DIR) \
                    $(FIR_DIR) \
                    $(ADF4158_DIR) \
+		   $(LTC2292_DIR) \
                    $(FT245_DIR) \
+		   $(ASYNC_FIFO_DIR) \
                    $(MULT_ADD_DIR) \
+                   $(RAM_DIR) \
                    $(RAM_SINGLE_DIR) \
                    $(RAM_DUAL_DIR) \
                    $(SHIFT_REG_DIR)
