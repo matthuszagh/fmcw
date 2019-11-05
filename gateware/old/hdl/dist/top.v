@@ -74,16 +74,16 @@ module top #(
    assign pa_en_n_o    = !pll_lock;
    assign led_o        = !pa_en_n_o;
 
-   assign ext1_io[0] = ft245_wrfifo_full;
-   assign ext1_io[1] = ft_wr_n_o;
+   assign ext1_io[0] = ft_clkout_i;
+   assign ext1_io[1] = ft245_wrfifo_full;
 
    always @(posedge clk_i) begin
       if (!rst_n) begin
          adc_oe_o <= 2'b11;
          adc_shdn_o <= 2'b11;
       end else begin
-         adc_oe_o <= 2'b10;
-         adc_shdn_o <= 2'b10;
+         adc_oe_o <= 2'b00;
+         adc_shdn_o <= 2'b00;
       end
    end
 
@@ -109,6 +109,8 @@ module top #(
       .CLKFBOUT (pll_fb     ),
       .CLKFBIN  (pll_fb     )
    );
+   // TODO this should be registered to permit higher fanout and
+   // ensure it is asserted long enough.
    wire                            rst_n = pll_lock;
 
    /**
@@ -274,25 +276,25 @@ module top #(
       .DATA_WIDTH   (FT245_DATA_WIDTH ),
       .DUPLICATE_TX (1                )
    ) ft245 (
-      .rst_n        (rst_n                                 ),
-      .clk          (clk_i                                 ),
-      .wren         (!ft245_wrfifo_full                    ),
-      .wrdata       ({1'b1, {43{1'b0}}, chan_a, {8{1'b0}}} ), // TODO temp
-      .wrfifo_full  (ft245_wrfifo_full                     ),
-      .rden         (!ft245_rdfifo_empty                   ),
-      .rddata       (ft245_rddata                          ),
-      .rdfifo_full  (ft245_rdfifo_full                     ),
-      .rdfifo_empty (ft245_rdfifo_empty                    ),
-      .ft_clk       (ft_clkout_i                           ),
-      .slow_ft_clk  (clk_7_5mhz                            ),
-      .rxf_n        (ft_rxf_n_i                            ),
-      .txe_n        (ft_txe_n_i                            ),
-      .rd_n         (ft_rd_n_o                             ),
-      .wr_n         (ft_wr_n_o                             ),
-      .oe_n         (ft_oe_n_o                             ),
-      .suspend_n    (ft_suspend_n_i                        ),
-      .ft_siwua_n   (ft_siwua_n_o                          ),
-      .ft_data      (ft_data_io                            )
+      .rst_n        (rst_n                                    ),
+      .clk          (clk_i                                    ),
+      .wren         (!ft245_wrfifo_full                       ),
+      .wrdata       ({4'b1000, {27{1'b0}}, fft_re_o, {8{1'b0}}} ), // TODO temp
+      .wrfifo_full  (ft245_wrfifo_full                        ),
+      .rden         (!ft245_rdfifo_empty                      ),
+      .rddata       (ft245_rddata                             ),
+      .rdfifo_full  (ft245_rdfifo_full                        ),
+      .rdfifo_empty (ft245_rdfifo_empty                       ),
+      .ft_clk       (ft_clkout_i                              ),
+      .slow_ft_clk  (clk_7_5mhz                               ),
+      .rxf_n        (ft_rxf_n_i                               ),
+      .txe_n        (ft_txe_n_i                               ),
+      .rd_n         (ft_rd_n_o                                ),
+      .wr_n         (ft_wr_n_o                                ),
+      .oe_n         (ft_oe_n_o                                ),
+      .suspend_n    (ft_suspend_n_i                           ),
+      .ft_siwua_n   (ft_siwua_n_o                             ),
+      .ft_data      (ft_data_io                               )
    );
 
 endmodule

@@ -1,0 +1,98 @@
+==18706== Memcheck, a memory error detector
+==18706== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==18706== Using Valgrind-3.15.0-608cb11914-20190413 and LibVEX; rerun with -h for copyright info
+==18706== Command: ./gen_plot_data
+==18706== Parent PID: 18705
+==18706== 
+--18706-- 
+--18706-- Valgrind options:
+--18706--    --leak-check=full
+--18706--    --show-leak-kinds=all
+--18706--    --track-origins=yes
+--18706--    --verbose
+--18706--    --log-file=valgrind-out.txt
+--18706-- Contents of /proc/version:
+--18706--   Linux version 5.2.14 (nixbld@localhost) (gcc version 8.3.0 (GCC)) #1-NixOS SMP Tue Sep 10 09:35:27 UTC 2019
+--18706-- 
+--18706-- Arch and hwcaps: AMD64, LittleEndian, amd64-cx16-lzcnt-rdtscp-sse3-ssse3-avx-avx2-bmi-f16c-rdrand
+--18706-- Page sizes: currently 4096, max supported 4096
+--18706-- Valgrind library directory: /nix/store/3f3gnk71fimyqph619gxncz6yl4kidcn-valgrind-3.15.0/lib/valgrind
+--18706-- Reading syms from /home/matt/src/fmcw-radar/fpga/hdl/dist/scripts/gen_plot_data
+--18706-- Reading syms from /nix/store/6yaj6n8l925xxfbcd65gzqx3dz7idrnn-glibc-2.27/lib/ld-2.27.so
+--18706-- Reading syms from /nix/store/3f3gnk71fimyqph619gxncz6yl4kidcn-valgrind-3.15.0/lib/valgrind/memcheck-amd64-linux
+--18706--    object doesn't have a dynamic symbol table
+--18706-- Scheduler: using generic scheduler lock implementation.
+--18706-- Reading suppressions file: /nix/store/3f3gnk71fimyqph619gxncz6yl4kidcn-valgrind-3.15.0/lib/valgrind/default.supp
+==18706== embedded gdbserver: reading from /tmp/vgdb-pipe-from-vgdb-to-18706-by-matt-on-???
+==18706== embedded gdbserver: writing to   /tmp/vgdb-pipe-to-vgdb-from-18706-by-matt-on-???
+==18706== embedded gdbserver: shared mem   /tmp/vgdb-pipe-shared-mem-vgdb-18706-by-matt-on-???
+==18706== 
+==18706== TO CONTROL THIS PROCESS USING vgdb (which you probably
+==18706== don't want to do, unless you know exactly what you're doing,
+==18706== or are doing some strange experiment):
+==18706==   /nix/store/3f3gnk71fimyqph619gxncz6yl4kidcn-valgrind-3.15.0/lib/valgrind/../../bin/vgdb --pid=18706 ...command...
+==18706== 
+==18706== TO DEBUG THIS PROCESS USING GDB: start GDB like this
+==18706==   /path/to/gdb ./gen_plot_data
+==18706== and then give GDB the following command
+==18706==   target remote | /nix/store/3f3gnk71fimyqph619gxncz6yl4kidcn-valgrind-3.15.0/lib/valgrind/../../bin/vgdb --pid=18706
+==18706== --pid is optional if only one valgrind process is running
+==18706== 
+--18706-- REDIR: 0x401c990 (ld-linux-x86-64.so.2:strlen) redirected to 0x580c4792 (vgPlain_amd64_linux_REDIR_FOR_strlen)
+--18706-- REDIR: 0x401c770 (ld-linux-x86-64.so.2:index) redirected to 0x580c47ac (vgPlain_amd64_linux_REDIR_FOR_index)
+--18706-- Reading syms from /nix/store/3f3gnk71fimyqph619gxncz6yl4kidcn-valgrind-3.15.0/lib/valgrind/vgpreload_core-amd64-linux.so
+--18706-- Reading syms from /nix/store/3f3gnk71fimyqph619gxncz6yl4kidcn-valgrind-3.15.0/lib/valgrind/vgpreload_memcheck-amd64-linux.so
+==18706== WARNING: new redirection conflicts with existing -- ignoring it
+--18706--     old: 0x0401c990 (strlen              ) R-> (0000.0) 0x580c4792 vgPlain_amd64_linux_REDIR_FOR_strlen
+--18706--     new: 0x0401c990 (strlen              ) R-> (2007.0) 0x04837b00 strlen
+--18706-- REDIR: 0x401aa00 (ld-linux-x86-64.so.2:strcmp) redirected to 0x4838bc0 (strcmp)
+--18706-- REDIR: 0x401ced0 (ld-linux-x86-64.so.2:mempcpy) redirected to 0x483c5e0 (mempcpy)
+--18706-- Reading syms from /nix/store/hdgl45hvcwrvggjbvpdhadw8b87rnj3k-bitmanip-0.1.0/lib/libbitmanip.so
+--18706-- Reading syms from /nix/store/6yaj6n8l925xxfbcd65gzqx3dz7idrnn-glibc-2.27/lib/libm-2.27.so
+--18706-- Reading syms from /nix/store/6yaj6n8l925xxfbcd65gzqx3dz7idrnn-glibc-2.27/lib/libc-2.27.so
+--18706-- REDIR: 0x4a647b0 (libc.so.6:memmove) redirected to 0x482c199 (_vgnU_ifunc_wrapper)
+--18706-- REDIR: 0x4a63850 (libc.so.6:strncpy) redirected to 0x482c199 (_vgnU_ifunc_wrapper)
+--18706-- REDIR: 0x4a64a60 (libc.so.6:strcasecmp) redirected to 0x482c199 (_vgnU_ifunc_wrapper)
+--18706-- REDIR: 0x4a63220 (libc.so.6:strcat) redirected to 0x482c199 (_vgnU_ifunc_wrapper)
+--18706-- REDIR: 0x4a63890 (libc.so.6:rindex) redirected to 0x482c199 (_vgnU_ifunc_wrapper)
+--18706-- REDIR: 0x4a66030 (libc.so.6:rawmemchr) redirected to 0x482c199 (_vgnU_ifunc_wrapper)
+--18706-- REDIR: 0x4a7f260 (libc.so.6:wmemchr) redirected to 0x482c199 (_vgnU_ifunc_wrapper)
+--18706-- REDIR: 0x4a64940 (libc.so.6:mempcpy) redirected to 0x482c199 (_vgnU_ifunc_wrapper)
+--18706-- REDIR: 0x4a646d0 (libc.so.6:bcmp) redirected to 0x482c199 (_vgnU_ifunc_wrapper)
+--18706-- REDIR: 0x4a63810 (libc.so.6:strncmp) redirected to 0x482c199 (_vgnU_ifunc_wrapper)
+--18706-- REDIR: 0x4a632b0 (libc.so.6:strcmp) redirected to 0x482c199 (_vgnU_ifunc_wrapper)
+--18706-- REDIR: 0x4a64860 (libc.so.6:memset) redirected to 0x482c199 (_vgnU_ifunc_wrapper)
+--18706-- REDIR: 0x4a7df60 (libc.so.6:wcschr) redirected to 0x482c199 (_vgnU_ifunc_wrapper)
+--18706-- REDIR: 0x4a63780 (libc.so.6:strnlen) redirected to 0x482c199 (_vgnU_ifunc_wrapper)
+--18706-- REDIR: 0x4a63330 (libc.so.6:strcspn) redirected to 0x482c199 (_vgnU_ifunc_wrapper)
+--18706-- REDIR: 0x4a64ac0 (libc.so.6:strncasecmp) redirected to 0x482c199 (_vgnU_ifunc_wrapper)
+--18706-- REDIR: 0x4a63300 (libc.so.6:strcpy) redirected to 0x482c199 (_vgnU_ifunc_wrapper)
+--18706-- REDIR: 0x4a64cb0 (libc.so.6:memcpy@@GLIBC_2.14) redirected to 0x482c199 (_vgnU_ifunc_wrapper)
+--18706-- REDIR: 0x4a80430 (libc.so.6:wcsnlen) redirected to 0x482c199 (_vgnU_ifunc_wrapper)
+--18706-- REDIR: 0x4a638c0 (libc.so.6:strpbrk) redirected to 0x482c199 (_vgnU_ifunc_wrapper)
+--18706-- REDIR: 0x4a63270 (libc.so.6:index) redirected to 0x482c199 (_vgnU_ifunc_wrapper)
+--18706-- REDIR: 0x4a63740 (libc.so.6:strlen) redirected to 0x482c199 (_vgnU_ifunc_wrapper)
+--18706-- REDIR: 0x4a6a5a0 (libc.so.6:memrchr) redirected to 0x482c199 (_vgnU_ifunc_wrapper)
+--18706-- REDIR: 0x4a64b20 (libc.so.6:strcasecmp_l) redirected to 0x482c199 (_vgnU_ifunc_wrapper)
+--18706-- REDIR: 0x4a64650 (libc.so.6:memchr) redirected to 0x482c199 (_vgnU_ifunc_wrapper)
+--18706-- REDIR: 0x4a7ed30 (libc.so.6:wcslen) redirected to 0x482c199 (_vgnU_ifunc_wrapper)
+--18706-- REDIR: 0x4a63bb0 (libc.so.6:strspn) redirected to 0x482c199 (_vgnU_ifunc_wrapper)
+--18706-- REDIR: 0x4a64a00 (libc.so.6:stpncpy) redirected to 0x482c199 (_vgnU_ifunc_wrapper)
+--18706-- REDIR: 0x4a649c0 (libc.so.6:stpcpy) redirected to 0x482c199 (_vgnU_ifunc_wrapper)
+--18706-- REDIR: 0x4a66070 (libc.so.6:strchrnul) redirected to 0x482c199 (_vgnU_ifunc_wrapper)
+--18706-- REDIR: 0x4a64b80 (libc.so.6:strncasecmp_l) redirected to 0x482c199 (_vgnU_ifunc_wrapper)
+--18706-- REDIR: 0x4b302d0 (libc.so.6:__strrchr_avx2) redirected to 0x4837510 (rindex)
+--18706-- REDIR: 0x4a5fc70 (libc.so.6:malloc) redirected to 0x48346e5 (malloc)
+--18706-- REDIR: 0x4a640d0 (libc.so.6:__GI_strstr) redirected to 0x483c840 (__strstr_sse2)
+--18706-- REDIR: 0x4a602f0 (libc.so.6:free) redirected to 0x4835892 (free)
+--18706-- REDIR: 0x4b30e60 (libc.so.6:__memset_avx2_unaligned_erms) redirected to 0x483b510 (memset)
+--18706-- REDIR: 0x4b300e0 (libc.so.6:__strchrnul_avx2) redirected to 0x483c110 (strchrnul)
+--18706-- REDIR: 0x4b309c0 (libc.so.6:__mempcpy_avx_unaligned_erms) redirected to 0x483c220 (mempcpy)
+==18706== 
+==18706== HEAP SUMMARY:
+==18706==     in use at exit: 0 bytes in 0 blocks
+==18706==   total heap usage: 8,956 allocs, 8,956 frees, 1,173,056 bytes allocated
+==18706== 
+==18706== All heap blocks were freed -- no leaks are possible
+==18706== 
+==18706== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

@@ -50,9 +50,11 @@ read: prog read.c
 	$(COMPILER) $(CFLAGS) $(FTDI_CFLAGS) read.c -o read $(LINKER_FLAGS)
 	sudo ./read read.bin
 
+.PHONY: prog
 prog: bitstream
 	sudo openocd -f $(OPENOCD_DIR)/interface.cfg -f $(OPENOCD_DIR)/program_fpga.cfg
 
+.PHONY: bitstream
 bitstream: top.bit
 
 top.bit: $(SOURCES) $(CONSTRAINTS) $(VIVADO_DIR)/synth.tcl yosys_synth.ys
@@ -63,15 +65,20 @@ else
 	vivado -nolog -nojournal -mode batch -source $(VIVADO_DIR)/synth.tcl
 endif
 
+.PHONY: timing
 timing: $(SOURCES) $(VIVADO_DIR)/timing.tcl
 	vivado -nolog -nojournal -mode batch -source $(VIVADO_DIR)/timing.tcl
 
+.PHONY: lint
+lint: top.v
+	verilator $(addprefix -I,$(INCLUDE_DIRS)) --bbox-sys --bbox-unsup --lint-only --Wall top.v
+
+.PHONY: test
 test:
 	iverilog $(addprefix -I,$(INCLUDE_DIRS)) -DTOP_SIMULATE top.v -o tb/top_tb
 	./tb/top_tb
 	gtkwave tb/top_tb.vcd
 
+.PHONY: resources
 resources:
 	vivado -nolog -nojournal -mode batch -source $(VIVADO_DIR)/resources.tcl
-
-.PHONY: resources bitstream test timing prog
