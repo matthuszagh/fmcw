@@ -4,13 +4,16 @@ let
   libdigital = pkgs.libdigital;
   mh-python = pkgs.python3.withPackages (ps: with ps; [
     libdigital
-    matplotlib
+    matplotlib # TODO replace fully with pyqtgraph
     numpy
+    # pylibftdi
+    pyqtgraph
   ]);
 
 in
 pkgs.mkShell {
   buildInputs = with pkgs; [
+    # python3Full
     mh-python
     bitmanip
 
@@ -29,6 +32,9 @@ pkgs.mkShell {
     openocd
     libftdi1
 
+    # software
+    valgrind
+
     # pcb cad
     kicad
 
@@ -44,8 +50,4 @@ pkgs.mkShell {
     # video
     ffmpeg
   ];
-
-  # shellHook = ''
-  #   export PYTHONPATH="$(python -c "import site; print(site.getsitepackages()[0])")"
-  # '';
 }

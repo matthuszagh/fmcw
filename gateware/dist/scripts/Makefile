@@ -9,11 +9,17 @@ VERILOG_SRCS    := $(filter-out $(TOP_MODULE_SRC),$(VERILOG_SRCS))
 VIVADO_DIR	= vivado
 VIVADO_INCS	= $(subst -I,,$(VERILOG_INCS))
 
+OPENOCD_DIR	= openocd
+
+
+.PHONY: prog
+prog: pnr
+	sudo openocd -f $(OPENOCD_DIR)/interface.cfg -f $(OPENOCD_DIR)/program_fpga.cfg
 
 .PHONY: pnr
-pnr: $(TOP_MODULE).tcl
+pnr: $(TOP_MODULE).bit
 
-$(TOP_MODULE).tcl: synth
+$(TOP_MODULE).bit: synth
 	vivado -nolog -nojournal -mode batch -source $(VIVADO_DIR)/pnr.tcl
 
 .PHONY: synth

@@ -1,22 +1,46 @@
-FTDI_DIR = ftdi
-FPGA_DIR = fpga
-PC_DIR = pc
+GATEWARE_DIR	= gateware
+DIST_DIR	= $(GATEWARE_DIR)/dist
+SOFTWARE_DIR	= software
 
-all: ftdi_eeprom fpga run
+.PHONY: run
+run: run_dist
 
-run: | prog_fpga pc
+.PHONY: run_dist
+run_dist: dist_bitstream dist_prog
 
-pc:
-	$(MAKE) collect -C $(PC_DIR)
-	$(MAKE) analyze -C $(PC_DIR)
 
-ftdi_eeprom:
-	$(MAKE) -C $(FTDI_DIR)
+.PHONY: dist_bitstream
+dist_bitstream:
+	$(MAKE) -C $(DIST_DIR) pnr
 
-prog_fpga:
-	$(MAKE) prog_fpga -C $(FPGA_DIR)
+.PHONY: dist_prog
+dist_prog: dist_bitstream
+	$(MAKE) -C $(DIST_DIR) prog
 
-fpga:
-	$(MAKE) -C $(FPGA_DIR)
+# .PHONY: run_angle
+# run_angle:
 
-.PHONY: all run pc ftdi_eeprom prog_fpga fpga
+
+
+# FTDI_DIR = ftdi
+# FPGA_DIR = fpga
+# PC_DIR = pc
+
+# all: ftdi_eeprom fpga run
+
+# run: | prog_fpga pc
+
+# pc:
+# 	$(MAKE) collect -C $(PC_DIR)
+# 	$(MAKE) analyze -C $(PC_DIR)
+
+# ftdi_eeprom:
+# 	$(MAKE) -C $(FTDI_DIR)
+
+# prog_fpga:
+# 	$(MAKE) prog_fpga -C $(FPGA_DIR)
+
+# fpga:
+# 	$(MAKE) -C $(FPGA_DIR)
+
+# .PHONY: all run pc ftdi_eeprom prog_fpga fpga

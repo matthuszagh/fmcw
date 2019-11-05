@@ -24,6 +24,10 @@ SCRIPT_DIR	:= $(realpath scripts)
 TEST_DIR	:= $(realpath test)
 
 
+.PHONY: prog
+prog:
+	$(MAKE) -C $(SCRIPT_DIR) prog
+
 .PHONY: synth
 synth:
 	$(MAKE) -C $(SCRIPT_DIR) synth
