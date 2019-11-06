@@ -1,6 +1,9 @@
-{ pkgs ? (import <nixpkgs> {} // import <custompkgs> {}) }:
+{ nixpkgs ? (import <nixpkgs> {})
+, useMusl ? false
+}:
 
 let
+  pkgs = ((if useMusl then nixpkgs.pkgsMusl else nixpkgs) // import <custompkgs> {});
   libdigital = pkgs.libdigital;
   mh-python = pkgs.python3.withPackages (ps: with ps; [
     libdigital
