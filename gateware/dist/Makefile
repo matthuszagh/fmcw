@@ -35,3 +35,10 @@ synth:
 .PHONY: pnr
 pnr:
 	$(MAKE) -C $(SCRIPT_DIR) pnr
+
+.PHONY: lint
+lint:
+	verilator $(VERILOG_INCS) \
+		--lint-only \
+		--Wall \
+		$(TOP_MODULE_SRC)

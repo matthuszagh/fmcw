@@ -61,3 +61,5 @@ openems/octave-workspace
 /fpga/hdl/dist/scripts/data
 /fpga/hdl/dist/scripts/missed_reads
 *.ilang
+/software/read
+/software/gen_plot

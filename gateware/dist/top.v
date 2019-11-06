@@ -93,6 +93,7 @@ module top #(
    wire                            clk_20mhz;
    wire                            pll_lock;
    wire                            pll_fb;
+   /* verilator lint_off DECLFILENAME */
    PLLE2_BASE #(
       .CLKFBOUT_MULT  (24 ),
       .DIVCLK_DIVIDE  (1  ),
@@ -108,6 +109,7 @@ module top #(
       .CLKFBOUT (pll_fb     ),
       .CLKFBIN  (pll_fb     )
    );
+   /* verilator lint_on DECLFILENAME */
    wire                            rst_n = pll_lock;
 
    /**
@@ -228,13 +230,17 @@ module top #(
       end
    end
 
+   /* verilator lint_off WIDTH */
+   localparam [N_WIDTH-1:0] FFT_N_LAST = FFT_N - 1;
+   /* verilator lint_on WIDTH */
+
    always @(posedge clk_i) begin
       if (!rst_n) begin
          fft_en <= 1'b0;
       end else begin
-         if (fft_ctr == FFT_N-1) begin
+         if (fft_ctr == FFT_N_LAST-1) begin
             fft_en <= 1'b0;
-         end else if (fir_ctr == FFT_N-1 || fft_en) begin
+         end else if (fir_ctr == FFT_N_LAST-1 || fft_en) begin
             fft_en <= 1'b1;
          end
       end
@@ -266,7 +272,7 @@ module top #(
    wire                               ft245_wrfifo_full;
    wire                               ft245_rdfifo_full;
    wire                               ft245_rdfifo_empty;
-   wire signed [FT245_DATA_WIDTH-1:0] ft245_rddata;
+   wire signed [7:0]                  ft245_rddata;
    ft245 #(
       .WRITE_DEPTH  (1024             ),
       .READ_DEPTH   (512              ),
@@ -275,8 +281,8 @@ module top #(
    ) ft245 (
       .rst_n        (rst_n                                    ),
       .clk          (clk_i                                    ),
-      .wren         (!ft245_wrfifo_full                       ),
-      .wrdata       ({4'b1000, {27{1'b0}}, fft_re_o, {8{1'b0}}} ), // TODO temp
+      .wren         (!ft245_wrfifo_full && clk_2mhz_pos_en    ),
+      .wrdata       ({4'b1000, {26{1'b0}}, chan_a_filtered, chan_a, {8{1'b0}}} ), // TODO temp
       .wrfifo_full  (ft245_wrfifo_full                        ),
       .rden         (!ft245_rdfifo_empty                      ),
       .rddata       (ft245_rddata                             ),
