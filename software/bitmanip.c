@@ -21,10 +21,10 @@ int64_t subw_val(uint64_t w, int l, int n, unsigned char s)
 
 	extract = (w & mask) >> l;
 
-	neg = extract & (1 << n);
+	neg = extract & (1 << (n - 1));
 
 	if (s && neg)
-		return extract - (2 << n);
+		return extract - (1 << n);
 
 	return extract;
 }

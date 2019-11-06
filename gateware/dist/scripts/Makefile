@@ -28,7 +28,7 @@ synth: synth_xilinx
 .PHONY: synth_xilinx
 synth_xilinx: $(TOP_MODULE).edif
 
-$(TOP_MODULE).edif: $(VERILOG_SRCS)
+$(TOP_MODULE).edif: $(VERILOG_SRCS) $(TOP_MODULE_SRC)
 	vivado -nolog -nojournal -mode batch -source $(VIVADO_DIR)/synth.tcl
 
 # $(TOP_MODULE).edif: $(TOP_MODULE).ilang $(YOSYS_DIR)/xilinx.tcl
