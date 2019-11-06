@@ -7,7 +7,7 @@ run: run_dist
 
 .PHONY: run_dist
 run_dist: dist_bitstream dist_prog
-
+	$(MAKE) -C $(SOFTWARE_DIR) gen_plot
 
 .PHONY: dist_bitstream
 dist_bitstream:

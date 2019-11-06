@@ -3,7 +3,7 @@
 uint64_t add_byte_to_word(uint64_t w, int l, unsigned char b)
 {
 	uint64_t bshift;
-	bshift = b << l; /* TODO ub?? */
+	bshift = b << l;
 	return w | bshift;
 }
 
@@ -15,7 +15,7 @@ int64_t subw_val(uint64_t w, int l, int n, unsigned char s)
 	int neg;
 
 	mask = -1;
-	lower_mask = mask >> l;
+	lower_mask = mask >> (64 - l);
 	upper_mask = mask << (l + n);
 	mask = ~(upper_mask | lower_mask);
 

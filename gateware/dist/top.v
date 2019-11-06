@@ -108,8 +108,6 @@ module top #(
       .CLKFBOUT (pll_fb     ),
       .CLKFBIN  (pll_fb     )
    );
-   // TODO this should be registered to permit higher fanout and
-   // ensure it is asserted long enough.
    wire                            rst_n = pll_lock;
 
    /**

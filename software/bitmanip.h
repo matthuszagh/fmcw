@@ -15,8 +15,8 @@ uint64_t add_byte_to_word(uint64_t w, int l, unsigned char b);
  *
  * A full word contains 64 bits and may comprise any combination of
  * "subwords" within it. These are generally placed contiguously,
- * although that is not required. A start halfword of 0x8 is, however,
- * required and a terminating halfword of 0x0 is also required.
+ * although that is not required. A start nibble of 0x8 is, however,
+ * required and a terminating nibble of 0x0 is also required.
  * Subwords must be big-endian.
  *
  * example

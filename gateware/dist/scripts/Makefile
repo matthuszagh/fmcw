@@ -19,7 +19,7 @@ prog: pnr
 .PHONY: pnr
 pnr: $(TOP_MODULE).bit
 
-$(TOP_MODULE).bit: synth
+$(TOP_MODULE).bit: $(TOP_MODULE).edif
 	vivado -nolog -nojournal -mode batch -source $(VIVADO_DIR)/pnr.tcl
 
 .PHONY: synth
