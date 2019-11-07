@@ -29,6 +29,45 @@ void seek_header(FILE *f)
 	}
 }
 
+/**
+ * Calculate the parity bit of a data packet.
+ */
+int parity(uint64_t data)
+{
+	int nbits;
+	int parity;
+	int i;
+
+	nbits = 8 * sizeof(data);
+	parity = 0;
+	for (i = 0; i < nbits; ++i) {
+		parity ^= (data & (1 << i)) >> i;
+	}
+
+	return parity;
+}
+
+/**
+ * Ensure data is in a valid state. This means that it contains the
+ * appropriate header and stop sequence and has the correct parity
+ * bit.
+ */
+int dvalid(uint64_t val)
+{
+	int header;
+	int tail;
+	int exp_parity;
+	int val_parity;
+
+	val_parity = ((((uint64_t)1) << 59) & val) >> 59;
+	exp_parity = parity(subw_val(val, 4, 55, 0));
+
+	header = val >> (8 * (PACKET_LEN - 1) + 4);
+	tail = (val & '\xf');
+
+	return header == 8 && tail == 0 && val_parity == exp_parity;
+}
+
 int main(int argc, char **argv)
 {
 	char *fin_name;
@@ -73,9 +112,9 @@ int main(int argc, char **argv)
 			return EXIT_FAILURE;
 		}
 		/* Convert to big endian. This allows the code to be
-		 * independent of your CPU's native endianness. */
+		 * independent of the CPU's native endianness. */
 		rdval = htobe64(rdval);
-		if (rdval >> (8 * (PACKET_LEN - 1) + 4) != 8 || (rdval & '\xf') != 0) {
+		if (!dvalid(rdval)) {
 			second_val = 0;
 			seek_header(fin);
 		} else {
@@ -85,16 +124,23 @@ int main(int argc, char **argv)
 					seek_header(fin);
 				} else {
 					int fft_re;
-					fft_re = subw_val(rdval, 8, 25, 1);
-					fprintf(fout, "%d\n", fft_re);
+					int fft_im;
+					fft_re = subw_val(rdval, 4, 25, 1);
+					fft_im = subw_val(rdval, 29, 25, 1);
+					fprintf(fout, "%10d %10d\n", fft_re, fft_im);
 				}
 			} else {
 				second_val = 1;
-				last_val = rdval;
 			}
+			last_val = rdval;
 		}
 	}
 
 	fclose(fin);
 	fclose(fout);
 }
+// Local Variables:
+// rmsbolt-command: "clang -O3"
+// rmsbolt-asm-format: "intel"
+// rmsbolt-disassemble: nil
+// End:
