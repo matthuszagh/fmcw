@@ -111,23 +111,21 @@ int main(int argc, char **argv)
 			fputs("Failed to read from input file. Exiting...", stderr);
 			return EXIT_FAILURE;
 		}
-		/* Convert to big endian. This allows the code to be
-		 * independent of the CPU's native endianness. */
+		/* Convert to big endian to be independent of the
+		 * CPU's native endianness. */
 		rdval = htobe64(rdval);
 		if (!dvalid(rdval)) {
 			second_val = 0;
 			seek_header(fin);
 		} else {
 			if (second_val) {
-				second_val = 0;
-				if (rdval != last_val) {
-					seek_header(fin);
-				} else {
+				if (rdval == last_val) {
 					int fft_re;
-					int fft_im;
+					/* int fft_im; */
 					fft_re = subw_val(rdval, 4, 25, 1);
-					fft_im = subw_val(rdval, 29, 25, 1);
-					fprintf(fout, "%8d %8d\n", fft_re, fft_im);
+					/* fft_im = subw_val(rdval, 29, 25, 1); */
+					fprintf(fout, "%8d\n", fft_re);
+					second_val = 0;
 				}
 			} else {
 				second_val = 1;
