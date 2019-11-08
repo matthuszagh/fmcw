@@ -127,7 +127,7 @@ int main(int argc, char **argv)
 					int fft_im;
 					fft_re = subw_val(rdval, 4, 25, 1);
 					fft_im = subw_val(rdval, 29, 25, 1);
-					fprintf(fout, "%10d %10d\n", fft_re, fft_im);
+					fprintf(fout, "%8d %8d\n", fft_re, fft_im);
 				}
 			} else {
 				second_val = 1;

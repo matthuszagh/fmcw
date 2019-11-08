@@ -1,5 +1,7 @@
 COMPILER	= clang
 DEBUG		= 0
+PLOT		= 0
+
 ifeq ($(DEBUG),0)
 CFLAGS	= -O3
 else
@@ -11,6 +13,9 @@ LINKER_FLAGS	:= $(shell libftdi1-config --libs)
 
 generate_plot: gen_plot
 	./gen_plot
+ifeq ($(PLOT),1)
+	python -i plot.py
+endif
 
 gen_plot: main.c read bitmanip.c bitmanip.h
 	$(COMPILER) $(CFLAGS) main.c bitmanip.c -o gen_plot

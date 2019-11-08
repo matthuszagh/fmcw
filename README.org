@@ -1,0 +1,3 @@
+* About
+An in-depth explanation of the radar is available in the ~doc~
+directory.

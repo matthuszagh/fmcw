@@ -10,6 +10,7 @@ VERILOG_DIRS	+= $(LIBDIGITAL_PATH)/devices/adf4158
 VERILOG_DIRS	+= $(LIBDIGITAL_PATH)/devices/ft2232h/ft245
 VERILOG_DIRS	+= $(LIBDIGITAL_PATH)/filters/fir_poly
 VERILOG_DIRS	+= $(LIBDIGITAL_PATH)/fft/r22sdf
+VERILOG_DIRS	+= $(LIBDIGITAL_PATH)/error_detection
 
 VERILOG_INCS	= $(addprefix -I,$(VERILOG_DIRS))
 VERILOG_SRCS	:= $(shell find $(VERILOG_DIRS) -maxdepth 1 -name '*.v')
@@ -23,6 +24,13 @@ SCRIPT_DIR	:= $(realpath scripts)
 # Testing
 TEST_DIR	:= $(realpath test)
 
+
+.PHONY: test
+test: test_cocotb
+
+.PHONY: test_cocotb
+test_cocotb:
+	$(MAKE) -C $(TEST_DIR) cocotb
 
 .PHONY: prog
 prog:
