@@ -242,20 +242,6 @@ module top #(
       .wrdata (chan_a_filtered              )
    );
 
-   // ram #(
-   //    .WIDTH (FIR_OUTPUT_WIDTH ),
-   //    .SIZE  (FFT_N            )
-   // ) ram (
-   //    .rdclk  (clk_i              ),
-   //    .rden   (fft_en             ),
-   //    .rdaddr (fft_bit_normal_ctr ),
-   //    .rddata (fft_in             ),
-   //    .wrclk  (clk_i              ),
-   //    .wren   (clk_2mhz_pos_en & !fft_en    ),
-   //    .wraddr (fir_ctr            ),
-   //    .wrdata (chan_a_filtered    )
-   // );
-
    reg               fft_en;
    // reg [N_WIDTH-1:0] fft_bit_normal_ctr;
    // always @(posedge clk_i) begin
