@@ -3,6 +3,7 @@
 #include "bitmanip.h"
 #include <bits/stdint-uintn.h>
 #include <endian.h>
+#include <limits.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,6 +29,22 @@ void seek_header(FILE *f)
 			return;
 		}
 	}
+}
+
+unsigned int bitrev(unsigned int v)
+{
+	unsigned int r;
+	int s;
+
+	r = v;
+	s = sizeof(v) * CHAR_BIT - 1;
+
+	for (v >>= 1; v; v >>= 1) {
+		r <<= 1;
+		r |= v & 1;
+		s--;
+	}
+	return r <<= s;
 }
 
 /**
@@ -57,23 +74,17 @@ int dvalid(uint64_t val)
 {
 	int header;
 	int tail;
-	/* int exp_parity; */
-	/* int val_parity; */
-
-	/* val_parity = ((((uint64_t)1) << 59) & val) >> 59; */
-	/* exp_parity = parity(subw_val(val, 4, 55, 0)); */
 
 	header = val >> (8 * (PACKET_LEN - 1) + 4);
 	tail = (val & '\xf');
 
-	/* return header == 8 && tail == 0 && val_parity == exp_parity; */
 	return header == 8 && tail == 0;
 }
 
 int main(int argc, char **argv)
 {
 	char *fin_name;
-	char *fout_name;
+	char fout_name[32];
 	FILE *fin;
 	FILE *fout;
 	long end;
@@ -81,11 +92,18 @@ int main(int argc, char **argv)
 	uint64_t last_val;
 	int second_val;
 	int last_fft;
-	int last_ctr;
+	unsigned int last_ctr;
+	unsigned int last_ctr_rev;
 	int last_tx_re;
 
+	/* output file number */
+	int fn;
+
+	fn = 0;
+
 	fin_name = "read.bin";
-	fout_name = "plot.dec";
+	memset(fout_name, 0, sizeof(fout_name));
+	sprintf(fout_name, "data/%05d.dec", fn);
 
 	if (argc == 2) {
 		fin_name = argv[1];
@@ -112,6 +130,7 @@ int main(int argc, char **argv)
 	second_val = 0;
 	last_fft = 0;
 	last_ctr = 0;
+	last_ctr_rev = 0;
 	last_tx_re = 0;
 	seek_header(fin);
 	while (ftell(fin) + PACKET_LEN <= end) {
@@ -130,11 +149,27 @@ int main(int argc, char **argv)
 				if (rdval == last_val) {
 					int fft;
 					int fft_res;
-					int ctr;
+					unsigned int ctr;
+					unsigned int ctr_rev;
 					int tx_re;
+
 					fft = subw_val(rdval, 4, 25, 1);
 					ctr = subw_val(rdval, 29, 10, 0);
 					tx_re = subw_val(rdval, 39, 1, 0);
+					ctr_rev = bitrev(ctr);
+
+					if (ctr_rev < last_ctr_rev) {
+						fclose(fout);
+						++fn;
+						sprintf(fout_name, "data/%05d.dec", fn);
+						fout = fopen(fout_name, "w");
+						if (!fout) {
+							fputs("Failed to open output file. "
+							      "Exiting...",
+							      stderr);
+							return EXIT_FAILURE;
+						}
+					}
 
 					if (last_ctr == ctr && last_tx_re != tx_re) {
 						fft_res = sqrt(pow(fft, 2) + pow(last_fft, 2));
@@ -144,6 +179,7 @@ int main(int argc, char **argv)
 					second_val = 0;
 					last_fft = fft;
 					last_ctr = ctr;
+					last_ctr_rev = ctr_rev;
 					last_tx_re = tx_re;
 				}
 			} else {
