@@ -65,7 +65,8 @@ int dvalid(uint64_t val)
 	header = val >> (8 * (PACKET_LEN - 1) + 4);
 	tail = (val & '\xf');
 
-	return header == 8 && tail == 0 && val_parity == exp_parity;
+	/* return header == 8 && tail == 0 && val_parity == exp_parity; */
+	return header == 8 && tail == 0;
 }
 
 int main(int argc, char **argv)
@@ -121,10 +122,11 @@ int main(int argc, char **argv)
 			if (second_val) {
 				if (rdval == last_val) {
 					int fft_re;
-					/* int fft_im; */
+					int fft_im;
 					fft_re = subw_val(rdval, 4, 25, 1);
-					/* fft_im = subw_val(rdval, 29, 25, 1); */
-					fprintf(fout, "%8d\n", fft_re);
+					fft_im = subw_val(rdval, 29, 25, 1);
+					fprintf(fout, "%8d %8d\n", fft_re, fft_im);
+
 					second_val = 0;
 				}
 			} else {

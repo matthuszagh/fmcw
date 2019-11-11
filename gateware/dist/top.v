@@ -81,8 +81,6 @@ module top #(
    assign pa_en_n_o    = !pll_lock;
    assign led_o        = !pa_en_n_o;
 
-   assign ext1_io[0] = fft_en;
-
    always @(posedge clk_i) begin
       if (!rst_n) begin
          adc_oe_o <= 2'b11;
@@ -90,16 +88,6 @@ module top #(
       end else begin
          adc_oe_o <= 2'b00;
          adc_shdn_o <= 2'b00;
-      end
-   end
-
-   // TODO not portable
-   reg pwr_on_rst_n = 1'b0;
-   always @(posedge clk_i) begin
-      if (!rst_n && !pwr_on_rst_n) begin
-         pwr_on_rst_n <= 1'b0;
-      end else begin
-         pwr_on_rst_n <= 1'b1;
       end
    end
 
@@ -232,7 +220,7 @@ module top #(
       .WIDTH (FIR_OUTPUT_WIDTH ),
       .SIZE  (FFT_N            )
    ) fir_fft_fifo (
-      .rst_n  (pwr_on_rst_n                 ),
+      .rst_n  (rst_n                 ),
       .full   (fir_fft_fifo_full            ),
       .rdclk  (clk_i                        ),
       .rden   (fft_rd_en                    ),
@@ -291,22 +279,24 @@ module top #(
    end
 
    localparam FFT_OUTPUT_WIDTH = 25;
+   localparam FFT_TWIDDLE_WIDTH = 10;
    wire fft_valid;
    wire [N_WIDTH-1:0] fft_ctr;
    wire signed [FFT_OUTPUT_WIDTH-1:0] fft_re_o;
    wire signed [FFT_OUTPUT_WIDTH-1:0] fft_im_o;
+
    fft_r22sdf #(
-      .N             (FFT_N            ),
-      .INPUT_WIDTH   (FIR_OUTPUT_WIDTH ),
-      .TWIDDLE_WIDTH (10               ),
-      .OUTPUT_WIDTH  (FFT_OUTPUT_WIDTH )
+      .N             (FFT_N             ),
+      .INPUT_WIDTH   (FIR_OUTPUT_WIDTH  ),
+      .TWIDDLE_WIDTH (FFT_TWIDDLE_WIDTH ),
+      .OUTPUT_WIDTH  (FFT_OUTPUT_WIDTH  )
    ) fft (
       .clk_i      (clk_i                    ),
       .clk_3x_i   (clk_120mhz               ),
-      .rst_n      (pwr_on_rst_n             ),
+      .rst_n      (ft245_tx_en             ),
       .sync_o     (fft_valid                ),
       .data_ctr_o (fft_ctr                  ),
-      .data_re_i  (fft_in                   ),
+      .data_re_i  (chan_a                   ),
       .data_im_i  ({FIR_OUTPUT_WIDTH{1'b0}} ),
       .data_re_o  (fft_re_o                 ),
       .data_im_o  (fft_im_o                 )
@@ -326,17 +316,34 @@ module top #(
       .par (parity_bit   )
    );
 
+   wire ft245_wrfifo_empty;
+   reg  ft245_tx_en;
+   always @(posedge clk_i) begin
+      if (!rst_n) begin
+         ft245_tx_en <= 1'b0;
+      end else begin
+         if (ft245_wrfifo_full) begin
+            ft245_tx_en <= 1'b0;
+         end else if (ft245_wrfifo_empty || ft245_tx_en) begin
+            ft245_tx_en <= 1'b1;
+         end else begin
+            ft245_tx_en <= 1'b0;
+         end
+      end
+   end
+
    ft245 #(
-      .WRITE_DEPTH  (1024             ),
+      .WRITE_DEPTH  (2048            ),
       .READ_DEPTH   (512              ),
       .DATA_WIDTH   (FT245_DATA_WIDTH ),
       .DUPLICATE_TX (1                )
    ) ft245 (
       .rst_n        (rst_n                                              ),
       .clk          (clk_i                                              ),
-      .wren         (!ft245_wrfifo_full && fft_valid                    ),
+      .wren         ( ft245_tx_en && fft_valid                   ),
       .wrdata       ({4'h8, parity_bit, {5{1'b0}}, ft245_wrdata, 4'h0}  ),
       .wrfifo_full  (ft245_wrfifo_full                                  ),
+      .wrfifo_empty (ft245_wrfifo_empty                                 ),
       .rden         (!ft245_rdfifo_empty                                ),
       .rddata       (ft245_rddata                                       ),
       .rdfifo_full  (ft245_rdfifo_full                                  ),

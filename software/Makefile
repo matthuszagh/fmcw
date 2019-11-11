@@ -1,4 +1,4 @@
-COMPILER	= clang
+CC		= clang
 DEBUG		= 0
 PLOT		= 0
 
@@ -18,10 +18,10 @@ ifeq ($(PLOT),1)
 endif
 
 gen_plot: main.c read bitmanip.c bitmanip.h
-	$(COMPILER) $(CFLAGS) main.c bitmanip.c -o gen_plot
+	$(CC) $(CFLAGS) main.c bitmanip.c -o gen_plot
 
 # bitmanip.o: bitmanip.c bitmanip.h
-# 	$(COMPILER) $(STRICT_CFLAGS) -c bitmanip.c
+# 	$(CC) $(STRICT_CFLAGS) -c bitmanip.c
 
 .PHONY: acquire
 acquire: read
@@ -29,4 +29,4 @@ acquire: read
 
 read: read.c
 	sudo rmmod ftdi_sio
-	$(COMPILER) $(CFLAGS) $(FTDI_CFLAGS) read.c -o read $(LINKER_FLAGS)
+	$(CC) $(CFLAGS) $(FTDI_CFLAGS) read.c -o read $(LINKER_FLAGS)
