@@ -121,11 +121,13 @@ int main(int argc, char **argv)
 		} else {
 			if (second_val) {
 				if (rdval == last_val) {
-					int fft_re;
-					int fft_im;
-					fft_re = subw_val(rdval, 4, 25, 1);
-					fft_im = subw_val(rdval, 29, 25, 1);
-					fprintf(fout, "%8d %8d\n", fft_re, fft_im);
+					int fft;
+					int ctr;
+					int tx_re;
+					fft = subw_val(rdval, 4, 25, 1);
+					ctr = subw_val(rdval, 29, 10, 0);
+					tx_re = subw_val(rdval, 39, 1, 0);
+					fprintf(fout, "%8d %8u %3d\n", fft, ctr, tx_re);
 
 					second_val = 0;
 				}

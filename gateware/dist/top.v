@@ -96,6 +96,7 @@ module top #(
     * Drives onboard logic.
     */
    wire                            clk_120mhz;
+   wire                            clk_80mhz;
    wire                            clk_20mhz;
    wire                            pll_lock;
    wire                            pll_fb;
@@ -105,10 +106,12 @@ module top #(
       .DIVCLK_DIVIDE  (1  ),
       .CLKOUT0_DIVIDE (8  ),
       .CLKOUT1_DIVIDE (48 ),
+      .CLKOUT2_DIVIDE (12 ),
       .CLKIN1_PERIOD  (25 )
    ) main_pll (
       .CLKOUT0  (clk_120mhz ),
       .CLKOUT1  (clk_20mhz  ),
+      .CLKOUT2  (clk_80mhz  ),
       .LOCKED   (pll_lock   ),
       .CLKIN1   (clk_i      ),
       .RST      (1'b0       ),
@@ -296,7 +299,7 @@ module top #(
       .rst_n      (ft245_tx_en             ),
       .sync_o     (fft_valid                ),
       .data_ctr_o (fft_ctr                  ),
-      .data_re_i  (chan_a                   ),
+      .data_re_i  (fft_in                   ),
       .data_im_i  ({FIR_OUTPUT_WIDTH{1'b0}} ),
       .data_re_o  (fft_re_o                 ),
       .data_im_o  (fft_im_o                 )
@@ -307,14 +310,7 @@ module top #(
    wire                               ft245_rdfifo_full;
    wire                               ft245_rdfifo_empty;
    wire signed [7:0]                  ft245_rddata;
-   wire signed [2*FFT_OUTPUT_WIDTH-1:0] ft245_wrdata = {fft_im_o, fft_re_o};
-   wire                               parity_bit;
-   parity #(
-      .DATA_WIDTH (2*FFT_OUTPUT_WIDTH)
-   ) parity (
-      .di  (ft245_wrdata ),
-      .par (parity_bit   )
-   );
+   wire signed [FFT_OUTPUT_WIDTH-1:0] ft245_wrdata = tx_re ? fft_re_o : fft_im_o;
 
    wire ft245_wrfifo_empty;
    reg  ft245_tx_en;
@@ -332,16 +328,25 @@ module top #(
       end
    end
 
+   reg tx_re;
+   always @(posedge clk_80mhz) begin
+      if (!rst_n) begin
+         tx_re <= 1'b0;
+      end else begin
+         tx_re <= ~tx_re;
+      end
+   end
+
    ft245 #(
-      .WRITE_DEPTH  (2048            ),
+      .WRITE_DEPTH  (4096            ),
       .READ_DEPTH   (512              ),
       .DATA_WIDTH   (FT245_DATA_WIDTH ),
       .DUPLICATE_TX (1                )
    ) ft245 (
       .rst_n        (rst_n                                              ),
-      .clk          (clk_i                                              ),
+      .clk          (clk_80mhz                                          ),
       .wren         ( ft245_tx_en && fft_valid                   ),
-      .wrdata       ({4'h8, parity_bit, {5{1'b0}}, ft245_wrdata, 4'h0}  ),
+      .wrdata       ({4'h8, {20{1'b0}}, tx_re, fft_ctr, ft245_wrdata, 4'h0}  ),
       .wrfifo_full  (ft245_wrfifo_full                                  ),
       .wrfifo_empty (ft245_wrfifo_empty                                 ),
       .rden         (!ft245_rdfifo_empty                                ),
