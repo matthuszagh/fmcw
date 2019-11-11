@@ -3,6 +3,7 @@
 #include "bitmanip.h"
 #include <bits/stdint-uintn.h>
 #include <endian.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -56,11 +57,11 @@ int dvalid(uint64_t val)
 {
 	int header;
 	int tail;
-	int exp_parity;
-	int val_parity;
+	/* int exp_parity; */
+	/* int val_parity; */
 
-	val_parity = ((((uint64_t)1) << 59) & val) >> 59;
-	exp_parity = parity(subw_val(val, 4, 55, 0));
+	/* val_parity = ((((uint64_t)1) << 59) & val) >> 59; */
+	/* exp_parity = parity(subw_val(val, 4, 55, 0)); */
 
 	header = val >> (8 * (PACKET_LEN - 1) + 4);
 	tail = (val & '\xf');
@@ -79,6 +80,9 @@ int main(int argc, char **argv)
 	uint64_t rdval;
 	uint64_t last_val;
 	int second_val;
+	int last_fft;
+	int last_ctr;
+	int last_tx_re;
 
 	fin_name = "read.bin";
 	fout_name = "plot.dec";
@@ -106,6 +110,9 @@ int main(int argc, char **argv)
 	rdval = 0ul;
 
 	second_val = 0;
+	last_fft = 0;
+	last_ctr = 0;
+	last_tx_re = 0;
 	seek_header(fin);
 	while (ftell(fin) + PACKET_LEN <= end) {
 		if (fread(&rdval, sizeof(uint64_t), 1, fin) < 1) {
@@ -122,14 +129,22 @@ int main(int argc, char **argv)
 			if (second_val) {
 				if (rdval == last_val) {
 					int fft;
+					int fft_res;
 					int ctr;
 					int tx_re;
 					fft = subw_val(rdval, 4, 25, 1);
 					ctr = subw_val(rdval, 29, 10, 0);
 					tx_re = subw_val(rdval, 39, 1, 0);
-					fprintf(fout, "%8d %8u %3d\n", fft, ctr, tx_re);
+
+					if (last_ctr == ctr && last_tx_re != tx_re) {
+						fft_res = sqrt(pow(fft, 2) + pow(last_fft, 2));
+						fprintf(fout, "%8d %8u\n", fft_res, ctr);
+					}
 
 					second_val = 0;
+					last_fft = fft;
+					last_ctr = ctr;
+					last_tx_re = tx_re;
 				}
 			} else {
 				second_val = 1;

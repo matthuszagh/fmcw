@@ -18,7 +18,7 @@ ifeq ($(PLOT),1)
 endif
 
 gen_plot: main.c read bitmanip.c bitmanip.h
-	$(CC) $(CFLAGS) main.c bitmanip.c -o gen_plot
+	$(CC) $(CFLAGS) main.c bitmanip.c -o gen_plot -lm
 
 # bitmanip.o: bitmanip.c bitmanip.h
 # 	$(CC) $(STRICT_CFLAGS) -c bitmanip.c
