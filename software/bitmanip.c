@@ -1,10 +1,11 @@
 #include "bitmanip.h"
 
-uint64_t add_byte_to_word(uint64_t w, int l, unsigned char b)
+void add_byte_to_word(uint64_t *w, int l, uint8_t b)
 {
 	uint64_t bshift;
-	bshift = b << l;
-	return w | bshift;
+	bshift = (uint64_t)b;
+	bshift <<= l;
+	*w |= bshift;
 }
 
 int64_t subw_val(uint64_t w, int l, int n, unsigned char s)

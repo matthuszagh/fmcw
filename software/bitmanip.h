@@ -9,7 +9,7 @@
  * @l LSB of byte to add
  * @b byte to add
  */
-uint64_t add_byte_to_word(uint64_t w, int l, unsigned char b);
+void add_byte_to_word(uint64_t *w, int l, uint8_t b);
 
 /** Extract a subword value from a full word.
  *
