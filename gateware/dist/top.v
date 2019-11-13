@@ -223,7 +223,7 @@ module top #(
       .WIDTH (FIR_OUTPUT_WIDTH ),
       .SIZE  (FFT_N            )
    ) fir_fft_fifo (
-      .rst_n  (rst_n                 ),
+      .rst_n  (rst_n                        ),
       .full   (fir_fft_fifo_full            ),
       .rdclk  (clk_i                        ),
       .rden   (fft_rd_en                    ),
@@ -234,14 +234,6 @@ module top #(
    );
 
    reg               fft_en;
-   // reg [N_WIDTH-1:0] fft_bit_normal_ctr;
-   // always @(posedge clk_i) begin
-   //    if (fft_en) begin
-   //       fft_bit_normal_ctr <= fft_bit_normal_ctr + 1'b1;
-   //    end else begin
-   //       fft_bit_normal_ctr <= {N_WIDTH{1'b0}};
-   //    end
-   // end
 
    /* verilator lint_off WIDTH */
    localparam [N_WIDTH-1:0] FFT_N_LAST = FFT_N - 1;
@@ -272,12 +264,6 @@ module top #(
             fft_rd_en <= 1'b0;
             fft_en <= 1'b0;
          end
-
-         // if (fft_ctr == FFT_N_LAST-1) begin
-         //    fft_en <= 1'b0;
-         // end else if (fir_ctr == FFT_N_LAST-1 || fft_en) begin
-         //    fft_en <= 1'b1;
-         // end
       end
    end
 
@@ -296,7 +282,7 @@ module top #(
    ) fft (
       .clk_i      (clk_i                    ),
       .clk_3x_i   (clk_120mhz               ),
-      .rst_n      (ft245_tx_en             ),
+      .rst_n      (ft245_tx_en              ),
       .sync_o     (fft_valid                ),
       .data_ctr_o (fft_ctr                  ),
       .data_re_i  (fft_in                   ),
@@ -320,6 +306,7 @@ module top #(
       end else begin
          if (ft245_wrfifo_full) begin
             ft245_tx_en <= 1'b0;
+         // wait for the fifo to empty so that we get contiguous data
          end else if (ft245_wrfifo_empty || ft245_tx_en) begin
             ft245_tx_en <= 1'b1;
          end else begin
@@ -338,31 +325,31 @@ module top #(
    end
 
    ft245 #(
-      .WRITE_DEPTH  (4096            ),
+      .WRITE_DEPTH  (8192             ),
       .READ_DEPTH   (512              ),
       .DATA_WIDTH   (FT245_DATA_WIDTH ),
       .DUPLICATE_TX (1                )
    ) ft245 (
-      .rst_n        (rst_n                                              ),
-      .clk          (clk_80mhz                                          ),
-      .wren         ( ft245_tx_en && fft_valid                   ),
-      .wrdata       ({4'h8, {20{1'b0}}, tx_re, fft_ctr, ft245_wrdata, 4'h0}  ),
-      .wrfifo_full  (ft245_wrfifo_full                                  ),
-      .wrfifo_empty (ft245_wrfifo_empty                                 ),
-      .rden         (!ft245_rdfifo_empty                                ),
-      .rddata       (ft245_rddata                                       ),
-      .rdfifo_full  (ft245_rdfifo_full                                  ),
-      .rdfifo_empty (ft245_rdfifo_empty                                 ),
-      .ft_clk       (ft_clkout_i                                        ),
-      .slow_ft_clk  (clk_7_5mhz                                         ),
-      .rxf_n        (ft_rxf_n_i                                         ),
-      .txe_n        (ft_txe_n_i                                         ),
-      .rd_n         (ft_rd_n_o                                          ),
-      .wr_n         (ft_wr_n_o                                          ),
-      .oe_n         (ft_oe_n_o                                          ),
-      .suspend_n    (ft_suspend_n_i                                     ),
-      .ft_siwua_n   (ft_siwua_n_o                                       ),
-      .ft_data      (ft_data_io                                         )
+      .rst_n        (rst_n                                                  ),
+      .clk          (clk_80mhz                                              ),
+      .wren         (ft245_tx_en && fft_valid                               ),
+      .wrdata       ({4'h8, {20{1'b0}}, tx_re, fft_ctr, ft245_wrdata, 4'h0} ),
+      .wrfifo_full  (ft245_wrfifo_full                                      ),
+      .wrfifo_empty (ft245_wrfifo_empty                                     ),
+      .rden         (!ft245_rdfifo_empty                                    ),
+      .rddata       (ft245_rddata                                           ),
+      .rdfifo_full  (ft245_rdfifo_full                                      ),
+      .rdfifo_empty (ft245_rdfifo_empty                                     ),
+      .ft_clk       (ft_clkout_i                                            ),
+      .slow_ft_clk  (clk_7_5mhz                                             ),
+      .rxf_n        (ft_rxf_n_i                                             ),
+      .txe_n        (ft_txe_n_i                                             ),
+      .rd_n         (ft_rd_n_o                                              ),
+      .wr_n         (ft_wr_n_o                                              ),
+      .oe_n         (ft_oe_n_o                                              ),
+      .suspend_n    (ft_suspend_n_i                                         ),
+      .ft_siwua_n   (ft_siwua_n_o                                           ),
+      .ft_data      (ft_data_io                                             )
    );
 
 `ifdef COCOTB_SIM

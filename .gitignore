@@ -63,3 +63,4 @@ openems/octave-workspace
 *.ilang
 /software/read
 /software/gen_plot
+software/data

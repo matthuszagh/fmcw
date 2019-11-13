@@ -11,10 +11,9 @@
 #include <string.h>
 
 #define PACKET_LEN 8
-
-/* TODO move relevant code from read.c into this file. We want to read
- * data from the FPGA and convert it to a form usable for plots at the
- * same time. */
+#define FFT_LEN 1024
+/* Average samples over this number of reads. */
+#define AVG_INDEX 10000
 
 /**
  * Find the first byte for which the MSB nibble is 0x8.
@@ -90,17 +89,50 @@ static int exit_requested = 0;
 static uint32_t start = 0;
 static uint32_t offset = 0;
 static int fn = 0;
-static FILE *fout;
-static char fout_name[32];
 static uint64_t last_val;
 static int second_val;
 static int last_fft;
 static unsigned int last_ctr;
 static unsigned int last_ctr_rev;
 static int last_tx_re;
+static int coverage;
+/* keep track of the number of times a value is found for each bit
+ * position. This is used to periodically divide the accumulator. */
+static int idx_ctr[FFT_LEN];
+/* Accumulate values and average periodically. This is used as a
+ * solution for dropped values. */
+static int64_t accum[FFT_LEN];
+static int avg_ctr = 0;
+
+void flush_samples(int fn)
+{
+	int i;
+	FILE *fout;
+	char fout_name[32];
+
+	sprintf(fout_name, "data/%05d.dec", fn);
+	fout = fopen(fout_name, "w");
+	if (!fout) {
+		fputs("Failed to open output file. "
+		      "Exiting...",
+		      stderr);
+		exit(EXIT_FAILURE);
+	}
+	for (i = 0; i < FFT_LEN; ++i) {
+		if (idx_ctr[i] != 0) {
+			accum[i] /= idx_ctr[i];
+		} else {
+			accum[i] = 0;
+		}
+		fprintf(fout, "%8d %8u\n", accum[i], i);
+		accum[i] = 0;
+		idx_ctr[i] = 0;
+	}
+	fclose(fout);
+}
 
 /**
- *
+ * TODO
  */
 static int read_callback(uint8_t *buffer, int length, FTDIProgressInfo *progress, void *userdata)
 {
@@ -129,22 +161,17 @@ static int read_callback(uint8_t *buffer, int length, FTDIProgressInfo *progress
 					tx_re = subw_val(rdval, 39, 1, 0);
 					ctr_rev = bitrev(ctr, 10);
 
-					if (ctr_rev < last_ctr_rev) {
-						fclose(fout);
-						++fn;
-						sprintf(fout_name, "data/%05d.dec", fn);
-						fout = fopen(fout_name, "w");
-						if (!fout) {
-							fputs("Failed to open output file. "
-							      "Exiting...",
-							      stderr);
-							return EXIT_FAILURE;
-						}
-					}
-
 					if (last_ctr == ctr && last_tx_re != tx_re) {
 						fft_res = sqrt(pow(fft, 2) + pow(last_fft, 2));
-						fprintf(fout, "%8d %8u\n", fft_res, ctr);
+						accum[ctr] += fft_res;
+						++idx_ctr[ctr];
+						if (avg_ctr == AVG_INDEX) {
+							avg_ctr = 0;
+							flush_samples(fn);
+							++fn;
+						} else {
+							++avg_ctr;
+						}
 					}
 
 					second_val = 0;
@@ -165,15 +192,6 @@ static int read_callback(uint8_t *buffer, int length, FTDIProgressInfo *progress
 
 int main(int argc, char **argv)
 {
-	memset(fout_name, 0, sizeof(fout_name));
-	sprintf(fout_name, "data/%05d.dec", fn);
-
-	fout = fopen(fout_name, "w");
-	if (!fout) {
-		fputs("Failed to open output file. Exiting...", stderr);
-		return EXIT_FAILURE;
-	}
-
 	struct ftdi_context *ftdi;
 	int err;
 
@@ -194,13 +212,19 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	if (ftdi_set_latency_timer(ftdi, 16)) {
+	/* When the host PC requests a read, the FTDI device will only
+	 * send data if the number of bytes requested is available. If
+	 * not, the FTDI waits until the bytes are available before
+	 * sending, or until the latency timer (1-255ms) has
+	 * expired. */
+	if (ftdi_set_latency_timer(ftdi, 2)) {
 		fprintf(stderr, "Can't set latency, Error %s\n", ftdi_get_error_string(ftdi));
 		ftdi_usb_close(ftdi);
 		ftdi_free(ftdi);
 		return EXIT_FAILURE;
 	}
 
+	/* Configures FT2232H for synchronous FIFO mode. */
 	if (ftdi_set_bitmode(ftdi, 0xff, BITMODE_SYNCFF) < 0) {
 		fprintf(stderr, "Can't set synchronous fifo mode, Error %s\n",
 			ftdi_get_error_string(ftdi));
@@ -209,7 +233,9 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	ftdi_read_data_set_chunksize(ftdi, 0x10000);
+	/* Unfortunately this is maxed out on linux as 16KB even
+	 * though FTDI recommends setting it to 64KB. */
+	ftdi_read_data_set_chunksize(ftdi, 16384);
 
 	if (ftdi_setflowctrl(ftdi, SIO_RTS_CTS_HS) < 0) {
 		fprintf(stderr, "Unable to set flow control %s\n", ftdi_get_error_string(ftdi));
@@ -218,6 +244,12 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
+	/* Uses libusb asynchronous transfers for high-performance
+	 * data streaming. It continually transfers data until an
+	 * error occurs in the callback, or the callback returns a
+	 * nonzero value. The last 2 arguments specify the number of
+	 * packets per transfer (each packet is 512 bytes) and the
+	 * number of transfers per callback, respectively. */
 	err = ftdi_readstream(ftdi, read_callback, NULL, 8, 256);
 	if (err < 0 && !exit_requested)
 		exit(1);
@@ -225,7 +257,6 @@ int main(int argc, char **argv)
 	fprintf(stderr, "Capture ended.\n");
 	ftdi_usb_close(ftdi);
 	ftdi_free(ftdi);
-	fclose(fout);
 }
 // Local Variables:
 // rmsbolt-command: "clang -O3"
