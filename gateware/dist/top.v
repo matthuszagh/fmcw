@@ -1,6 +1,6 @@
 `default_nettype none
 
-`include "parity.v"
+`include "control.v"
 `include "ltc2292.v"
 `include "adf4158.v"
 `include "ft245.v"
@@ -23,6 +23,7 @@ module top #(
 `ifdef COCOTB_SIM
    input wire                             clk_7_5mhz,
    input wire                             clk_120mhz,
+   input wire                             clk_80mhz,
    input wire                             clk_20mhz,
    input wire                             pll_lock,
 `endif
@@ -53,10 +54,10 @@ module top #(
    input wire                             sd_detect_i,
 
    // mixer
-   output wire                            mix_enbl_n_o, /* Low voltage enables mixer. */
+   output reg                             mix_enbl_n_o, /* Low voltage enables mixer. */
 
    // power amplifier
-   output wire                            pa_en_n_o,
+   output reg                             pa_en_n_o,
 
    // frequency synthesizer
    output wire                            adf_ce_o,
@@ -77,8 +78,6 @@ module top #(
    localparam FFT_N   = 1024;
    localparam N_WIDTH = $clog2(FFT_N);
 
-   assign mix_enbl_n_o = !pll_lock;
-   assign pa_en_n_o    = !pll_lock;
    assign led_o        = !pa_en_n_o;
 
    always @(posedge clk_i) begin
@@ -86,8 +85,17 @@ module top #(
          adc_oe_o <= 2'b11;
          adc_shdn_o <= 2'b11;
       end else begin
-         adc_oe_o <= 2'b00;
-         adc_shdn_o <= 2'b00;
+         if (adf_en) begin
+            adc_oe_o     <= 2'b00;
+            adc_shdn_o   <= 2'b00;
+            mix_enbl_n_o <= 1'b0;
+            pa_en_n_o    <= 1'b0;
+         end else begin
+            adc_oe_o     <= 2'b11;
+            adc_shdn_o   <= 2'b11;
+            mix_enbl_n_o <= 1'b1;
+            pa_en_n_o    <= 1'b1;
+         end
       end
    end
 
@@ -160,12 +168,41 @@ module top #(
       end
    end
 
+   wire adf_en;
+   wire fir_en;
+   wire fifo_wren;
+   wire fifo_rden;
+   wire fft_en;
+   wire ft245_en;
+   control control (
+      .clk       (clk_i               ),
+      .rst_n     (rst_n               ),
+      .adf_done  (adf_config_done     ),
+      .fir_valid (fir_dvalid          ),
+      .fifo_full (fir_fft_fifo_full   ),
+      .fft_valid (fft_valid           ),
+      .fft_done  (fft_ctr == 10'd1023 ),
+      .adf_en    (adf_en              ),
+      .fir_en    (fir_en              ),
+      .fifo_wren (fifo_wren           ),
+      .fifo_rden (fifo_rden           ),
+      .fft_en    (fft_en              ),
+      .ft245_en  (ft245_en            )
+   );
+
+   assign ext1_io[0] = adf_en;
+   assign ext1_io[1] = fir_en;
+   assign ext1_io[2] = fifo_wren;
+   assign ext1_io[3] = fifo_rden;
+   assign ext1_io[4] = fft_en;
+   assign ext1_io[5] = ft245_en;
+
    wire                            adf_config_done;
    adf4158 adf4158 (
       .clk         (clk_i           ),
       .clk_20mhz   (clk_20mhz       ),
       .rst_n       (pll_lock        ),
-      .enable      (pll_lock        ),
+      .enable      (adf_en          ),
       .config_done (adf_config_done ),
       .le          (adf_le_o        ),
       .ce          (adf_ce_o        ),
@@ -199,7 +236,7 @@ module top #(
       .OUTPUT_WIDTH   (14  )
    ) fir (
       .clk             (clk_i           ),
-      .rst_n           (adf_config_done ),
+      .rst_n           (fir_en          ),
       .clk_2mhz_pos_en (clk_2mhz_pos_en ),
       .din             (chan_a          ),
       .dout            (chan_a_filtered ),
@@ -211,7 +248,9 @@ module top #(
       if (!rst_n) begin
          fir_ctr <= {N_WIDTH{1'b0}};
       end else begin
-         if (fir_dvalid && clk_2mhz_pos_en) begin
+         if (!fir_en) begin
+            fir_ctr <= {N_WIDTH{1'b0}};
+         end else if (fir_dvalid && clk_2mhz_pos_en) begin
             fir_ctr <= fir_ctr + 1'b1;
          end
       end
@@ -223,49 +262,19 @@ module top #(
       .WIDTH (FIR_OUTPUT_WIDTH ),
       .SIZE  (FFT_N            )
    ) fir_fft_fifo (
-      .rst_n  (rst_n                        ),
-      .full   (fir_fft_fifo_full            ),
-      .rdclk  (clk_i                        ),
-      .rden   (fft_rd_en                    ),
-      .rddata (fft_in                       ),
-      .wrclk  (clk_i                        ),
-      .wren   (fir_dvalid & clk_2mhz_pos_en ),
-      .wrdata (chan_a_filtered              )
+      .rst_n  (rst_n                       ),
+      .full   (fir_fft_fifo_full           ),
+      .rdclk  (clk_i                       ),
+      .rden   (fifo_rden                   ),
+      .rddata (fft_in                      ),
+      .wrclk  (clk_i                       ),
+      .wren   (fifo_wren & clk_2mhz_pos_en ),
+      .wrdata (chan_a_filtered             )
    );
-
-   reg               fft_en;
 
    /* verilator lint_off WIDTH */
    localparam [N_WIDTH-1:0] FFT_N_LAST = FFT_N - 1;
    /* verilator lint_on WIDTH */
-
-   // must wait 1 clock after asserting read enable to get data from
-   // fifo.
-   reg               fft_rd_en;
-   always @(posedge clk_i) begin
-      if (!rst_n) begin
-         fft_en <= 1'b0;
-         fft_rd_en <= 1'b0;
-      end else begin
-         if (fir_fft_fifo_full || fft_en) begin
-            if (fft_ctr == FFT_N_LAST) begin
-               fft_rd_en <= 1'b0;
-               fft_en <= 1'b0;
-            end else begin
-               if (fft_rd_en) begin
-                  fft_en <= 1'b1;
-                  fft_rd_en <= 1'b1;
-               end else begin
-                  fft_en <= 1'b0;
-                  fft_rd_en <= 1'b1;
-               end
-            end
-         end else begin
-            fft_rd_en <= 1'b0;
-            fft_en <= 1'b0;
-         end
-      end
-   end
 
    localparam FFT_OUTPUT_WIDTH = 25;
    localparam FFT_TWIDDLE_WIDTH = 10;
@@ -282,7 +291,7 @@ module top #(
    ) fft (
       .clk_i      (clk_i                    ),
       .clk_3x_i   (clk_120mhz               ),
-      .rst_n      (ft245_tx_en              ),
+      .rst_n      (fft_en                   ),
       .sync_o     (fft_valid                ),
       .data_ctr_o (fft_ctr                  ),
       .data_re_i  (fft_in                   ),
@@ -299,22 +308,8 @@ module top #(
    wire signed [FFT_OUTPUT_WIDTH-1:0] ft245_wrdata = tx_re ? fft_re_o : fft_im_o;
 
    wire ft245_wrfifo_empty;
-   reg  ft245_tx_en;
-   always @(posedge clk_i) begin
-      if (!rst_n) begin
-         ft245_tx_en <= 1'b0;
-      end else begin
-         if (ft245_wrfifo_full) begin
-            ft245_tx_en <= 1'b0;
-         // wait for the fifo to empty so that we get contiguous data
-         end else if (ft245_wrfifo_empty || ft245_tx_en) begin
-            ft245_tx_en <= 1'b1;
-         end else begin
-            ft245_tx_en <= 1'b0;
-         end
-      end
-   end
 
+   /* alternate sending FFT real and imaginary parts. */
    reg tx_re;
    always @(posedge clk_80mhz) begin
       if (!rst_n) begin
@@ -325,14 +320,14 @@ module top #(
    end
 
    ft245 #(
-      .WRITE_DEPTH  (8192             ),
+      .WRITE_DEPTH  (2048             ),
       .READ_DEPTH   (512              ),
       .DATA_WIDTH   (FT245_DATA_WIDTH ),
       .DUPLICATE_TX (1                )
    ) ft245 (
       .rst_n        (rst_n                                                  ),
       .clk          (clk_80mhz                                              ),
-      .wren         (ft245_tx_en && fft_valid                               ),
+      .wren         (ft245_en                                               ),
       .wrdata       ({4'h8, {20{1'b0}}, tx_re, fft_ctr, ft245_wrdata, 4'h0} ),
       .wrfifo_full  (ft245_wrfifo_full                                      ),
       .wrfifo_empty (ft245_wrfifo_empty                                     ),

@@ -49,4 +49,5 @@ lint:
 	verilator $(VERILOG_INCS) \
 		--lint-only \
 		--Wall \
+		--top-module $(TOP_MODULE) \
 		$(TOP_MODULE_SRC)

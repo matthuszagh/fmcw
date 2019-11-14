@@ -1,8 +1,5 @@
-#define _DEFAULT_SOURCE
-
 #include "bitmanip.h"
 #include <bits/stdint-uintn.h>
-#include <endian.h>
 #include <ftdi.h>
 #include <limits.h>
 #include <math.h>
@@ -13,7 +10,9 @@
 #define PACKET_LEN 8
 #define FFT_LEN 1024
 /* Average samples over this number of reads. */
-#define AVG_INDEX 10000
+#define AVG_INDEX 30000
+/* whether to subtract background signal. */
+#define SUBTRACT_BACKGROUND 1
 
 /**
  * Find the first byte for which the MSB nibble is 0x8.
@@ -93,7 +92,7 @@ static uint64_t last_val;
 static int second_val;
 static int last_fft;
 static unsigned int last_ctr;
-static unsigned int last_ctr_rev;
+/* static unsigned int last_ctr_rev; */
 static int last_tx_re;
 static int coverage;
 /* keep track of the number of times a value is found for each bit
@@ -102,11 +101,16 @@ static int idx_ctr[FFT_LEN];
 /* Accumulate values and average periodically. This is used as a
  * solution for dropped values. */
 static int64_t accum[FFT_LEN];
+static int64_t backg[FFT_LEN];
+static int backg_set = 0;
 static int avg_ctr = 0;
+
+/* void subtract_background() {} */
 
 void flush_samples(int fn)
 {
 	int i;
+	int ctr_rev;
 	FILE *fout;
 	char fout_name[32];
 
@@ -121,9 +125,21 @@ void flush_samples(int fn)
 	for (i = 0; i < FFT_LEN; ++i) {
 		if (idx_ctr[i] != 0) {
 			accum[i] /= idx_ctr[i];
+			/* if (backg_set) { */
+			/* backg[i] = (backg[i] + accum[i]) / 2; */
+			/* accum[i] -= backg[i]; */
+			/* backg[i] = accum[i]; */
+			/* } else { */
+			/* 	backg_set = 1; */
+			/* 	backg[i] = accum[i]; */
+			/* } */
+
 		} else {
 			accum[i] = 0;
 		}
+		/* if (SUBTRACT_BACKGROUND) */
+		/* 	subtract_background(); */
+
 		fprintf(fout, "%8d %8u\n", accum[i], i);
 		accum[i] = 0;
 		idx_ctr[i] = 0;
@@ -153,13 +169,13 @@ static int read_callback(uint8_t *buffer, int length, FTDIProgressInfo *progress
 					int fft;
 					int fft_res;
 					unsigned int ctr;
-					unsigned int ctr_rev;
+					/* unsigned int ctr_rev; */
 					int tx_re;
 
 					fft = subw_val(rdval, 4, 25, 1);
 					ctr = subw_val(rdval, 29, 10, 0);
 					tx_re = subw_val(rdval, 39, 1, 0);
-					ctr_rev = bitrev(ctr, 10);
+					/* ctr_rev = bitrev(ctr, 10); */
 
 					if (last_ctr == ctr && last_tx_re != tx_re) {
 						fft_res = sqrt(pow(fft, 2) + pow(last_fft, 2));
@@ -177,7 +193,7 @@ static int read_callback(uint8_t *buffer, int length, FTDIProgressInfo *progress
 					second_val = 0;
 					last_fft = fft;
 					last_ctr = ctr;
-					last_ctr_rev = ctr_rev;
+					/* last_ctr_rev = ctr_rev; */
 					last_tx_re = tx_re;
 				}
 			} else {
