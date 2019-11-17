@@ -5,6 +5,7 @@
 `include "adf4158.v"
 `include "ft245.v"
 `include "fir_poly.v"
+`include "window.v"
 `include "fft_r22sdf.v"
 
 module top #(
@@ -81,22 +82,19 @@ module top #(
    assign led_o        = !pa_en_n_o;
 
    always @(posedge clk_i) begin
-      if (!rst_n) begin
-         adc_oe_o <= 2'b11;
-         adc_shdn_o <= 2'b11;
-      end else begin
-         if (adf_en) begin
-            adc_oe_o     <= 2'b00;
-            adc_shdn_o   <= 2'b00;
-            mix_enbl_n_o <= 1'b0;
-            pa_en_n_o    <= 1'b0;
-         end else begin
-            adc_oe_o     <= 2'b11;
-            adc_shdn_o   <= 2'b11;
-            mix_enbl_n_o <= 1'b1;
-            pa_en_n_o    <= 1'b1;
-         end
-      end
+      // Multiplex both channels through A, so we can disable channel
+      // B. OE should remain on for A since the switching speed isn't
+      // fast enough to switch it on and off (datasheet p22).
+      adc_oe_o <= 2'b10;
+      // Similarly leave the shutdown pin on. If we need to conserve
+      // power we can set this to use nap mode when not in
+      // use. However, that requires about 100 clock cycles to
+      // recover.
+      adc_shdn_o <= 2'b00;
+      // Keep mixer on so we don't have to worry about enable and
+      // disable times.
+      mix_enbl_n_o <= 1'b0;
+      pa_en_n_o <= 1'b0;
    end
 
 `ifndef COCOTB_SIM
@@ -178,7 +176,7 @@ module top #(
       .clk       (clk_i               ),
       .rst_n     (rst_n               ),
       .adf_done  (adf_config_done     ),
-      .fir_valid (fir_dvalid          ),
+      .fir_valid (kaiser_dvalid       ),
       .fifo_full (fir_fft_fifo_full   ),
       .fft_valid (fft_valid           ),
       .fft_done  (fft_ctr == 10'd1023 ),
@@ -243,6 +241,21 @@ module top #(
       .dvalid          (fir_dvalid      )
    );
 
+   wire                               kaiser_dvalid;
+   wire signed [FIR_OUTPUT_WIDTH-1:0] kaiser_out;
+   window #(
+      .N           (FFT_N            ),
+      .DATA_WIDTH  (FIR_OUTPUT_WIDTH ),
+      .COEFF_WIDTH (16               )
+   ) kaiser (
+      .clk    (clk_i                         ),
+      .rst_n  (rst_n                         ),
+      .en     (clk_2mhz_pos_en && fir_dvalid ),
+      .di     (chan_a_filtered               ),
+      .dvalid (kaiser_dvalid                 ),
+      .dout   (kaiser_out                    )
+   );
+
    reg [N_WIDTH-1:0]                  fir_ctr;
    always @(posedge clk_i) begin
       if (!rst_n) begin
@@ -269,7 +282,7 @@ module top #(
       .rddata (fft_in                      ),
       .wrclk  (clk_i                       ),
       .wren   (fifo_wren & clk_2mhz_pos_en ),
-      .wrdata (chan_a_filtered             )
+      .wrdata (kaiser_out                  )
    );
 
    /* verilator lint_off WIDTH */
