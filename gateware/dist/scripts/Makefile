@@ -14,7 +14,7 @@ OPENOCD_DIR	= openocd
 
 .PHONY: prog
 prog: pnr
-	sudo openocd -f $(OPENOCD_DIR)/interface.cfg -f $(OPENOCD_DIR)/program_fpga.cfg
+	openocd -f $(OPENOCD_DIR)/interface.cfg -f $(OPENOCD_DIR)/program_fpga.cfg
 
 .PHONY: pnr
 pnr: $(TOP_MODULE).bit

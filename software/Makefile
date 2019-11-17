@@ -16,7 +16,7 @@ acquire: read
 	rm -rf data
 	mkdir data
 	./plot.py &
-	sudo ./read
+	./read
 
 read: read.c bitmanip.c bitmanip.h
 	$(CC) $(CFLAGS) $(FTDI_CFLAGS) read.c bitmanip.c -o read -lm $(LINKER_FLAGS)
