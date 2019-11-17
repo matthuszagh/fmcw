@@ -1,6 +1,10 @@
+export
+
 GATEWARE_DIR	= gateware
 DIST_DIR	= $(GATEWARE_DIR)/dist
 SOFTWARE_DIR	= software
+
+DEBUG		= 0
 
 .PHONY: run
 run: run_dist

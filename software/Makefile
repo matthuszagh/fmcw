@@ -1,11 +1,11 @@
 CC		= clang
-DEBUG		= 0
+DEBUG		?= 0
 PLOT		= 0
 
-ifeq ($(DEBUG),0)
-CFLAGS	= -O3
-else
+ifeq ($(DEBUG),1)
 CFLAGS	= -O0 -g3
+else
+CFLAGS	= -O3
 endif
 STRICT_CFLAGS	= $(CFLAGS) -Wall -Wextra -Wshadow -Wstrict-aliasing -ansi -pedantic -Werror
 FTDI_CFLAGS	:= $(shell libftdi1-config --cflags)
@@ -15,8 +15,10 @@ LINKER_FLAGS	:= $(shell libftdi1-config --libs)
 acquire: read
 	rm -rf data
 	mkdir data
+ifeq ($(DEBUG),0)
 	./plot.py &
 	./read
+endif
 
 read: read.c bitmanip.c bitmanip.h
 	$(CC) $(CFLAGS) $(FTDI_CFLAGS) read.c bitmanip.c -o read -lm $(LINKER_FLAGS)
