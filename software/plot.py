@@ -22,7 +22,7 @@ if __name__ == "__main__":
     view.enableAutoRange()
 
     ts = 0
-    hist = np.zeros((num_timesteps, 1024))
+    hist = np.zeros((num_timesteps, 512))
     img = pg.ImageItem(border="w")
     view.addItem(img)
 
@@ -30,10 +30,13 @@ if __name__ == "__main__":
         fname = "data/{:05d}.dec".format(ts)
         if os.path.isfile(fname):
             with open("data/{:05d}.dec".format(ts), "r") as f:
-                hist[ts] = np.loadtxt(f, usecols=0)
+                if ts % num_timesteps == 0:
+                    hist = np.zeros((num_timesteps, 512))
+
+                hist[ts % num_timesteps] = np.loadtxt(f, usecols=0)
 
                 img.setImage(hist)
-                img.setLevels([0, 8000])
+                img.setLevels([0, 500])
                 app.processEvents()
                 ts += 1
         else:
