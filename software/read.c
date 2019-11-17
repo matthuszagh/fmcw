@@ -122,7 +122,7 @@ void flush_samples(int fn)
 		      stderr);
 		exit(EXIT_FAILURE);
 	}
-	for (i = 0; i < FFT_LEN; ++i) {
+	for (i = 0; i < FFT_LEN / 2; ++i) {
 		if (idx_ctr[i] != 0) {
 			accum[i] /= idx_ctr[i];
 			/* if (backg_set) { */
