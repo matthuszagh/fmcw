@@ -12,13 +12,13 @@ FTDI_CFLAGS	:= $(shell libftdi1-config --cflags)
 LINKER_FLAGS	:= $(shell libftdi1-config --libs)
 
 .PHONY: acquire
-acquire: read
+acquire: fmcw
 	rm -rf data
 	mkdir data
 ifeq ($(DEBUG),0)
 	./plot.py &
-	./read
+	./fmcw
 endif
 
-read: read.c bitmanip.c bitmanip.h
-	$(CC) $(CFLAGS) $(FTDI_CFLAGS) read.c bitmanip.c -o read -lm $(LINKER_FLAGS)
+fmcw: fmcw.c bitmanip.c bitmanip.h
+	$(CC) $(CFLAGS) $(FTDI_CFLAGS) fmcw.c bitmanip.c -o fmcw -lm $(LINKER_FLAGS)
