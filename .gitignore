@@ -64,3 +64,5 @@ openems/octave-workspace
 /software/read
 /software/gen_plot
 software/data
+**/build
+**/*.xml
