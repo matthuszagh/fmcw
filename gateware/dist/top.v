@@ -347,7 +347,7 @@ module top #(
       fft_fifo_rden_delay <= fft_fifo_rden;
    end
 
-   localparam FT245_DATA_WIDTH = 64;
+   localparam FT245_DATA_WIDTH = 47;
    wire                               ft245_wrfifo_full;
    wire                               ft245_rdfifo_full;
    wire                               ft245_rdfifo_empty;
@@ -386,32 +386,32 @@ module top #(
       case (op_state)
       IDLE:
         begin
-           ft245_wrdata = 64'd0;
+           ft245_wrdata = {FT245_DATA_WIDTH{1'b0}};
            ft245_en = 1'b0;
         end
       FFT:
         begin
-           ft245_wrdata = {8'h80, {16{1'b0}}, fft_ft245_data, 4'h0};
+           ft245_wrdata = {{11{1'b0}}, fft_ft245_data};
            ft245_en = fft_fifo_rden_delay;
         end
       WINDOW:
         begin
-           ft245_wrdata = {8'h80, {38{1'b0}}, kaiser_out, 4'h0};
+           ft245_wrdata = {{33{1'b0}}, kaiser_out};
            ft245_en = kaiser_dvalid && clk_2mhz_pos_en;
         end
       FIR:
         begin
-           ft245_wrdata = {8'h80, {38{1'b0}}, chan_a_filtered, 4'h0};
+           ft245_wrdata = {{33{1'b0}}, chan_a_filtered};
            ft245_en = fir_dvalid && clk_2mhz_pos_en;
         end
       RAW:
         begin
-           ft245_wrdata = {8'h80, {40{1'b0}}, chan_a, 4'h0};
+           ft245_wrdata = {{35{1'b0}}, chan_a};
            ft245_en = fir_en;
         end
       default:
         begin
-           ft245_wrdata = 64'd0;
+           ft245_wrdata = {FT245_DATA_WIDTH{1'b0}};
            ft245_en = 1'b0;
         end
       endcase
