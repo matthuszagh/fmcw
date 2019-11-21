@@ -5,6 +5,7 @@ VERILOG_DIRS	:= $(shell pwd)
 VERILOG_DIRS	+= $(LIBDIGITAL_PATH)/memory/fifo
 VERILOG_DIRS	+= $(LIBDIGITAL_PATH)/memory/ram
 VERILOG_DIRS	+= $(LIBDIGITAL_PATH)/memory/shift_reg
+VERILOG_DIRS	+= $(LIBDIGITAL_PATH)/memory/dual_ff
 VERILOG_DIRS	+= $(LIBDIGITAL_PATH)/devices/ltc2292
 VERILOG_DIRS	+= $(LIBDIGITAL_PATH)/devices/adf4158
 VERILOG_DIRS	+= $(LIBDIGITAL_PATH)/devices/ft2232h/ft245
@@ -12,6 +13,7 @@ VERILOG_DIRS	+= $(LIBDIGITAL_PATH)/filters/fir_poly
 VERILOG_DIRS	+= $(LIBDIGITAL_PATH)/window
 VERILOG_DIRS	+= $(LIBDIGITAL_PATH)/fft/r22sdf
 VERILOG_DIRS	+= $(LIBDIGITAL_PATH)/error_detection
+VERILOG_DIRS	+= $(LIBDIGITAL_PATH)/misc/pll_sync_ctr
 
 VERILOG_INCS	= $(addprefix -I,$(VERILOG_DIRS))
 VERILOG_SRCS	:= $(shell find $(VERILOG_DIRS) -maxdepth 1 -name '*.v')
