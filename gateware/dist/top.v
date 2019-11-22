@@ -77,7 +77,6 @@ module top #(
 );
 
    localparam FFT_N   = 1024;
-   localparam [$clog2(FFT_N)-1:0] FFT_N_CMP = FFT_N[$clog2(FFT_N)-1:0];
    localparam N_WIDTH = $clog2(FFT_N);
 
    assign led_o        = !pa_en_n_o;
@@ -311,7 +310,7 @@ module top #(
       end else begin
          if (fft_valid) begin
             fft_fifo_rden <= 1'b1;
-            fft_ft245_ctr <= FFT_N_CMP-1'b1;
+            fft_ft245_ctr <= FFT_N-1'b1;
          end else begin
             if (fft_ft245_ctr == 0) begin
                fft_fifo_rden <= 1'b0;
@@ -353,7 +352,7 @@ module top #(
    wire                               ft245_rdfifo_empty;
    wire signed [7:0]                  ft245_rddata;
    wire signed [FFT_OUTPUT_WIDTH-1:0] ft245_fftdata = tx_re ? fft_re_o : fft_im_o;
-   reg signed [63:0]                  ft245_wrdata;
+   reg signed [FT245_DATA_WIDTH-1:0]  ft245_wrdata;
 
    wire ft245_wrfifo_empty;
 
