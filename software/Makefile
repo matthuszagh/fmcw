@@ -9,7 +9,7 @@ CFLAGS	= -O3
 endif
 STRICT_CFLAGS	= $(CFLAGS) -Wall -Wextra -Wshadow -Wstrict-aliasing -ansi -pedantic -Werror
 FTDI_CFLAGS	:= $(shell libftdi1-config --cflags)
-LINKER_FLAGS	:= $(shell libftdi1-config --libs)
+LINKER_FLAGS	:= $(shell libftdi1-config --libs) -lm -lpthread
 
 .PHONY: acquire
 acquire: fmcw
@@ -21,4 +21,4 @@ ifeq ($(DEBUG),0)
 endif
 
 fmcw: fmcw.c bitmanip.c bitmanip.h
-	$(CC) $(CFLAGS) $(FTDI_CFLAGS) fmcw.c bitmanip.c -o fmcw -lm $(LINKER_FLAGS)
+	$(CC) $(CFLAGS) $(FTDI_CFLAGS) fmcw.c bitmanip.c -o fmcw $(LINKER_FLAGS)
