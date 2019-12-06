@@ -79,7 +79,15 @@ module top #(
    localparam FFT_N   = 1024;
    localparam N_WIDTH = $clog2(FFT_N);
 
-   assign led_o        = !pa_en_n_o;
+   assign led_o       = !pa_en_n_o;
+   assign ext1_io[0]  = ft245_wrfifo_full;
+
+   // assign ext1_io[0] = adf_en;
+   // assign ext1_io[1] = fir_en;
+   // assign ext1_io[2] = fifo_wren;
+   // assign ext1_io[3] = fifo_rden;
+   // assign ext1_io[4] = fft_en;
+   // assign ext1_io[5] = ft245_en;
 
    always @(posedge clk_i) begin
       // Multiplex both channels through A, so we can disable channel
@@ -185,13 +193,6 @@ module top #(
       .fifo_rden    (fifo_rden           ),
       .fft_en       (fft_en              )
    );
-
-   assign ext1_io[0] = adf_en;
-   assign ext1_io[1] = fir_en;
-   assign ext1_io[2] = fifo_wren;
-   assign ext1_io[3] = fifo_rden;
-   assign ext1_io[4] = fft_en;
-   assign ext1_io[5] = ft245_en;
 
    wire                            adf_config_done;
    adf4158 adf4158 (
@@ -315,7 +316,7 @@ module top #(
             if (fft_ft245_ctr == 0) begin
                fft_fifo_rden <= 1'b0;
                fft_ft245_ctr <= {N_WIDTH{1'b0}};
-            end else begin
+            end else if (!ft245_wrfifo_full) begin
                fft_fifo_rden <= 1'b1;
                fft_ft245_ctr <= fft_ft245_ctr - 1'b1;
             end
@@ -417,7 +418,7 @@ module top #(
    end
 
    ft245 #(
-      .WRITE_DEPTH  (2048             ),
+      .WRITE_DEPTH  (8192             ),
       .READ_DEPTH   (512              ),
       .DATA_WIDTH   (FT245_DATA_WIDTH ),
       .DUPLICATE_TX (1                )
