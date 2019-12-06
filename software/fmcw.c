@@ -14,8 +14,6 @@
 #define PAYLOAD_SIZE 510
 #define FFT_LEN 1024
 #define BUFSIZE 2048
-/* Average samples over this number of reads. */
-#define AVG_INDEX 30000
 
 /* Valid messages to send radar. */
 #define IDLE 0
@@ -51,13 +49,8 @@ static unsigned int last_ctr;
 static unsigned int last_rev_ctr;
 static int last_tx_re;
 static int coverage;
-/* keep track of the number of times a value is found for each bit
- * position. This is used to periodically divide the accumulator. */
+/* record if each sample is found (1) or missed (0). */
 static int idx_ctr[FFT_LEN];
-static int avg_ctr = 0;
-/* Accumulate values and average periodically. This is used as a
- * solution for dropped values. */
-static int64_t accum[FFT_LEN];
 /* raw samples */
 static int64_t raw_a[FFT_LEN];
 static int64_t raw_b[FFT_LEN];
@@ -66,9 +59,13 @@ static int64_t fir_a[FFT_LEN];
 static int64_t fir_b[FFT_LEN];
 /* kaiser window output */
 static int64_t window[FFT_LEN];
-static unsigned char op_state = IDLE;
+/* Fully-processed FFT data. */
+static int fft_data[FFT_LEN];
 
-static FILE *raw_file;
+static unsigned char op_state = IDLE;
+static int report_loss = 0;
+
+/* static FILE *raw_file; */
 
 struct readstream_data {
 	struct ftdi_context *ftdi;
@@ -87,9 +84,18 @@ static void proc_fft(uint64_t rdval);
 static void proc_window(uint64_t rdval);
 static void proc_raw(uint64_t rdval);
 static void proc_fir(uint64_t rdval);
+/**
+ * Perform a linear interpolation of any samples missing from the
+ * array pointed to by @data. @valid points to an array of equal
+ * length to @data. Each entry is either a 1 or 0, where 1 indicates
+ * valid data and 0 indicates data is missing. @len is the number of
+ * items in each array.
+ */
+static void interp_lin(int *data, int *valid, int len);
 static int read_callback(uint8_t *buffer, int length, FTDIProgressInfo *progress, void *userdata);
 static void *producer_fn(void *arg);
 static void *consumer_fn(void *arg);
+static void *monitor_input(void *arg);
 
 struct buffer {
 	uint8_t buf[BUFSIZE];
@@ -112,10 +118,11 @@ int main(int argc, char **argv)
 	FILE *fmode = NULL;
 	pthread_t producer_thread;
 	pthread_t consumer_thread;
+	pthread_t input_monitor_thread;
 
 	memset(interm, 0, 10);
 	dist = 1;
-	while ((opt = getopt(argc, argv, "ha:i:")) != -1) {
+	while ((opt = getopt(argc, argv, "hla:i:")) != -1) {
 		switch (opt) {
 		case 'a':
 			if (strcmp(optarg, "dist") != 0) {
@@ -127,14 +134,23 @@ int main(int argc, char **argv)
 		case 'i':
 			*interm = *optarg;
 			break;
+		case 'l':
+			report_loss = 1;
+			/* fft data is used as a premise for measuring
+			 * data loss. */
+			strcpy(interm, "fft");
+			dist = 1;
+			break;
 		case 'h':
 			printf("Usage: %s [OPTION]\n\n"
-			       "  -h  display this message\n"
+			       "  -h  display this message and exit\n\n"
 			       "  -a  specify radar action\n"
-			       "      values: dist or angle (defaults to dist)\n"
+			       "      values: dist or angle (defaults to dist)\n\n"
 			       "  -i  get data from an intermediary step\n"
 			       "      values: raw, fir, window, or fft (defaults to fft)\n"
-			       "      fft retrieves fully processed output\n\n",
+			       "      fft retrieves fully processed output\n\n"
+			       "  -l  display packet loss statistics\n"
+			       "      does not perform any other processing\n\n",
 			       argv[0]);
 			goto cleanup;
 		default:
@@ -228,8 +244,12 @@ int main(int argc, char **argv)
 		pthread_create(&producer_thread, NULL, &producer_fn, &prod_fn_arg);
 		pthread_create(&consumer_thread, NULL, &consumer_fn, &buf);
 
+		pthread_create(&input_monitor_thread, NULL, &monitor_input, NULL);
+
+		pthread_join(input_monitor_thread, NULL);
 		/* TODO get return value. */
-		pthread_join(producer_thread, NULL);
+		/* pthread_join(producer_thread, NULL); */
+		pthread_cancel(consumer_thread);
 		pthread_cancel(consumer_thread);
 		/* ftdi_err = *(int *)prod_ret; */
 		/* if (ftdi_err < 0 && !exit_requested) { */
@@ -242,7 +262,6 @@ int main(int argc, char **argv)
 
 	fprintf(stderr, "Capture ended.\n");
 cleanup:
-	fclose(fmode);
 	ftdi_usb_close(ftdi);
 	ftdi_free(ftdi);
 }
@@ -295,22 +314,16 @@ int dvalid(uint64_t val)
 void write_fft(FILE *f)
 {
 	int i;
-	for (i = 0; i < FFT_LEN / 2; ++i) {
-		if (idx_ctr[i] != 0) {
-			accum[i] /= idx_ctr[i];
-		} else {
-			accum[i] = 0;
-		}
 
-		fprintf(f, "%8d %8u\n", accum[i], i);
-		accum[i] = 0;
-		idx_ctr[i] = 0;
+	for (i = 0; i < FFT_LEN / 2; ++i) {
+		fprintf(f, "%8d %8u\n", fft_data[i], i);
 	}
 }
 
 void write_raw(FILE *f)
 {
 	int i;
+
 	for (i = 0; i < FFT_LEN; ++i) {
 		if (idx_ctr[i] != 0) {
 			raw_a[i] /= idx_ctr[i];
@@ -330,6 +343,7 @@ void write_raw(FILE *f)
 void write_window(FILE *f)
 {
 	int i;
+
 	for (i = 0; i < FFT_LEN; ++i) {
 		if (idx_ctr[i] != 0) {
 			window[i] /= idx_ctr[i];
@@ -362,6 +376,8 @@ void write_fir(FILE *f)
 	}
 }
 
+/* TODO consider renaming since this just writes data to a file it
+ * doesn't flush it to disk. */
 void flush_data(int fn)
 {
 	FILE *fout;
@@ -392,6 +408,40 @@ void flush_data(int fn)
 	fclose(fout);
 }
 
+void interp_lin(int *data, int *valid, int len)
+{
+	int i;
+	int j;
+	int last_dat;
+	int last_i;
+	double inc_val;
+
+	last_i = -1;
+	for (i = 0; i < len; ++i) {
+		if (valid[i]) {
+			/* if starting data is invalid, copy the first
+			 * valid data there. */
+			if (last_i == -1) {
+				last_dat = data[i];
+			}
+			for (j = last_i + 1; j < i; ++j) {
+				inc_val = ((double)data[i] - (double)last_dat) / (i - last_i);
+				data[j] = (int)(inc_val * (j - last_i));
+			}
+			last_dat = data[i];
+			last_i = i;
+		}
+	}
+	/* fill any missing data at the end with the last valid
+	 * value. */
+	if (last_i != len - 1) {
+		for (j = last_i + 1; j < i; ++j) {
+			inc_val = ((double)data[i] - (double)last_dat) / (i - last_i);
+			data[j] = (int)(inc_val * (j - last_i));
+		}
+	}
+}
+
 void proc_fft(uint64_t rdval)
 {
 	int fft;
@@ -400,7 +450,6 @@ void proc_fft(uint64_t rdval)
 	unsigned int rev_ctr;
 	int tx_re;
 	int i;
-	double cvg_sum;
 
 	fft = subw_val(rdval, 4, 25, 1);
 	ctr = subw_val(rdval, 29, 10, 0);
@@ -411,25 +460,27 @@ void proc_fft(uint64_t rdval)
 		rev_ctr = bitrev(ctr, 10);
 		if (rev_ctr > last_rev_ctr) {
 			idx_ctr[rev_ctr] = 1;
+			fft_data[ctr] = fft_res;
 		} else {
-			cvg_sum = 0;
-			for (i = 0; i < FFT_LEN; ++i) {
-				cvg_sum += idx_ctr[i];
-				/* if (!idx_ctr[i]) */
-				/* 	printf("%d\n", i); */
-				idx_ctr[i] = 0;
+			if (report_loss) {
+				double cvg_sum;
+
+				cvg_sum = 0;
+				for (i = 0; i < FFT_LEN; ++i) {
+					cvg_sum += idx_ctr[i];
+					idx_ctr[i] = 0;
+				}
+				printf("coverage: %2.0f\n", 100 * cvg_sum / FFT_LEN);
+			} else {
+				interp_lin(fft_data, idx_ctr, FFT_LEN);
+				flush_data(fn);
+				++fn;
+				for (i = 0; i < FFT_LEN; ++i) {
+					fft_data[i] = 0;
+					idx_ctr[i] = 0;
+				}
 			}
-			printf("coverage: %2.0f\n", 100 * cvg_sum / FFT_LEN);
 		}
-		/* accum[ctr] += fft_res; */
-		/* ++idx_ctr[ctr]; */
-		/* if (avg_ctr == AVG_INDEX) { */
-		/* 	avg_ctr = 0; */
-		/* 	flush_data(fn); */
-		/* 	++fn; */
-		/* } else { */
-		/* 	++avg_ctr; */
-		/* } */
 		last_rev_ctr = rev_ctr;
 	}
 	last_fft = fft;
@@ -447,13 +498,13 @@ void proc_window(uint64_t rdval)
 
 	++idx_ctr[ctr];
 	window[ctr] += win;
-	if (avg_ctr == AVG_INDEX) {
-		avg_ctr = 0;
-		flush_data(fn);
-		++fn;
-	} else {
-		++avg_ctr;
-	}
+	/* if (avg_ctr == AVG_INDEX) { */
+	/* 	avg_ctr = 0; */
+	/* 	flush_data(fn); */
+	/* 	++fn; */
+	/* } else { */
+	/* 	++avg_ctr; */
+	/* } */
 }
 
 void proc_raw(uint64_t rdval)
@@ -469,13 +520,13 @@ void proc_raw(uint64_t rdval)
 	++idx_ctr[ctr];
 	raw_a[ctr] += chan_a;
 	raw_b[ctr] += chan_b;
-	if (avg_ctr == AVG_INDEX) {
-		avg_ctr = 0;
-		flush_data(fn);
-		++fn;
-	} else {
-		++avg_ctr;
-	}
+	/* if (avg_ctr == AVG_INDEX) { */
+	/* 	avg_ctr = 0; */
+	/* 	flush_data(fn); */
+	/* 	++fn; */
+	/* } else { */
+	/* 	++avg_ctr; */
+	/* } */
 }
 
 void proc_fir(uint64_t rdval)
@@ -491,13 +542,13 @@ void proc_fir(uint64_t rdval)
 	++idx_ctr[ctr];
 	fir_a[ctr] += chan_a;
 	fir_b[ctr] += chan_b;
-	if (avg_ctr == AVG_INDEX) {
-		avg_ctr = 0;
-		flush_data(fn);
-		++fn;
-	} else {
-		++avg_ctr;
-	}
+	/* if (avg_ctr == AVG_INDEX) { */
+	/* 	avg_ctr = 0; */
+	/* 	flush_data(fn); */
+	/* 	++fn; */
+	/* } else { */
+	/* 	++avg_ctr; */
+	/* } */
 }
 
 int read_callback(uint8_t *buffer, int length, FTDIProgressInfo *progress, void *userdata)
@@ -556,20 +607,18 @@ void *consumer_fn(void *arg)
 	struct buffer *shared_buf;
 	uint64_t rdval;
 	uint64_t last_val;
-	uint8_t *packet_buf;
+	uint8_t *packet_buf = malloc(PACKET_LEN * sizeof(uint8_t));
 	int i;
 	int j;
 	int occupied_cmp;
 
 	shared_buf = (struct buffer *)arg;
-	packet_buf = malloc(PACKET_LEN * sizeof(uint8_t));
 	memset(packet_buf, 0, PACKET_LEN * sizeof(uint8_t));
 
 	pthread_mutex_lock(&shared_buf->mutex);
 
 	/* TODO use cleaner way of breaking out. */
 	while (1) {
-		/* TODO magic number */
 		occupied_cmp = shared_buf->occupied - PAYLOAD_SIZE > 8 ? shared_buf->occupied : 8;
 		/* Wait for at least `PAYLOAD_SIZE' bytes of data so
 		 * we don't waste time switching between threads. */
@@ -578,7 +627,7 @@ void *consumer_fn(void *arg)
 		}
 		while (shared_buf->occupied >= occupied_cmp) {
 			i = 0;
-			while (i + shared_buf->nextout < BUFSIZE) {
+			while (i + shared_buf->nextout < BUFSIZE && i < 8) {
 				packet_buf[i] = shared_buf->buf[i + shared_buf->nextout];
 				++i;
 			}
@@ -627,4 +676,13 @@ void *consumer_fn(void *arg)
 
 	free(packet_buf);
 	pthread_mutex_unlock(&shared_buf->mutex);
+}
+
+void *monitor_input(void *arg)
+{
+	char c;
+
+	while ((c = getchar()) != 'q') {
+	}
+	return NULL;
 }

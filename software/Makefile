@@ -17,8 +17,14 @@ acquire: fmcw
 	mkdir data
 ifeq ($(DEBUG),0)
 	./plot.py &
-	./fmcw
+	./fmcw -a dist
 endif
 
 fmcw: fmcw.c bitmanip.c bitmanip.h
 	$(CC) $(CFLAGS) $(FTDI_CFLAGS) fmcw.c bitmanip.c -o fmcw $(LINKER_FLAGS)
+
+.PHONY: valgrind
+valgrind:
+	rm -f fmcw
+	$(CC) -O0 -g3 $(FTDI_CFLAGS) fmcw.c bitmanip.c -o fmcw $(LINKER_FLAGS)
+	valgrind --leak-check=yes ./fmcw
