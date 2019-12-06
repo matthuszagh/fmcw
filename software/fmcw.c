@@ -246,6 +246,7 @@ int main(int argc, char **argv)
 
 		pthread_create(&input_monitor_thread, NULL, &monitor_input, NULL);
 
+		fputs("Type 'q' to terminate data capture.\n> ", stdout);
 		pthread_join(input_monitor_thread, NULL);
 		/* TODO get return value. */
 		/* pthread_join(producer_thread, NULL); */
@@ -687,6 +688,9 @@ void *monitor_input(void *arg)
 	char c;
 
 	while ((c = getchar()) != 'q') {
+		if (c == '\n') {
+			fputs("Unrecognized input.\n> ", stdout);
+		}
 	}
 	return NULL;
 }
