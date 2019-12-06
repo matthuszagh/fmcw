@@ -422,11 +422,15 @@ void interp_lin(int *data, int *valid, int len)
 			/* if starting data is invalid, copy the first
 			 * valid data there. */
 			if (last_i == -1) {
-				last_dat = data[i];
-			}
-			for (j = last_i + 1; j < i; ++j) {
-				inc_val = ((double)data[i] - (double)last_dat) / (i - last_i);
-				data[j] = (int)(inc_val * (j - last_i));
+				for (j = last_i + 1; j < i; ++j) {
+					data[j] = data[i];
+				}
+			} else {
+				for (j = last_i + 1; j < i; ++j) {
+					inc_val =
+						((double)data[i] - (double)last_dat) / (i - last_i);
+					data[j] = (int)(inc_val * (j - last_i) + last_dat);
+				}
 			}
 			last_dat = data[i];
 			last_i = i;
@@ -459,7 +463,7 @@ void proc_fft(uint64_t rdval)
 		fft_res = (int)sqrt(pow(fft, 2) + pow(last_fft, 2));
 		rev_ctr = bitrev(ctr, 10);
 		if (rev_ctr > last_rev_ctr) {
-			idx_ctr[rev_ctr] = 1;
+			idx_ctr[ctr] = 1;
 			fft_data[ctr] = fft_res;
 		} else {
 			if (report_loss) {
