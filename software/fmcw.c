@@ -10,8 +10,10 @@
 #include <unistd.h>
 
 #define PACKET_LEN 8
+/* number of bytes in a data payload */
+#define PAYLOAD_SIZE 510
 #define FFT_LEN 1024
-#define BUFSIZE 20480
+#define BUFSIZE 2048
 /* Average samples over this number of reads. */
 #define AVG_INDEX 30000
 
@@ -23,10 +25,9 @@
 #define RAW 4
 
 /**
- * Return the integral value of the next @PACKET_LEN bytes of buffer,
- * @buf, starting at the value @pos.
+ * Return the integral value of the @PACKET_LEN bytes of buffer, @buf.
  */
-static uint64_t get_value(uint8_t *buf, int pos);
+static uint64_t get_value(uint8_t *buf);
 
 /** TODO
  */
@@ -102,15 +103,16 @@ struct buffer {
 
 int main(int argc, char **argv)
 {
-	struct ftdi_context *ftdi;
+	struct ftdi_context *ftdi = NULL;
 	int ftdi_err;
-	void *prod_ret;
+	/* void *prod_ret; */
 	int opt;
 	int dist;
 	char interm[10];
-	FILE *fmode;
+	FILE *fmode = NULL;
 	pthread_t producer_thread;
 	pthread_t consumer_thread;
+
 	memset(interm, 0, 10);
 	dist = 1;
 	while ((opt = getopt(argc, argv, "ha:i:")) != -1) {
@@ -134,9 +136,7 @@ int main(int argc, char **argv)
 			       "      values: raw, fir, window, or fft (defaults to fft)\n"
 			       "      fft retrieves fully processed output\n\n",
 			       argv[0]);
-			fclose(raw_file);
-			return EXIT_SUCCESS;
-			break;
+			goto cleanup;
 		default:
 			break;
 		}
@@ -148,19 +148,17 @@ int main(int argc, char **argv)
 
 	if ((ftdi = ftdi_new()) == 0) {
 		fprintf(stderr, "ftdi_new failed\n");
-		return EXIT_FAILURE;
+		goto cleanup;
 	}
 
 	if (ftdi_set_interface(ftdi, INTERFACE_A) < 0) {
 		fprintf(stderr, "ftdi_set_interface failed\n");
-		ftdi_free(ftdi);
-		return EXIT_FAILURE;
+		goto cleanup;
 	}
 
 	if (ftdi_usb_open_desc(ftdi, 0x0403, 0x6010, NULL, NULL) < 0) {
 		fprintf(stderr, "Can't open ftdi device: %s\n", ftdi_get_error_string(ftdi));
-		ftdi_free(ftdi);
-		return EXIT_FAILURE;
+		goto cleanup;
 	}
 
 	/* When the host PC requests a read, the FTDI device will only
@@ -170,18 +168,14 @@ int main(int argc, char **argv)
 	 * expired. */
 	if (ftdi_set_latency_timer(ftdi, 2)) {
 		fprintf(stderr, "Can't set latency, Error %s\n", ftdi_get_error_string(ftdi));
-		ftdi_usb_close(ftdi);
-		ftdi_free(ftdi);
-		return EXIT_FAILURE;
+		goto cleanup;
 	}
 
 	/* Configures FT2232H for synchronous FIFO mode. */
 	if (ftdi_set_bitmode(ftdi, 0xff, BITMODE_SYNCFF) < 0) {
 		fprintf(stderr, "Can't set synchronous fifo mode, Error %s\n",
 			ftdi_get_error_string(ftdi));
-		ftdi_usb_close(ftdi);
-		ftdi_free(ftdi);
-		return EXIT_FAILURE;
+		goto cleanup;
 	}
 
 	/* Unfortunately this is maxed out on linux as 16KB even
@@ -190,9 +184,7 @@ int main(int argc, char **argv)
 
 	if (ftdi_setflowctrl(ftdi, SIO_RTS_CTS_HS) < 0) {
 		fprintf(stderr, "Unable to set flow control %s\n", ftdi_get_error_string(ftdi));
-		ftdi_usb_close(ftdi);
-		ftdi_free(ftdi);
-		return EXIT_FAILURE;
+		goto cleanup;
 	}
 
 	struct buffer buf = {.buf = {0}, .occupied = 0, .nextin = 0, .nextout = 0};
@@ -226,6 +218,10 @@ int main(int argc, char **argv)
 
 		/* Tell plotting program how to interpret data. */
 		fmode = fopen("data/mode", "w");
+		if (!fmode) {
+			fputs("Failed to open mode file.\n", stderr);
+			goto cleanup;
+		}
 		fprintf(fmode, "%s", interm);
 		fclose(fmode);
 
@@ -240,17 +236,18 @@ int main(int argc, char **argv)
 		/* 	goto cleanup; */
 		/* } */
 	} else {
-		fprintf(stderr, "Angle operation is not yet implemented. Exiting.\n");
+		fputs("Angle operation is not yet implemented. Exiting.\n", stderr);
 		goto cleanup;
 	}
 
 	fprintf(stderr, "Capture ended.\n");
 cleanup:
+	fclose(fmode);
 	ftdi_usb_close(ftdi);
 	ftdi_free(ftdi);
 }
 
-uint64_t get_value(uint8_t *buf, int pos)
+uint64_t get_value(uint8_t *buf)
 {
 	int i;
 	uint64_t res;
@@ -258,7 +255,7 @@ uint64_t get_value(uint8_t *buf, int pos)
 	i = 0;
 	res = 0;
 	while (i < 8) {
-		add_byte_to_word(&res, 8 * (7 - i), buf[i + pos]);
+		add_byte_to_word(&res, 8 * (7 - i), buf[i]);
 		++i;
 	}
 
@@ -418,6 +415,8 @@ void proc_fft(uint64_t rdval)
 			cvg_sum = 0;
 			for (i = 0; i < FFT_LEN; ++i) {
 				cvg_sum += idx_ctr[i];
+				/* if (!idx_ctr[i]) */
+				/* 	printf("%d\n", i); */
 				idx_ctr[i] = 0;
 			}
 			printf("coverage: %2.0f\n", 100 * cvg_sum / FFT_LEN);
@@ -549,6 +548,7 @@ void *producer_fn(void *arg)
 
 	pthread_mutex_unlock(&userdata->mutex);
 	/* return ret_val; */
+	return NULL;
 }
 
 void *consumer_fn(void *arg)
@@ -556,21 +556,39 @@ void *consumer_fn(void *arg)
 	struct buffer *shared_buf;
 	uint64_t rdval;
 	uint64_t last_val;
+	uint8_t *packet_buf;
+	int i;
+	int j;
+	int occupied_cmp;
 
 	shared_buf = (struct buffer *)arg;
+	packet_buf = malloc(PACKET_LEN * sizeof(uint8_t));
+	memset(packet_buf, 0, PACKET_LEN * sizeof(uint8_t));
 
 	pthread_mutex_lock(&shared_buf->mutex);
 
 	/* TODO use cleaner way of breaking out. */
 	while (1) {
-		/* Wait for at least 512 bytes of data so we don't
-		 * waste time switching between threads. */
-		while (shared_buf->occupied <= 512) {
+		/* TODO magic number */
+		occupied_cmp = shared_buf->occupied - PAYLOAD_SIZE > 8 ? shared_buf->occupied : 8;
+		/* Wait for at least `PAYLOAD_SIZE' bytes of data so
+		 * we don't waste time switching between threads. */
+		while (shared_buf->occupied <= PAYLOAD_SIZE) {
 			pthread_cond_wait(&shared_buf->more, &shared_buf->mutex);
 		}
-		while (shared_buf->occupied >= 8) {
-			/* TODO fix reads over edge of buffer */
-			rdval = get_value(shared_buf->buf, shared_buf->nextout);
+		while (shared_buf->occupied >= occupied_cmp) {
+			i = 0;
+			while (i + shared_buf->nextout < BUFSIZE) {
+				packet_buf[i] = shared_buf->buf[i + shared_buf->nextout];
+				++i;
+			}
+			j = i;
+			while (i < 8) {
+				packet_buf[i] = shared_buf->buf[i - j];
+				++i;
+			}
+
+			rdval = get_value(packet_buf);
 			if (dvalid(rdval)) {
 				if (second_val) {
 					if (rdval == last_val) {
@@ -607,5 +625,6 @@ void *consumer_fn(void *arg)
 		pthread_cond_signal(&shared_buf->less);
 	}
 
+	free(packet_buf);
 	pthread_mutex_unlock(&shared_buf->mutex);
 }
