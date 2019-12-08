@@ -11,6 +11,7 @@ module control (
    input wire window_valid,
    input wire fifo_full,
    input wire fft_done,
+   input wire ft245_empty,
 
    output reg adf_en,
    output reg fir_en,
@@ -22,22 +23,17 @@ module control (
    localparam [1:0] ADF_CONFIG_STATE = 2'd0;
    localparam [1:0] FIR_STATE = 2'd1;
    localparam [1:0] FFT_STATE = 2'd2;
-   localparam [1:0] DELAY_STATE = 2'd3;
+   localparam [1:0] FT245_STATE = 2'd3;
 
    localparam DELAY_WIDTH = 15;
 
    reg [1:0]  state;
-   // FT2232H sync fifo has bandwidth of max 40MB/s. The delay keeps
-   // the tx bandwidth sufficiently low such that we don't overrun the
-   // FT245.
-   reg [DELAY_WIDTH-1:0] delay;
 
    reg fifo_rd_delay;
    always @(posedge clk) begin
       if (!rst_n) begin
          state <= ADF_CONFIG_STATE;
          fifo_rd_delay <= 1'b0;
-         delay <= {{DELAY_WIDTH-1{1'b0}}, 1'b1};
       end else begin
          case (state)
          ADF_CONFIG_STATE:
@@ -64,18 +60,18 @@ module control (
            begin
               fifo_rd_delay <= 1'b1;
               if (fft_done) begin
-                 state <= DELAY_STATE;
+                 state <= FT245_STATE;
               end else begin
                  state <= FFT_STATE;
               end
            end
 
-         DELAY_STATE:
+         FT245_STATE:
            begin
-              delay     <= delay + 1'b1;
-              if (delay == {DELAY_WIDTH{1'b0}}) begin
+              if (ft245_empty) begin
                  state  <= ADF_CONFIG_STATE;
-                 delay <= {{DELAY_WIDTH-1{1'b0}}, 1'b1};
+              end else begin
+                 state <= FT245_STATE;
               end
            end
 
@@ -125,7 +121,7 @@ module control (
            end
         end
 
-      DELAY_STATE:
+      FT245_STATE:
         begin
            adf_en    = 1'b0;
            fir_en    = 1'b0;

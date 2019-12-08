@@ -77,7 +77,9 @@ module top #(
 );
 
    localparam FFT_N   = 1024;
-   localparam N_WIDTH = $clog2(FFT_N);
+   /* verilator lint_off WIDTH */
+   localparam [$clog2(FFT_N-1)-1:0] FFT_N_CMP = FFT_N - 1;
+   /* verilator lint_on WIDTH */
 
    assign led_o       = !pa_en_n_o;
    assign ext1_io[0]  = ft245_wrfifo_full;
@@ -187,6 +189,7 @@ module top #(
       .window_valid (kaiser_dvalid       ),
       .fifo_full    (fir_fft_fifo_full   ),
       .fft_done     (fft_ctr == 10'd1023 ),
+      .ft245_empty  (ft245_wrfifo_empty  ),
       .adf_en       (adf_en              ),
       .fir_en       (fir_en              ),
       .fifo_wren    (fifo_wren           ),
@@ -274,13 +277,13 @@ module top #(
    /* verilator lint_on PINMISSING */
 
    /* verilator lint_off WIDTH */
-   localparam [N_WIDTH-1:0] FFT_N_LAST = FFT_N - 1;
+   localparam [$clog2(FFT_N)-1:0] FFT_N_LAST = FFT_N - 1;
    /* verilator lint_on WIDTH */
 
    localparam FFT_OUTPUT_WIDTH = 25;
    localparam FFT_TWIDDLE_WIDTH = 10;
    wire fft_valid;
-   wire [N_WIDTH-1:0] fft_ctr;
+   wire [$clog2(FFT_N)-1:0] fft_ctr;
    wire signed [FFT_OUTPUT_WIDTH-1:0] fft_re_o;
    wire signed [FFT_OUTPUT_WIDTH-1:0] fft_im_o;
 
@@ -303,19 +306,19 @@ module top #(
 
    wire                               fft_ft245_fifo_full;
    reg                                fft_fifo_rden;
-   reg [N_WIDTH-1:0]                  fft_ft245_ctr;
+   reg [$clog2(FFT_N)-1:0]                  fft_ft245_ctr;
    always @(posedge clk_i) begin
       if (!rst_n) begin
          fft_fifo_rden <= 1'b0;
-         fft_ft245_ctr <= {N_WIDTH{1'b0}};
+         fft_ft245_ctr <= {$clog2(FFT_N){1'b0}};
       end else begin
          if (fft_valid) begin
             fft_fifo_rden <= 1'b1;
-            fft_ft245_ctr <= FFT_N-1'b1;
+            fft_ft245_ctr <= FFT_N_CMP;
          end else begin
             if (fft_ft245_ctr == 0) begin
                fft_fifo_rden <= 1'b0;
-               fft_ft245_ctr <= {N_WIDTH{1'b0}};
+               fft_ft245_ctr <= {$clog2(FFT_N){1'b0}};
             end else if (!ft245_wrfifo_full) begin
                fft_fifo_rden <= 1'b1;
                fft_ft245_ctr <= fft_ft245_ctr - 1'b1;
@@ -324,11 +327,11 @@ module top #(
       end
    end
 
-   wire [FFT_OUTPUT_WIDTH+N_WIDTH:0] fft_ft245_data;
+   wire [FFT_OUTPUT_WIDTH+$clog2(FFT_N):0] fft_ft245_data;
    // The size is not 2*FFT_N since we read while writing.
    /* verilator lint_off PINMISSING */
    async_fifo #(
-      .WIDTH (FFT_OUTPUT_WIDTH + N_WIDTH + 1 ),
+      .WIDTH (FFT_OUTPUT_WIDTH + $clog2(FFT_N) + 1 ),
       .SIZE  (FFT_N                          )
    ) fft_ft245_fifo (
       .rst_n  (rst_n                           ),
@@ -347,7 +350,7 @@ module top #(
       fft_fifo_rden_delay <= fft_fifo_rden;
    end
 
-   localparam FT245_DATA_WIDTH = 47;
+   localparam FT245_DATA_WIDTH = 38;
    wire                               ft245_wrfifo_full;
    wire                               ft245_rdfifo_full;
    wire                               ft245_rdfifo_empty;
@@ -382,6 +385,32 @@ module top #(
       end
    end
 
+   reg [$clog2(FFT_N)-1:0] fir_ctr;
+   always @(posedge clk_i) begin
+      if (!fir_dvalid) begin
+         fir_ctr <= {$clog2(FFT_N){1'b0}};
+      end else if (clk_2mhz_pos_en) begin
+         fir_ctr <= fir_ctr + 1'b1;
+      end
+   end
+
+   // localparam RAW_SEQ_LEN = 20*FFT_N;
+   // not enough memory for a full 20,480 length sequence
+   localparam RAW_SEQ_LEN = 8000;
+   localparam [$clog2(RAW_SEQ_LEN-1)-1:0] RAW_SEQ_MAX_CMP = RAW_SEQ_LEN-1;
+   reg [$clog2(RAW_SEQ_LEN)-1:0] raw_ctr;
+   always @(posedge clk_i) begin
+      if (!fir_en) begin
+         raw_ctr <= {$clog2(RAW_SEQ_LEN){1'b0}};
+      end else begin
+         if (raw_ctr == RAW_SEQ_MAX_CMP) begin
+            raw_ctr <= {$clog2(RAW_SEQ_LEN){1'b0}};
+         end else begin
+            raw_ctr <= raw_ctr + 1'b1;
+         end
+      end
+   end
+
    always @(*) begin
       case (op_state)
       IDLE:
@@ -391,22 +420,23 @@ module top #(
         end
       FFT:
         begin
-           ft245_wrdata = {{11{1'b0}}, fft_ft245_data};
+           ft245_wrdata = {{2{1'b0}}, fft_ft245_data};
            ft245_en = fft_fifo_rden_delay;
         end
       WINDOW:
+         /* TODO needs counter */
         begin
-           ft245_wrdata = {{33{1'b0}}, kaiser_out};
+           ft245_wrdata = {{24{1'b0}}, kaiser_out};
            ft245_en = kaiser_dvalid && clk_2mhz_pos_en;
         end
       FIR:
         begin
-           ft245_wrdata = {{33{1'b0}}, chan_a_filtered};
+           ft245_wrdata = {{0{1'b0}}, fir_ctr, 14'd0, chan_a_filtered};
            ft245_en = fir_dvalid && clk_2mhz_pos_en;
         end
       RAW:
         begin
-           ft245_wrdata = {{35{1'b0}}, chan_a};
+           ft245_wrdata = {{1{1'b0}}, raw_ctr, chan_b, chan_a};
            ft245_en = fir_en;
         end
       default:

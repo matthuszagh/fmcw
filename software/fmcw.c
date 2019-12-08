@@ -13,6 +13,7 @@
 /* number of bytes in a data payload */
 #define PAYLOAD_SIZE 510
 #define FFT_LEN 1024
+#define RAW_LEN 8000
 #define BUFSIZE 2048
 
 /* Valid messages to send radar. */
@@ -52,11 +53,12 @@ static int coverage;
 /* record if each sample is found (1) or missed (0). */
 static int idx_ctr[FFT_LEN];
 /* raw samples */
-static int64_t raw_a[FFT_LEN];
-static int64_t raw_b[FFT_LEN];
+static int raw_a[RAW_LEN];
+static int raw_b[RAW_LEN];
+static int raw_ctr[RAW_LEN];
 /* fir output */
-static int64_t fir_a[FFT_LEN];
-static int64_t fir_b[FFT_LEN];
+static int fir_a[FFT_LEN];
+static int fir_b[FFT_LEN];
 /* kaiser window output */
 static int64_t window[FFT_LEN];
 /* Fully-processed FFT data. */
@@ -132,12 +134,11 @@ int main(int argc, char **argv)
 			}
 			break;
 		case 'i':
-			*interm = *optarg;
+			strcpy(interm, optarg);
 			break;
 		case 'l':
 			report_loss = 1;
-			/* fft data is used as a premise for measuring
-			 * data loss. */
+			/* fft data is used to measure data loss. */
 			strcpy(interm, "fft");
 			dist = 1;
 			break;
@@ -316,8 +317,12 @@ void write_fft(FILE *f)
 {
 	int i;
 
-	for (i = 0; i < FFT_LEN / 2; ++i) {
-		fprintf(f, "%8d %8u\n", fft_data[i], i);
+	for (i = 0; i < FFT_LEN; ++i) {
+		if (i < FFT_LEN / 2) {
+			fprintf(f, "%8d %8u\n", fft_data[i], i);
+		}
+		fft_data[i] = 0;
+		idx_ctr[i] = 0;
 	}
 }
 
@@ -325,19 +330,11 @@ void write_raw(FILE *f)
 {
 	int i;
 
-	for (i = 0; i < FFT_LEN; ++i) {
-		if (idx_ctr[i] != 0) {
-			raw_a[i] /= idx_ctr[i];
-			raw_b[i] /= idx_ctr[i];
-		} else {
-			raw_a[i] = 0;
-			raw_b[i] = 0;
-		}
-
+	for (i = 0; i < RAW_LEN; ++i) {
 		fprintf(f, "%6d %6d %6u\n", raw_a[i], raw_b[i], i);
 		raw_a[i] = 0;
 		raw_b[i] = 0;
-		idx_ctr[i] = 0;
+		raw_ctr[i] = 0;
 	}
 }
 
@@ -362,15 +359,7 @@ void write_fir(FILE *f)
 {
 	int i;
 	for (i = 0; i < FFT_LEN; ++i) {
-		if (idx_ctr[i] != 0) {
-			fir_a[i] /= idx_ctr[i];
-			fir_b[i] /= idx_ctr[i];
-		} else {
-			fir_a[i] = 0;
-			fir_b[i] = 0;
-		}
-
-		fprintf(f, "%6d %6u\n", window[i], i);
+		fprintf(f, "%6d %6d %6u\n", fir_a[i], fir_b[i], i);
 		fir_a[i] = 0;
 		fir_b[i] = 0;
 		idx_ctr[i] = 0;
@@ -480,10 +469,6 @@ void proc_fft(uint64_t rdval)
 				interp_lin(fft_data, idx_ctr, FFT_LEN);
 				flush_data(fn);
 				++fn;
-				for (i = 0; i < FFT_LEN; ++i) {
-					fft_data[i] = 0;
-					idx_ctr[i] = 0;
-				}
 			}
 		}
 		last_rev_ctr = rev_ctr;
@@ -517,21 +502,25 @@ void proc_raw(uint64_t rdval)
 	int chan_a;
 	int chan_b;
 	unsigned int ctr;
+	unsigned int rev_ctr;
 
 	chan_a = subw_val(rdval, 4, 12, 1);
 	chan_b = subw_val(rdval, 16, 12, 1);
-	ctr = subw_val(rdval, 28, 10, 0);
+	ctr = subw_val(rdval, 28, 13, 0);
 
-	++idx_ctr[ctr];
-	raw_a[ctr] += chan_a;
-	raw_b[ctr] += chan_b;
-	/* if (avg_ctr == AVG_INDEX) { */
-	/* 	avg_ctr = 0; */
-	/* 	flush_data(fn); */
-	/* 	++fn; */
-	/* } else { */
-	/* 	++avg_ctr; */
-	/* } */
+	/* TODO most data is being written twice for some reason. >=
+	 * is a temporary bandaid */
+	if (ctr >= last_ctr) {
+		raw_ctr[ctr] = 1;
+		raw_a[ctr] = chan_a;
+		raw_b[ctr] = chan_b;
+	} else {
+		interp_lin(raw_a, raw_ctr, FFT_LEN);
+		interp_lin(raw_b, raw_ctr, FFT_LEN);
+		flush_data(fn);
+		++fn;
+	}
+	last_ctr = ctr;
 }
 
 void proc_fir(uint64_t rdval)
@@ -544,16 +533,20 @@ void proc_fir(uint64_t rdval)
 	chan_b = subw_val(rdval, 18, 14, 1);
 	ctr = subw_val(rdval, 32, 10, 0);
 
-	++idx_ctr[ctr];
-	fir_a[ctr] += chan_a;
-	fir_b[ctr] += chan_b;
-	/* if (avg_ctr == AVG_INDEX) { */
-	/* 	avg_ctr = 0; */
-	/* 	flush_data(fn); */
-	/* 	++fn; */
-	/* } else { */
-	/* 	++avg_ctr; */
-	/* } */
+	/* printf("%5d %5d %5d\n", ctr, last_ctr, chan_a); */
+	/* TODO most data is being written twice for some reason. >=
+	 * is a temporary bandaid */
+	if (ctr >= last_ctr) {
+		idx_ctr[ctr] = 1;
+		fir_a[ctr] = chan_a;
+		fir_b[ctr] = chan_b;
+	} else {
+		interp_lin(fir_a, idx_ctr, FFT_LEN);
+		interp_lin(fir_b, idx_ctr, FFT_LEN);
+		flush_data(fn);
+		++fn;
+	}
+	last_ctr = ctr;
 }
 
 int read_callback(uint8_t *buffer, int length, FTDIProgressInfo *progress, void *userdata)
@@ -688,6 +681,9 @@ void *monitor_input(void *arg)
 	char c;
 
 	while ((c = getchar()) != 'q') {
+		/* only send this once per set of characters. all
+		 * character sequences must be entered with a newline
+		 * so we use that. */
 		if (c == '\n') {
 			fputs("Unrecognized input.\n> ", stdout);
 		}
