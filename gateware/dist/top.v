@@ -15,12 +15,15 @@ module top #(
    parameter SD_DATA_WIDTH    = 4,
    parameter FIR_OUTPUT_WIDTH = 14
 ) (
-   // clocks, resets, LEDs, connectors
-   input wire                             clk_i, /* 40MHz */
+   // =============== clocks, resets, LEDs, connectors ===============
+   // 40MHz
+   input wire                             clk_i,
    output wire                            led_o,
-   inout wire [GPIO_WIDTH-1:0]            ext1_io, /* General-purpose I/O. */
-   inout wire [GPIO_WIDTH-1:0]            ext2_io, /* General-purpose I/O. */
+   // General-purpose I/O.
+   inout wire [GPIO_WIDTH-1:0]            ext1_io,
+   inout wire [GPIO_WIDTH-1:0]            ext2_io,
 
+   // can't simulate the PLL so we provide them from external logic.
 `ifdef COCOTB_SIM
    input wire                             clk_7_5mhz,
    input wire                             clk_120mhz,
@@ -29,38 +32,51 @@ module top #(
    input wire                             pll_lock,
 `endif
 
-   // FT2232H USB interface.
-   inout wire signed [USB_DATA_WIDTH-1:0] ft_data_io, /* FIFO data */
-   input wire                             ft_rxf_n_i, /* Low when there is data in the buffer that can be read. */
-   input wire                             ft_txe_n_i, /* Low when there is room for transmission data in the FIFO. */
-   output wire                            ft_rd_n_o, /* Drive low to load read data to ft_data_io each clock cycle. */
-   output wire                            ft_wr_n_o, /* Drive low to write ft_data_io to FIFO for transmission. */
-   output wire                            ft_siwua_n_o, /* Flush transmission data to USB immediately. */
-   input wire                             ft_clkout_i, /* 60MHz clock used to synchronize data transfers. */
-   output wire                            ft_oe_n_o, /* Drive low one period before ft_rd_n_o to signal read. */
-   input wire                             ft_suspend_n_i, /* Low when USB in suspend mode. */
+   // ==================== FT2232H USB interface. ====================
+   // FIFO data
+   inout wire signed [USB_DATA_WIDTH-1:0] ft_data_io,
+   // Low when there is data in the buffer that can be read.
+   input wire                             ft_rxf_n_i,
+   // Low when there is room for transmission data in the FIFO.
+   input wire                             ft_txe_n_i,
+   // Drive low to load read data to ft_data_io each clock cycle.
+   output wire                            ft_rd_n_o,
+   // Drive low to write ft_data_io to FIFO for transmission.
+   output wire                            ft_wr_n_o,
+   // Flush transmission data to USB immediately.
+   output wire                            ft_siwua_n_o,
+   // 60MHz clock used to synchronize data transfers.
+   input wire                             ft_clkout_i,
+   // Drive low one period before ft_rd_n_o to signal read.
+   output wire                            ft_oe_n_o,
+   // Low when USB in suspend mode.
+   input wire                             ft_suspend_n_i,
 
-   // ADC
-   input wire signed [ADC_DATA_WIDTH-1:0] adc_d_i, /* Input data from ADC. */
-   input wire [1:0]                       adc_of_i, /* High value indicates overflow or underflow. */
-   output reg [1:0]                       adc_oe_o, /* 10 turns on channel A and turns off channel B. */
-   output reg [1:0]                       adc_shdn_o, /* Same state as adc_oe. */
+   // ============================== ADC =============================
+   // Input data from ADC.
+   input wire signed [ADC_DATA_WIDTH-1:0] adc_d_i,
+   // High value indicates overflow or underflow.
+   input wire [1:0]                       adc_of_i,
+   // 10 turns on channel A and turns off channel B.
+   output reg [1:0]                       adc_oe_o,
+   // Same state as adc_oe.
+   output reg [1:0]                       adc_shdn_o,
 
-   // SD card
+   // ============================ SD card ===========================
    // TODO: Setup option to load bitstream from SD card.
-   // TODO should this be signed?
    inout wire [SD_DATA_WIDTH-1:0]         sd_data_i,
    inout wire                             sd_cmd_i,
    output reg                             sd_clk_o = 1'b0,
    input wire                             sd_detect_i,
 
-   // mixer
-   output reg                             mix_enbl_n_o, /* Low voltage enables mixer. */
+   // ============================= mixer ============================
+   // Low voltage enables mixer.
+   output reg                             mix_enbl_n_o,
 
-   // power amplifier
+   // ======================== power amplifier =======================
    output reg                             pa_en_n_o,
 
-   // frequency synthesizer
+   // ===================== frequency synthesizer ====================
    output wire                            adf_ce_o,
    output wire                            adf_le_o,
    output wire                            adf_clk_o,
@@ -69,7 +85,7 @@ module top #(
    output wire                            adf_data_o,
    // input wire                      adf_done_i,
 
-   // flash memory
+   // ========================= flash storage ========================
    // TODO: Configure flash to save bitstream configuration across boot cycles.
    output reg                             flash_cs_n_o = 1'b1,
    input wire                             flash_miso_i,
@@ -394,8 +410,8 @@ module top #(
       end
    end
 
-   // localparam RAW_SEQ_LEN = 20*FFT_N;
    // not enough memory for a full 20,480 length sequence
+   // localparam RAW_SEQ_LEN = 20*FFT_N;
    localparam RAW_SEQ_LEN = 8000;
    localparam [$clog2(RAW_SEQ_LEN-1)-1:0] RAW_SEQ_MAX_CMP = RAW_SEQ_LEN-1;
    reg [$clog2(RAW_SEQ_LEN)-1:0] raw_ctr;
