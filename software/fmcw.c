@@ -105,9 +105,9 @@ static void send_cmd(struct data *data);
  * prepare byte. The second is a 4-byte timestamp associated with the
  * data. The timestamp has type uint32_t and represents the number of
  * milliseconds since the start time. It then sends FFT_LEN packets of
- * 4 bytes for FFT data, FFT_LEN packets of 8 bytes (first 4 channel
- * A, second 4 channel B) for FIR or windowed data, or RAW_LEN packets
- * of 8 bytes for raw data.
+ * 4 bytes for FFT data, 2xFFT_LEN packets of 4 bytes (first FFT_LEN
+ * packets channel A, second channel B) for FIR or windowed data, or
+ * 2xRAW_LEN packets of 4 bytes for raw data.
  */
 static void send_data(struct data *data);
 static void proc_fft(uint64_t rdval, struct data *data);
@@ -147,6 +147,7 @@ int main(int argc, char **argv)
 	/* TODO shouldn't be done this way. */
 	int dist;
 	int plot_flag_passed;
+	int interm_flag_passed;
 	unsigned char fpga_wrval;
 	unsigned char python_wrval;
 	pthread_t producer_thread;
@@ -163,6 +164,7 @@ int main(int argc, char **argv)
 
 	dist = 1;
 	plot_flag_passed = 0;
+	interm_flag_passed = 0;
 	while ((opt = getopt(argc, argv, "a:hi:n:p:su:")) != -1) {
 		switch (opt) {
 		case 'h':
@@ -200,11 +202,11 @@ int main(int argc, char **argv)
 		case 'a':
 			if (strcmp(optarg, "dist") != 0) {
 				dist = 0;
-			} else {
-				dist = 1;
 			}
+			/* dist=1 is default */
 			break;
 		case 'i':
+			interm_flag_passed = 1;
 			if (strcmp(optarg, "raw") == 0) {
 				data.flags.out = RAW;
 				data.a_arr = malloc(RAW_LEN * sizeof(int32_t));
@@ -291,9 +293,11 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (data.flags.plt == TIME && data.flags.out == FFT) {
-		fputs("Invalid request: FFT time plot.\n", stderr);
-		goto cleanup;
+	if (!interm_flag_passed) {
+		data.a_arr = malloc(FFT_LEN * sizeof(int32_t));
+		data.ctr_arr = malloc(FFT_LEN * sizeof(int32_t));
+		memset(data.a_arr, 0, FFT_LEN * sizeof(int32_t));
+		memset(data.ctr_arr, 0, FFT_LEN * sizeof(int32_t));
 	}
 
 	if (!plot_flag_passed) {
@@ -302,6 +306,11 @@ int main(int argc, char **argv)
 		} else {
 			data.flags.plt = TIME;
 		}
+	}
+
+	if (data.flags.plt == TIME && data.flags.out == FFT) {
+		fputs("Invalid request: FFT time plot.\n", stderr);
+		goto cleanup;
 	}
 
 	if ((ftdi = ftdi_new()) == 0) {
@@ -375,8 +384,6 @@ int main(int argc, char **argv)
 		pthread_create(&consumer_thread, NULL, &consumer_fn, &cons_fn_arg);
 		pthread_create(&input_monitor_thread, NULL, &monitor_input, NULL);
 
-		/* python_wrval = CMD; */
-		/* fwrite(&python_wrval, 1, 1, data.pipe); */
 		send_cmd(&data);
 
 		fputs("Type 'q' to terminate data capture.\n> ", stdout);
@@ -478,8 +485,7 @@ void send_cmd(struct data *data)
 
 void send_data(struct data *data)
 {
-	unsigned char wrval[8];
-	int i;
+	unsigned char wrval[4];
 	int num_chans;
 	int packet_len;
 	uint32_t tsec;
@@ -503,9 +509,9 @@ void send_data(struct data *data)
 	tsec -= start_time;
 	fwrite(&tsec, sizeof(tsec), 1, data->pipe);
 
-	fwrite(data->a_arr, sizeof(int32_t), packet_len, data->pipe);
+	fwrite(data->a_arr, sizeof(wrval), packet_len, data->pipe);
 	if (num_chans == 2) {
-		fwrite(data->b_arr, sizeof(int32_t), packet_len, data->pipe);
+		fwrite(data->b_arr, sizeof(wrval), packet_len, data->pipe);
 	}
 }
 
@@ -549,20 +555,20 @@ void interp_lin(int *data, unsigned int *valid, int len)
 
 void proc_fft(uint64_t rdval, struct data *data)
 {
-	int fft;
-	int fft_res;
+	int32_t fft;
+	int32_t fft_res;
 	unsigned int ctr;
 	unsigned int rev_ctr;
 	int tx_re;
 	int i;
 
 	/* TODO magic numbers, use macros instead */
-	fft = subw_val(rdval, 4, 25, 1);
-	ctr = subw_val(rdval, 29, 10, 0);
-	tx_re = subw_val(rdval, 39, 1, 0);
+	fft = (int32_t)subw_val(rdval, 4, 25, 1);
+	ctr = (unsigned int)subw_val(rdval, 29, 10, 0);
+	tx_re = (int)subw_val(rdval, 39, 1, 0);
 
 	if (data->last_ctr == ctr && data->last_b != tx_re) {
-		fft_res = (int)sqrt(pow(fft, 2) + pow(data->last_a, 2));
+		fft_res = (int32_t)sqrt(pow(fft, 2) + pow(data->last_a, 2));
 		rev_ctr = bitrev(ctr, 10);
 		if (rev_ctr > data->last_rev_ctr) {
 			data->ctr_arr[ctr] = 1;
@@ -587,29 +593,35 @@ void proc_fft(uint64_t rdval, struct data *data)
 		data->last_rev_ctr = rev_ctr;
 	}
 	data->last_a = fft;
-	data->last_ctr = ctr;
 	data->last_b = tx_re;
+	data->last_ctr = ctr;
 }
 
-/* TODO not yet implemented */
 void proc_window(uint64_t rdval, struct data *data)
 {
-	int32_t win;
+	int32_t chan_a;
+	int32_t chan_b;
 	unsigned int ctr;
 
 	/* TODO magic numbers, use macros instead */
-	win = (int32_t)subw_val(rdval, 4, 14, 1);
-	ctr = (unsigned int)subw_val(rdval, 18, 10, 0);
+	chan_a = (int32_t)subw_val(rdval, 4, 14, 1);
+	chan_b = (int32_t)subw_val(rdval, 18, 14, 1);
+	ctr = (unsigned int)subw_val(rdval, 32, 10, 0);
 
-	/* ++idx_ctr[ctr]; */
-	/* window[ctr] += win; */
-	/* if (avg_ctr == AVG_INDEX) { */
-	/* 	avg_ctr = 0; */
-	/* 	send_data(fn); */
-	/* 	++fn; */
-	/* } else { */
-	/* 	++avg_ctr; */
-	/* } */
+	/* TODO most data is being written twice for some reason. >=
+	 * is a temporary bandaid */
+	if (ctr >= data->last_ctr) {
+		data->ctr_arr[ctr] = 1;
+		data->a_arr[ctr] = chan_a;
+		data->b_arr[ctr] = chan_b;
+	} else {
+		if (data->interp == LIN) {
+			interp_lin(data->a_arr, data->ctr_arr, FFT_LEN);
+			interp_lin(data->b_arr, data->ctr_arr, FFT_LEN);
+		}
+		send_data(data);
+	}
+	data->last_ctr = ctr;
 }
 
 void proc_raw(uint64_t rdval, struct data *data)
@@ -617,7 +629,6 @@ void proc_raw(uint64_t rdval, struct data *data)
 	int32_t chan_a;
 	int32_t chan_b;
 	unsigned int ctr;
-	unsigned int rev_ctr;
 
 	/* TODO magic numbers, use macros instead */
 	chan_a = (int32_t)subw_val(rdval, 4, 12, 1);
@@ -631,8 +642,10 @@ void proc_raw(uint64_t rdval, struct data *data)
 		data->a_arr[ctr] = chan_a;
 		data->b_arr[ctr] = chan_b;
 	} else {
-		interp_lin(data->a_arr, data->ctr_arr, FFT_LEN);
-		interp_lin(data->b_arr, data->ctr_arr, FFT_LEN);
+		if (data->interp == LIN) {
+			interp_lin(data->a_arr, data->ctr_arr, RAW_LEN);
+			interp_lin(data->b_arr, data->ctr_arr, RAW_LEN);
+		}
 		send_data(data);
 	}
 	data->last_ctr = ctr;
@@ -657,8 +670,10 @@ void proc_fir(uint64_t rdval, struct data *data)
 		data->a_arr[ctr] = chan_a;
 		data->b_arr[ctr] = chan_b;
 	} else {
-		interp_lin(data->a_arr, data->ctr_arr, FFT_LEN);
-		interp_lin(data->b_arr, data->ctr_arr, FFT_LEN);
+		if (data->interp == LIN) {
+			interp_lin(data->a_arr, data->ctr_arr, FFT_LEN);
+			interp_lin(data->b_arr, data->ctr_arr, FFT_LEN);
+		}
 		send_data(data);
 	}
 	data->last_ctr = ctr;

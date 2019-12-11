@@ -6,7 +6,6 @@ Plot radar data.
 # import os.path
 import sys
 from enum import IntEnum
-import time
 import numpy as np
 from scipy import signal
 from pyqtgraph.Qt import QtGui
@@ -17,7 +16,7 @@ RAW_LEN = 8000
 
 # number of x points in the plot or hist
 PLOT_DOMAIN = 2000
-HIST_LEVELS = [0, 1000]
+HIST_LEVELS = [0, 10000]
 
 DOWNSAMPLE_FACTOR = 20
 
@@ -89,10 +88,11 @@ class Plot:
             self.view.addItem(self.img)
         else:
             self.win.setWindowTitle("Time Plot")
-            # self.view = self.win.addViewBox()
-            # self.view.setAspectLocked(False)
-            # # Set initial view bounds
-            # self.view.enableAutoRange()
+            # explicitly setting limits and disabling the autorange
+            # facility makes plotting faster
+            self.win.setYRange(-100, 100, padding=0)
+            self.win.setXRange(0, PLOT_DOMAIN, padding=0)
+            self.win.disableAutoRange()
 
     def update_plot(self, data):
         if self.win is None:
@@ -124,7 +124,6 @@ class Plot:
                     clear=True,
                 )
                 self.app.processEvents()
-                # time.sleep(0.01)
 
 
 # TODO rename
@@ -214,7 +213,7 @@ class Monitor:
         elif self.data.indata_type == DType.WIND:
             self.data.data = np.zeros((2, FFT_LEN))
         elif self.data.indata_type == DType.FFT:
-            self.data.data = np.zeros(FFT_LEN)
+            self.data.data = np.zeros((2, int(FFT_LEN / 2)))
         else:
             raise ValueError("Invalid FPGA data type")
 
@@ -243,7 +242,10 @@ class Monitor:
         self.data.time = self._read_n_bytes(4)
         if self.data.indata_type == DType.FFT:
             for i in range(FFT_LEN):
-                self.data.data[i] = self._read_n_bytes(4)
+                if i < FFT_LEN / 2:
+                    self.data.data[0][i] = self._read_n_bytes(4)
+                else:
+                    self._read_n_bytes(4)
         elif (
             self.data.indata_type == DType.WIND
             or self.data.indata_type == DType.FIR
@@ -255,7 +257,6 @@ class Monitor:
         else:  # 'raw'
             for i in range(RAW_LEN):
                 self.data.data[0][i] = self._read_n_bytes(4)
-                # print(self.data.data[0][i])
             for i in range(RAW_LEN):
                 self.data.data[1][i] = self._read_n_bytes(4)
 
