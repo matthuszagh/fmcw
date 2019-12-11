@@ -74,7 +74,7 @@ module top #(
    output reg                             mix_enbl_n_o,
 
    // ======================== power amplifier =======================
-   output reg                             pa_en_n_o,
+   output wire                            pa_en_n_o,
 
    // ===================== frequency synthesizer ====================
    output wire                            adf_ce_o,
@@ -83,7 +83,7 @@ module top #(
    input wire                             adf_muxout_i,
    output wire                            adf_txdata_o,
    output wire                            adf_data_o,
-   // input wire                      adf_done_i,
+   // input wire                             adf_done_i,
 
    // ========================= flash storage ========================
    // TODO: Configure flash to save bitstream configuration across boot cycles.
@@ -97,15 +97,12 @@ module top #(
    localparam [$clog2(FFT_N-1)-1:0] FFT_N_CMP = FFT_N - 1;
    /* verilator lint_on WIDTH */
 
-   assign led_o       = !pa_en_n_o;
-   assign ext1_io[0]  = ft245_wrfifo_full;
-
-   // assign ext1_io[0] = adf_en;
-   // assign ext1_io[1] = fir_en;
-   // assign ext1_io[2] = fifo_wren;
-   // assign ext1_io[3] = fifo_rden;
-   // assign ext1_io[4] = fft_en;
-   // assign ext1_io[5] = ft245_en;
+   assign led_o       = ft245_en;
+   assign ext1_io[0]  = ramp_on;
+   assign ext1_io[1]  = ramp_start;
+   assign ext1_io[2]  = ft245_wrfifo_empty;
+   assign ext1_io[3]  = ft245_wrfifo_full;
+   assign ext1_io[4]  = adf_en;
 
    always @(posedge clk_i) begin
       // Multiplex both channels through A, so we can disable channel
@@ -120,8 +117,8 @@ module top #(
       // Keep mixer on so we don't have to worry about enable and
       // disable times.
       mix_enbl_n_o <= 1'b0;
-      pa_en_n_o <= 1'b0;
    end
+   assign pa_en_n_o = ~ramp_on;
 
 `ifndef COCOTB_SIM
    /**
@@ -202,6 +199,7 @@ module top #(
       .clk          (clk_i               ),
       .rst_n        (rst_n               ),
       .adf_done     (adf_config_done     ),
+      .ramp_start   (ramp_start          ),
       .window_valid (kaiser_dvalid       ),
       .fifo_full    (fir_fft_fifo_full   ),
       .fft_done     (fft_ctr == 10'd1023 ),
@@ -214,6 +212,8 @@ module top #(
    );
 
    wire                            adf_config_done;
+   wire                            ramp_start;
+   wire                            ramp_on;
    adf4158 adf4158 (
       .clk         (clk_i           ),
       .clk_20mhz   (clk_20mhz       ),
@@ -223,6 +223,8 @@ module top #(
       .le          (adf_le_o        ),
       .ce          (adf_ce_o        ),
       .muxout      (adf_muxout_i    ),
+      .ramp_start  (ramp_start      ),
+      .ramp_on     (ramp_on         ),
       .txdata      (adf_txdata_o    ),
       .data        (adf_data_o      )
    );
@@ -410,6 +412,15 @@ module top #(
       end
    end
 
+   reg [$clog2(FFT_N)-1:0] window_ctr;
+   always @(posedge clk_i) begin
+      if (!kaiser_dvalid) begin
+         window_ctr <= {$clog2(FFT_N){1'b0}};
+      end else if (clk_2mhz_pos_en) begin
+         window_ctr <= window_ctr + 1'b1;
+      end
+   end
+
    // not enough memory for a full 20,480 length sequence
    // localparam RAW_SEQ_LEN = 20*FFT_N;
    localparam RAW_SEQ_LEN = 8000;
@@ -440,9 +451,8 @@ module top #(
            ft245_en = fft_fifo_rden_delay;
         end
       WINDOW:
-         /* TODO needs counter */
         begin
-           ft245_wrdata = {{24{1'b0}}, kaiser_out};
+           ft245_wrdata = {{0{1'b0}}, window_ctr, 14'd0, kaiser_out};
            ft245_en = kaiser_dvalid && clk_2mhz_pos_en;
         end
       FIR:
