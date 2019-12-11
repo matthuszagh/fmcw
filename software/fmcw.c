@@ -1,4 +1,5 @@
 #include "bitmanip.h"
+#include "bits/getopt_core.h"
 #include <bits/stdint-uintn.h>
 #include <ftdi.h>
 #include <limits.h>
@@ -7,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 
 #define PACKET_LEN 8
@@ -15,91 +17,51 @@
 #define FFT_LEN 1024
 #define RAW_LEN 8000
 #define BUFSIZE 2048
+/* Indicates a command to Python subprocess. */
+#define CMD 1
+#define DATA 0
 
-/* Valid messages to send radar. */
-#define IDLE 0
-#define FFT 1
-#define WINDOW 2
-#define FIR 3
-#define RAW 4
-
-/**
- * Return the integral value of the @PACKET_LEN bytes of buffer, @buf.
- */
-static uint64_t get_value(uint8_t *buf);
-
-/** TODO
- */
-unsigned int bitrev(unsigned int v, int num_bits);
-
-/**
- * Ensure data is in a valid state. This means that it contains the
- * appropriate header and stop sequence and has the correct parity
- * bit.
- */
-int dvalid(uint64_t val);
-
+/* TODO needed? */
 static int exit_requested = 0;
-static uint32_t start = 0;
-static uint32_t offset = 0;
-static int fn = 0;
-static uint64_t last_val;
-static int second_val;
-static int last_fft;
-static unsigned int last_ctr;
-static unsigned int last_rev_ctr;
-static int last_tx_re;
-static int coverage;
-/* record if each sample is found (1) or missed (0). */
-static int idx_ctr[FFT_LEN];
-/* raw samples */
-static int raw_a[RAW_LEN];
-static int raw_b[RAW_LEN];
-static int raw_ctr[RAW_LEN];
-/* fir output */
-static int fir_a[FFT_LEN];
-static int fir_b[FFT_LEN];
-/* kaiser window output */
-static int64_t window[FFT_LEN];
-/* Fully-processed FFT data. */
-static int fft_data[FFT_LEN];
+static time_t start_time;
 
-static unsigned char op_state = IDLE;
-static int report_loss = 0;
-
-/* static FILE *raw_file; */
-
-struct readstream_data {
-	struct ftdi_context *ftdi;
-	FTDIStreamCallback *callback;
-	void *userdata;
-	int packetsPerTransfer;
-	int numTransfers;
+enum Plot { TIME = 0, HIST };
+/* FPGA expects these values. Don't change them unless you also change
+ * the Verilog code. */
+enum Out { FFT = 1, WIND, FIR, RAW };
+struct cmd_flags {
+	enum Plot plt;
+	enum Out out;
+	/* set to 1 to enable algo, or 0 to disable. */
+	int fir;
+	int wind;
+	int fft;
 };
 
-static void write_fft(FILE *f);
-static void write_raw(FILE *f);
-static void write_window(FILE *f);
-static void write_fir(FILE *f);
-static void flush_data(int fn);
-static void proc_fft(uint64_t rdval);
-static void proc_window(uint64_t rdval);
-static void proc_raw(uint64_t rdval);
-static void proc_fir(uint64_t rdval);
-/**
- * Perform a linear interpolation of any samples missing from the
- * array pointed to by @data. @valid points to an array of equal
- * length to @data. Each entry is either a 1 or 0, where 1 indicates
- * valid data and 0 indicates data is missing. @len is the number of
- * items in each array.
- */
-static void interp_lin(int *data, int *valid, int len);
-static int read_callback(uint8_t *buffer, int length, FTDIProgressInfo *progress, void *userdata);
-static void *producer_fn(void *arg);
-static void *consumer_fn(void *arg);
-static void *monitor_input(void *arg);
+enum Interpolate { NON = 0, LIN = 1 };
+/* TODO this struct feels like a loose collection of slightly
+ * related data. There should be a better way to organize
+ * this. */
+struct data {
+	/* These are send to the python subprocess, so their size must
+	 * be well defined. */
+	int32_t *a_arr;
+	int32_t *b_arr;
+	unsigned int *ctr_arr;
+	int second_valp;
+	int last_a;
+	int last_b;
+	unsigned int last_ctr;
+	unsigned int last_rev_ctr;
+	FILE *pipe;
+	enum Interpolate interp;
+	/* 1: report packet loss statistics; 0: don't report
+	 * statistics */
+	int stat;
+	struct cmd_flags flags;
+};
 
-struct buffer {
+struct thread_buffer {
 	uint8_t buf[BUFSIZE];
 	int occupied;
 	int nextin;
@@ -109,23 +71,132 @@ struct buffer {
 	pthread_cond_t less;
 };
 
+struct producer_data {
+	struct ftdi_context *ftdi;
+	FTDIStreamCallback *callback;
+	void *userdata;
+	int packetsPerTransfer;
+	int numTransfers;
+};
+
+struct consumer_data {
+	struct thread_buffer *buf;
+	struct data *data;
+};
+
+static unsigned char algo_bit_flags(struct cmd_flags *flags);
+/**
+ * Issue a command to the python subprocess. The python program
+ * initially expects a "prepare" byte. The prepare byte has a value of
+ * CMD if a sequence of commands will follow and a value of DATA if
+ * data will follow (see the function send_cmd). Behavior is undefined
+ * if data is sent before the first command. If a command is
+ * specified, the next byte will indicate the plot type (using the
+ * enum Plot values). Then the output type is specified (using the
+ * enum Out type). Lastly, a byte is sent specifying the algos to
+ * use. The LSB specifies FIR filtering. The next bit is for
+ * windowing, and the final bit is for the FFT. After the command has
+ * been sent the python subprocess expects another "prepare" byte.
+ */
+
+static void send_cmd(struct data *data);
+/**
+ * Send data to the python subprocess. The first byte must be a
+ * prepare byte. The second is a 4-byte timestamp associated with the
+ * data. The timestamp has type uint32_t and represents the number of
+ * milliseconds since the start time. It then sends FFT_LEN packets of
+ * 4 bytes for FFT data, FFT_LEN packets of 8 bytes (first 4 channel
+ * A, second 4 channel B) for FIR or windowed data, or RAW_LEN packets
+ * of 8 bytes for raw data.
+ */
+static void send_data(struct data *data);
+static void proc_fft(uint64_t rdval, struct data *data);
+static void proc_window(uint64_t rdval, struct data *data);
+static void proc_raw(uint64_t rdval, struct data *data);
+static void proc_fir(uint64_t rdval, struct data *data);
+/**
+ * Perform a linear interpolation of any samples missing from the
+ * array pointed to by @data. @valid points to an array of equal
+ * length to @data. Each entry is either a 1 or 0, where 1 indicates
+ * valid data and 0 indicates data is missing. @len is the number of
+ * items in each array.
+ */
+static void interp_lin(int *data, unsigned int *valid, int len);
+static int read_callback(uint8_t *buffer, int length, FTDIProgressInfo *progress, void *userdata);
+static void *producer_fn(void *arg);
+static void *consumer_fn(void *arg);
+static void *monitor_input(void *arg);
+/**
+ * Return the integral value of the @PACKET_LEN bytes of buffer, @buf.
+ */
+static uint64_t get_value(uint8_t *buf);
+unsigned int bitrev(unsigned int v, int num_bits);
+/**
+ * Ensure data is in a valid state. This means that it contains the
+ * appropriate header and stop sequence and has the correct parity
+ * bit.
+ */
+int dvalid(uint64_t val);
+
 int main(int argc, char **argv)
 {
 	struct ftdi_context *ftdi = NULL;
 	int ftdi_err;
 	/* void *prod_ret; */
 	int opt;
+	/* TODO shouldn't be done this way. */
 	int dist;
-	char interm[10];
-	FILE *fmode = NULL;
+	int plot_flag_passed;
+	unsigned char fpga_wrval;
+	unsigned char python_wrval;
 	pthread_t producer_thread;
 	pthread_t consumer_thread;
 	pthread_t input_monitor_thread;
+	/* set argument defaults. */
+	struct data data = {.interp = LIN,
+			    .stat = 0,
+			    .flags = {.out = FFT, .fir = 1, .wind = 1, .fft = 1},
+			    .a_arr = NULL,
+			    .b_arr = NULL,
+			    .ctr_arr = NULL,
+			    .pipe = NULL};
 
-	memset(interm, 0, 10);
 	dist = 1;
-	while ((opt = getopt(argc, argv, "hla:i:")) != -1) {
+	plot_flag_passed = 0;
+	while ((opt = getopt(argc, argv, "a:hi:n:p:su:")) != -1) {
 		switch (opt) {
+		case 'h':
+			printf("Usage: %s [OPTION]\n\n"
+			       "  -a  specify radar action\n"
+			       "      values: 'dist' or 'angle' (defaults to dist)\n\n"
+			       "  -h  display this message and exit\n\n"
+			       "  -i  get data from an intermediary step\n"
+			       "      values: 'raw', 'fir', 'window', or 'fft' (defaults to fft)\n"
+			       "      fft retrieves fully processed output\n\n"
+			       "  -n  interpolation method for missing data\n"
+			       "      values: 'lin', 'none' (defaults to 'lin')\n"
+			       "      If you specify none, all missing data will be set to 0.\n\n"
+			       "  -p  plot type\n"
+			       "      values: 'hist', 'time'\n"
+			       "      default: fft->hist, rest->time\n"
+			       "      NOTE: time plots are incompatible with FFT data.\n\n"
+			       "  -s  display packet loss statistics\n"
+			       "      does not perform any other processing\n\n"
+			       "  -u  specifies algorithms to use\n"
+			       "      Formatted as 3 numbers where a '1' indicates the algorithm\n"
+			       "      should be used and a '0' indicates it should be skipped.\n"
+			       "      The last set bit also determines what data is plotted.\n"
+			       "      1st number: filter\n"
+			       "      2nd number: window\n"
+			       "      3rd number: fft\n"
+			       "      default: 111\n"
+			       "      NOTE: Currently only relates to software processing.\n"
+			       "            For instance, if you specify '-i fft' and set\n"
+			       "            any of these bits to 0, the FPGA will still\n"
+			       "            perform all processing steps.\n"
+			       "      example usage: 100 (perform filtering and nothing else)\n\n",
+			       argv[0]);
+			goto cleanup;
 		case 'a':
 			if (strcmp(optarg, "dist") != 0) {
 				dist = 0;
@@ -134,33 +205,103 @@ int main(int argc, char **argv)
 			}
 			break;
 		case 'i':
-			strcpy(interm, optarg);
+			if (strcmp(optarg, "raw") == 0) {
+				data.flags.out = RAW;
+				data.a_arr = malloc(RAW_LEN * sizeof(int32_t));
+				data.b_arr = malloc(RAW_LEN * sizeof(int32_t));
+				data.ctr_arr = malloc(RAW_LEN * sizeof(int32_t));
+				memset(data.a_arr, 0, RAW_LEN * sizeof(int32_t));
+				memset(data.b_arr, 0, RAW_LEN * sizeof(int32_t));
+				memset(data.ctr_arr, 0, RAW_LEN * sizeof(int32_t));
+			} else if (strcmp(optarg, "fir") == 0) {
+				data.flags.out = FIR;
+				data.a_arr = malloc(FFT_LEN * sizeof(int32_t));
+				data.b_arr = malloc(FFT_LEN * sizeof(int32_t));
+				data.ctr_arr = malloc(FFT_LEN * sizeof(int32_t));
+				memset(data.a_arr, 0, FFT_LEN * sizeof(int32_t));
+				memset(data.b_arr, 0, FFT_LEN * sizeof(int32_t));
+				memset(data.ctr_arr, 0, FFT_LEN * sizeof(int32_t));
+			} else if (strcmp(optarg, "window") == 0) {
+				data.flags.out = WIND;
+				data.a_arr = malloc(FFT_LEN * sizeof(int32_t));
+				data.b_arr = malloc(FFT_LEN * sizeof(int32_t));
+				data.ctr_arr = malloc(FFT_LEN * sizeof(int32_t));
+				memset(data.a_arr, 0, FFT_LEN * sizeof(int32_t));
+				memset(data.b_arr, 0, FFT_LEN * sizeof(int32_t));
+				memset(data.ctr_arr, 0, FFT_LEN * sizeof(int32_t));
+			} else if (strcmp(optarg, "fft") == 0) {
+				/* default value */
+				data.a_arr = malloc(FFT_LEN * sizeof(int32_t));
+				data.ctr_arr = malloc(FFT_LEN * sizeof(int32_t));
+				memset(data.a_arr, 0, FFT_LEN * sizeof(int32_t));
+				memset(data.ctr_arr, 0, FFT_LEN * sizeof(int32_t));
+				/* don't compute a distance FFT for
+				 * channel B. */
+			} else {
+				fprintf(stderr, "Invalid -i option: %s\n", optarg);
+				goto cleanup;
+			}
 			break;
-		case 'l':
-			report_loss = 1;
-			/* fft data is used to measure data loss. */
-			strcpy(interm, "fft");
+		case 'n':
+			if (strcmp(optarg, "none") != 0) {
+				data.interp = NON;
+			} else if (strcmp(optarg, "lin") != 0) {
+				/* default value */
+			} else {
+				fprintf(stderr, "Invalid -n option: %s\n", optarg);
+				goto cleanup;
+			}
+			break;
+		case 'p':
+			plot_flag_passed = 1;
+			if (strcmp(optarg, "hist") != 0) {
+				data.flags.plt = HIST;
+			} else if (strcmp(optarg, "time") != 0) {
+				data.flags.plt = TIME;
+			} else {
+				fprintf(stderr, "Invalid -p option: %s\n", optarg);
+				goto cleanup;
+			}
+			break;
+		case 's':
+			data.stat = 1;
 			dist = 1;
 			break;
-		case 'h':
-			printf("Usage: %s [OPTION]\n\n"
-			       "  -h  display this message and exit\n\n"
-			       "  -a  specify radar action\n"
-			       "      values: dist or angle (defaults to dist)\n\n"
-			       "  -i  get data from an intermediary step\n"
-			       "      values: raw, fir, window, or fft (defaults to fft)\n"
-			       "      fft retrieves fully processed output\n\n"
-			       "  -l  display packet loss statistics\n"
-			       "      does not perform any other processing\n\n",
-			       argv[0]);
-			goto cleanup;
+		case 'u':
+			if (strlen(optarg) != 3) {
+				fprintf(stderr, "Invalid -u option: %s\n", optarg);
+				goto cleanup;
+			} else {
+				/* if something other than 0 or 1 is
+				 * specified, the default will be
+				 * used. */
+				if (optarg[0] == '0') {
+					data.flags.fir = 0;
+				}
+				if (optarg[1] == '0') {
+					data.flags.wind = 0;
+				}
+				if (optarg[2] == '0') {
+					data.flags.fft = 0;
+				}
+			}
+			break;
 		default:
 			break;
 		}
 	}
 
-	if (!interm[0]) {
-		strcpy(interm, "fft");
+	if (data.flags.plt == TIME && data.flags.out == FFT) {
+		fputs("Invalid request: FFT time plot.\n", stderr);
+		goto cleanup;
+	}
+
+	if (!plot_flag_passed) {
+		if (data.flags.fft) {
+			data.flags.plt = HIST;
+		} else {
+			data.flags.plt = TIME;
+		}
 	}
 
 	if ((ftdi = ftdi_new()) == 0) {
@@ -204,24 +345,17 @@ int main(int argc, char **argv)
 		goto cleanup;
 	}
 
-	struct buffer buf = {.buf = {0}, .occupied = 0, .nextin = 0, .nextout = 0};
-	struct readstream_data prod_fn_arg = {.ftdi = ftdi,
-					      .callback = read_callback,
-					      .userdata = &buf,
-					      .packetsPerTransfer = 8,
-					      .numTransfers = 256};
+	struct thread_buffer buf = {.buf = {0}, .occupied = 0, .nextin = 0, .nextout = 0};
+	struct consumer_data cons_fn_arg = {.buf = &buf, .data = &data};
+	struct producer_data prod_fn_arg = {.ftdi = ftdi,
+					    .callback = read_callback,
+					    .userdata = &buf,
+					    .packetsPerTransfer = 8,
+					    .numTransfers = 256};
 
+	fpga_wrval = data.flags.out;
 	if (dist) {
-		if (strcmp(interm, "fft") == 0) {
-			op_state = FFT;
-		} else if (strcmp(interm, "window") == 0) {
-			op_state = WINDOW;
-		} else if (strcmp(interm, "fir") == 0) {
-			op_state = FIR;
-		} else if (strcmp(interm, "raw") == 0) {
-			op_state = RAW;
-		}
-		ftdi_err = ftdi_write_data(ftdi, &op_state, 1);
+		ftdi_err = ftdi_write_data(ftdi, &fpga_wrval, 1);
 		if (ftdi_err < 0) {
 			if (ftdi_err == -666) {
 				fputs("Failed to write to radar. Device "
@@ -233,19 +367,17 @@ int main(int argc, char **argv)
 			goto cleanup;
 		}
 
-		/* Tell plotting program how to interpret data. */
-		fmode = fopen("data/mode", "w");
-		if (!fmode) {
-			fputs("Failed to open mode file.\n", stderr);
-			goto cleanup;
-		}
-		fprintf(fmode, "%s", interm);
-		fclose(fmode);
+		/* this should be blocking, which we want. */
+		data.pipe = popen("./plot.py", "w");
+		start_time = time(NULL);
 
 		pthread_create(&producer_thread, NULL, &producer_fn, &prod_fn_arg);
-		pthread_create(&consumer_thread, NULL, &consumer_fn, &buf);
-
+		pthread_create(&consumer_thread, NULL, &consumer_fn, &cons_fn_arg);
 		pthread_create(&input_monitor_thread, NULL, &monitor_input, NULL);
+
+		/* python_wrval = CMD; */
+		/* fwrite(&python_wrval, 1, 1, data.pipe); */
+		send_cmd(&data);
 
 		fputs("Type 'q' to terminate data capture.\n> ", stdout);
 		pthread_join(input_monitor_thread, NULL);
@@ -258,12 +390,16 @@ int main(int argc, char **argv)
 		/* 	goto cleanup; */
 		/* } */
 	} else {
-		fputs("Angle operation is not yet implemented. Exiting.\n", stderr);
+		fputs("Angle operation is not yet implemented.\n", stderr);
 		goto cleanup;
 	}
 
 	fprintf(stderr, "Capture ended.\n");
 cleanup:
+	pclose(data.pipe);
+	free(data.a_arr);
+	free(data.b_arr);
+	free(data.ctr_arr);
 	ftdi_usb_close(ftdi);
 	ftdi_free(ftdi);
 }
@@ -313,92 +449,67 @@ int dvalid(uint64_t val)
 	return header == 128 && tail == 0;
 }
 
-void write_fft(FILE *f)
+unsigned char algo_bit_flags(struct cmd_flags *flags)
 {
-	int i;
+	unsigned char res;
 
-	for (i = 0; i < FFT_LEN; ++i) {
-		if (i < FFT_LEN / 2) {
-			fprintf(f, "%8d %8u\n", fft_data[i], i);
-		}
-		fft_data[i] = 0;
-		idx_ctr[i] = 0;
-	}
+	res = 0;
+	res |= flags->fir;
+	res |= flags->wind << 1;
+	res |= flags->fft << 2;
+	return res;
 }
 
-void write_raw(FILE *f)
+/* TODO this always writes data without signaling data. It should
+ * signal data and the python program should be made to support it. */
+void send_cmd(struct data *data)
 {
-	int i;
+	unsigned char wrval;
 
-	for (i = 0; i < RAW_LEN; ++i) {
-		fprintf(f, "%6d %6d %6u\n", raw_a[i], raw_b[i], i);
-		raw_a[i] = 0;
-		raw_b[i] = 0;
-		raw_ctr[i] = 0;
-	}
+	wrval = CMD;
+	fwrite(&wrval, 1, 1, data->pipe);
+	wrval = data->flags.plt;
+	fwrite(&wrval, 1, 1, data->pipe);
+	wrval = data->flags.out;
+	fwrite(&wrval, 1, 1, data->pipe);
+	wrval = algo_bit_flags(&data->flags);
+	fwrite(&wrval, 1, 1, data->pipe);
 }
 
-void write_window(FILE *f)
+void send_data(struct data *data)
 {
+	unsigned char wrval[8];
 	int i;
+	int num_chans;
+	int packet_len;
+	uint32_t tsec;
 
-	for (i = 0; i < FFT_LEN; ++i) {
-		if (idx_ctr[i] != 0) {
-			window[i] /= idx_ctr[i];
+	if (data->flags.out == RAW) {
+		packet_len = RAW_LEN;
+		num_chans = 2;
+	} else {
+		packet_len = FFT_LEN;
+		if (data->flags.out == FFT) {
+			num_chans = 1;
 		} else {
-			window[i] = 0;
+			num_chans = 2;
 		}
+	}
 
-		fprintf(f, "%6d %6u\n", window[i], i);
-		window[i] = 0;
-		idx_ctr[i] = 0;
+	wrval[0] = DATA;
+	fwrite(wrval, 1, 1, data->pipe);
+
+	tsec = time(NULL);
+	tsec -= start_time;
+	fwrite(&tsec, sizeof(tsec), 1, data->pipe);
+
+	fwrite(data->a_arr, sizeof(int32_t), packet_len, data->pipe);
+	if (num_chans == 2) {
+		fwrite(data->b_arr, sizeof(int32_t), packet_len, data->pipe);
 	}
 }
 
-void write_fir(FILE *f)
-{
-	int i;
-	for (i = 0; i < FFT_LEN; ++i) {
-		fprintf(f, "%6d %6d %6u\n", fir_a[i], fir_b[i], i);
-		fir_a[i] = 0;
-		fir_b[i] = 0;
-		idx_ctr[i] = 0;
-	}
-}
-
-/* TODO consider renaming since this just writes data to a file it
- * doesn't flush it to disk. */
-void flush_data(int fn)
-{
-	FILE *fout;
-	char fout_name[32];
-
-	sprintf(fout_name, "data/%05d.dec", fn);
-	fout = fopen(fout_name, "w");
-	if (!fout) {
-		fputs("Failed to open output file. "
-		      "Exiting...",
-		      stderr);
-		exit(EXIT_FAILURE);
-	}
-	switch (op_state) {
-	case FFT:
-		write_fft(fout);
-		break;
-	case WINDOW:
-		write_window(fout);
-		break;
-	case FIR:
-		write_fir(fout);
-		break;
-	case RAW:
-		write_raw(fout);
-		break;
-	}
-	fclose(fout);
-}
-
-void interp_lin(int *data, int *valid, int len)
+void interp_lin(int *data, unsigned int *valid, int len)
 {
 	int i;
 	int j;
@@ -436,7 +547,7 @@ void interp_lin(int *data, int *valid, int len)
 	}
 }
 
-void proc_fft(uint64_t rdval)
+void proc_fft(uint64_t rdval, struct data *data)
 {
 	int fft;
 	int fft_res;
@@ -445,122 +556,126 @@ void proc_fft(uint64_t rdval)
 	int tx_re;
 	int i;
 
+	/* TODO magic numbers, use macros instead */
 	fft = subw_val(rdval, 4, 25, 1);
 	ctr = subw_val(rdval, 29, 10, 0);
 	tx_re = subw_val(rdval, 39, 1, 0);
 
-	if (last_ctr == ctr && last_tx_re != tx_re) {
-		fft_res = (int)sqrt(pow(fft, 2) + pow(last_fft, 2));
+	if (data->last_ctr == ctr && data->last_b != tx_re) {
+		fft_res = (int)sqrt(pow(fft, 2) + pow(data->last_a, 2));
 		rev_ctr = bitrev(ctr, 10);
-		if (rev_ctr > last_rev_ctr) {
-			idx_ctr[ctr] = 1;
-			fft_data[ctr] = fft_res;
+		if (rev_ctr > data->last_rev_ctr) {
+			data->ctr_arr[ctr] = 1;
+			data->a_arr[ctr] = fft_res;
 		} else {
-			if (report_loss) {
+			if (data->stat) {
 				double cvg_sum;
 
 				cvg_sum = 0;
 				for (i = 0; i < FFT_LEN; ++i) {
-					cvg_sum += idx_ctr[i];
-					idx_ctr[i] = 0;
+					cvg_sum += data->ctr_arr[i];
+					data->ctr_arr[i] = 0;
 				}
 				printf("coverage: %2.0f\n", 100 * cvg_sum / FFT_LEN);
 			} else {
-				interp_lin(fft_data, idx_ctr, FFT_LEN);
-				flush_data(fn);
-				++fn;
+				if (data->interp == LIN) {
+					interp_lin(data->a_arr, data->ctr_arr, FFT_LEN);
+				}
+				send_data(data);
 			}
 		}
-		last_rev_ctr = rev_ctr;
+		data->last_rev_ctr = rev_ctr;
 	}
-	last_fft = fft;
-	last_ctr = ctr;
-	last_tx_re = tx_re;
+	data->last_a = fft;
+	data->last_ctr = ctr;
+	data->last_b = tx_re;
 }
 
-void proc_window(uint64_t rdval)
+/* TODO not yet implemented */
+void proc_window(uint64_t rdval, struct data *data)
 {
-	int win;
+	int32_t win;
 	unsigned int ctr;
 
-	win = subw_val(rdval, 4, 14, 1);
-	ctr = subw_val(rdval, 18, 10, 0);
+	/* TODO magic numbers, use macros instead */
+	win = (int32_t)subw_val(rdval, 4, 14, 1);
+	ctr = (unsigned int)subw_val(rdval, 18, 10, 0);
 
-	++idx_ctr[ctr];
-	window[ctr] += win;
+	/* ++idx_ctr[ctr]; */
+	/* window[ctr] += win; */
 	/* if (avg_ctr == AVG_INDEX) { */
 	/* 	avg_ctr = 0; */
-	/* 	flush_data(fn); */
+	/* 	send_data(fn); */
 	/* 	++fn; */
 	/* } else { */
 	/* 	++avg_ctr; */
 	/* } */
 }
 
-void proc_raw(uint64_t rdval)
+void proc_raw(uint64_t rdval, struct data *data)
 {
-	int chan_a;
-	int chan_b;
+	int32_t chan_a;
+	int32_t chan_b;
 	unsigned int ctr;
 	unsigned int rev_ctr;
 
-	chan_a = subw_val(rdval, 4, 12, 1);
-	chan_b = subw_val(rdval, 16, 12, 1);
-	ctr = subw_val(rdval, 28, 13, 0);
+	/* TODO magic numbers, use macros instead */
+	chan_a = (int32_t)subw_val(rdval, 4, 12, 1);
+	chan_b = (int32_t)subw_val(rdval, 16, 12, 1);
+	ctr = (unsigned int)subw_val(rdval, 28, 13, 0);
 
 	/* TODO most data is being written twice for some reason. >=
 	 * is a temporary bandaid */
-	if (ctr >= last_ctr) {
-		raw_ctr[ctr] = 1;
-		raw_a[ctr] = chan_a;
-		raw_b[ctr] = chan_b;
+	if (ctr >= data->last_ctr) {
+		data->ctr_arr[ctr] = 1;
+		data->a_arr[ctr] = chan_a;
+		data->b_arr[ctr] = chan_b;
 	} else {
-		interp_lin(raw_a, raw_ctr, FFT_LEN);
-		interp_lin(raw_b, raw_ctr, FFT_LEN);
-		flush_data(fn);
-		++fn;
+		interp_lin(data->a_arr, data->ctr_arr, FFT_LEN);
+		interp_lin(data->b_arr, data->ctr_arr, FFT_LEN);
+		send_data(data);
 	}
-	last_ctr = ctr;
+	data->last_ctr = ctr;
 }
 
-void proc_fir(uint64_t rdval)
+void proc_fir(uint64_t rdval, struct data *data)
 {
-	int chan_a;
-	int chan_b;
+	int32_t chan_a;
+	int32_t chan_b;
 	unsigned int ctr;
 
-	chan_a = subw_val(rdval, 4, 14, 1);
-	chan_b = subw_val(rdval, 18, 14, 1);
-	ctr = subw_val(rdval, 32, 10, 0);
+	/* TODO magic numbers, use macros instead */
+	chan_a = (int32_t)subw_val(rdval, 4, 14, 1);
+	chan_b = (int32_t)subw_val(rdval, 18, 14, 1);
+	ctr = (unsigned int)subw_val(rdval, 32, 10, 0);
 
 	/* printf("%5d %5d %5d\n", ctr, last_ctr, chan_a); */
 	/* TODO most data is being written twice for some reason. >=
 	 * is a temporary bandaid */
-	if (ctr >= last_ctr) {
-		idx_ctr[ctr] = 1;
-		fir_a[ctr] = chan_a;
-		fir_b[ctr] = chan_b;
+	if (ctr >= data->last_ctr) {
+		data->ctr_arr[ctr] = 1;
+		data->a_arr[ctr] = chan_a;
+		data->b_arr[ctr] = chan_b;
 	} else {
-		interp_lin(fir_a, idx_ctr, FFT_LEN);
-		interp_lin(fir_b, idx_ctr, FFT_LEN);
-		flush_data(fn);
-		++fn;
+		interp_lin(data->a_arr, data->ctr_arr, FFT_LEN);
+		interp_lin(data->b_arr, data->ctr_arr, FFT_LEN);
+		send_data(data);
 	}
-	last_ctr = ctr;
+	data->last_ctr = ctr;
 }
 
 int read_callback(uint8_t *buffer, int length, FTDIProgressInfo *progress, void *userdata)
 {
 	int i;
 	uint64_t rdval;
-	struct readstream_data *ftdi_data;
-	struct buffer *shared_buf;
+	struct producer_data *ftdi_data;
+	struct thread_buffer *shared_buf;
 
-	ftdi_data = (struct readstream_data *)userdata;
-	shared_buf = (struct buffer *)ftdi_data->userdata;
+	ftdi_data = (struct producer_data *)userdata;
+	shared_buf = (struct thread_buffer *)ftdi_data->userdata;
 
 	/* We check every time less is signaled since the consumer
-	 * won't signal that every byte. */
+	 * won't signal less every byte. */
 	while (shared_buf->occupied + length >= BUFSIZE) {
 		pthread_cond_wait(&shared_buf->less, &shared_buf->mutex);
 	}
@@ -577,12 +692,12 @@ int read_callback(uint8_t *buffer, int length, FTDIProgressInfo *progress, void 
 
 void *producer_fn(void *arg)
 {
-	struct readstream_data *data;
-	struct buffer *userdata;
+	struct producer_data *data;
+	struct thread_buffer *userdata;
 	int ret_val;
 
-	data = (struct readstream_data *)arg;
-	userdata = (struct buffer *)data->userdata;
+	data = (struct producer_data *)arg;
+	userdata = (struct thread_buffer *)data->userdata;
 
 	pthread_mutex_lock(&userdata->mutex);
 
@@ -602,7 +717,9 @@ void *producer_fn(void *arg)
 
 void *consumer_fn(void *arg)
 {
-	struct buffer *shared_buf;
+	struct consumer_data *consumer_data;
+	struct thread_buffer *buf;
+	struct data *data;
 	uint64_t rdval;
 	uint64_t last_val;
 	uint8_t *packet_buf = malloc(PACKET_LEN * sizeof(uint8_t));
@@ -610,80 +727,86 @@ void *consumer_fn(void *arg)
 	int j;
 	int occupied_cmp;
 
-	shared_buf = (struct buffer *)arg;
+	consumer_data = (struct consumer_data *)arg;
+	buf = consumer_data->buf;
+	data = consumer_data->data;
+
 	memset(packet_buf, 0, PACKET_LEN * sizeof(uint8_t));
 
-	pthread_mutex_lock(&shared_buf->mutex);
+	pthread_mutex_lock(&buf->mutex);
 
 	/* TODO use cleaner way of breaking out. */
 	while (1) {
-		occupied_cmp = shared_buf->occupied - PAYLOAD_SIZE > 8 ? shared_buf->occupied : 8;
+		occupied_cmp = buf->occupied - PAYLOAD_SIZE > 8 ? buf->occupied : 8;
 		/* Wait for at least `PAYLOAD_SIZE' bytes of data so
 		 * we don't waste time switching between threads. */
-		while (shared_buf->occupied <= PAYLOAD_SIZE) {
-			pthread_cond_wait(&shared_buf->more, &shared_buf->mutex);
+		while (buf->occupied <= PAYLOAD_SIZE) {
+			pthread_cond_wait(&buf->more, &buf->mutex);
 		}
-		while (shared_buf->occupied >= occupied_cmp) {
+		while (buf->occupied >= occupied_cmp) {
 			i = 0;
-			while (i + shared_buf->nextout < BUFSIZE && i < 8) {
-				packet_buf[i] = shared_buf->buf[i + shared_buf->nextout];
+			while (i + buf->nextout < BUFSIZE && i < 8) {
+				packet_buf[i] = buf->buf[i + buf->nextout];
 				++i;
 			}
 			j = i;
 			while (i < 8) {
-				packet_buf[i] = shared_buf->buf[i - j];
+				packet_buf[i] = buf->buf[i - j];
 				++i;
 			}
 
 			rdval = get_value(packet_buf);
 			if (dvalid(rdval)) {
-				if (second_val) {
+				if (data->second_valp) {
 					if (rdval == last_val) {
-						switch (op_state) {
+						switch (data->flags.out) {
 						case FFT:
-							proc_fft(rdval);
+							proc_fft(rdval, data);
 							break;
-						case WINDOW:
-							proc_window(rdval);
+						case WIND:
+							proc_window(rdval, data);
 							break;
 						case FIR:
-							proc_fir(rdval);
+							proc_fir(rdval, data);
 							break;
 						case RAW:
-							proc_raw(rdval);
+							proc_raw(rdval, data);
 							break;
 						}
-						second_val = 0;
+						data->second_valp = 0;
 					}
 				} else {
-					second_val = 1;
+					data->second_valp = 1;
 				}
 				last_val = rdval;
-				shared_buf->nextout += PACKET_LEN;
-				shared_buf->occupied -= PACKET_LEN;
+				buf->nextout += PACKET_LEN;
+				buf->occupied -= PACKET_LEN;
 			} else {
-				second_val = 0;
-				++shared_buf->nextout;
-				--shared_buf->occupied;
+				data->second_valp = 0;
+				++buf->nextout;
+				--buf->occupied;
 			}
-			shared_buf->nextout %= BUFSIZE;
+			buf->nextout %= BUFSIZE;
 		}
 
-		pthread_cond_signal(&shared_buf->less);
+		pthread_cond_signal(&buf->less);
 	}
 
 	free(packet_buf);
-	pthread_mutex_unlock(&shared_buf->mutex);
+	pthread_mutex_unlock(&buf->mutex);
 }
 
+/* TODO eventually monitor_input should permit changing state while
+   running. The current difficulty with this is that it requires
+   thread-safe access to data. */
 void *monitor_input(void *arg)
 {
 	char c;
 
-	while ((c = getchar()) != 'q') {
+	while ((c = (char)getchar()) != 'q') {
 		/* only send this once per set of characters. all
-		 * character sequences must be entered with a newline
-		 * so we use that. */
+		 * character sequences must be entered with a
+		 * terminated return so we use a newline. */
 		if (c == '\n') {
 			fputs("Unrecognized input.\n> ", stdout);
 		}

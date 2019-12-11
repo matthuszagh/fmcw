@@ -13,11 +13,8 @@ LINKER_FLAGS	:= $(shell libftdi1-config --libs) -lm -lpthread
 
 .PHONY: acquire
 acquire: fmcw
-	rm -rf data
-	mkdir data
 ifeq ($(DEBUG),0)
-	./plot.py &
-	./fmcw -a dist
+	./fmcw -a dist -i raw -u 000
 endif
 
 fmcw: fmcw.c bitmanip.c bitmanip.h
