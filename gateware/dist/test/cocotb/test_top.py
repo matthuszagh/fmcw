@@ -72,6 +72,50 @@ class TopTB:
             self.dut.pll_lock <= 1
 
     @cocotb.coroutine
+    async def pc_request_mode(self, mode):
+        """
+        Simulate sending a request from the host PC for a certain kind of
+        data. This is equivalent to using the fmcw -i flag. The valid
+        values are the same. I.e. @mode can be 'raw', 'fir', 'window',
+        or 'fft'.
+        """
+        if mode == "fft":
+            mode_bits = 1
+        elif mode == "window":
+            mode_bits = 2
+        elif mode == "fir":
+            mode_bits = 3
+        elif mode == "raw":
+            mode_bits = 4
+        else:
+            raise ValueError("request_mode: invalid request")
+
+        await RisingEdge(self.dut.ft_clkout_i)
+        self.dut.ft_rxf_n_i <= 0
+        self.dut.ft_data_io <= mode_bits
+        await RisingEdge(self.dut.ft_clkout_i)
+        self.dut.ft_data_io <= mode_bits
+        await RisingEdge(self.dut.ft_clkout_i)
+        self.dut.ft_data_io <= mode_bits
+        await RisingEdge(self.dut.ft_clkout_i)
+        await RisingEdge(self.dut.ft_clkout_i)
+        await ReadOnly()
+        while self.dut.ft_rd_n_o.value.integer:
+            await RisingEdge(self.dut.ft_clkout_i)
+            await ReadOnly()
+        await RisingEdge(self.dut.ft_clkout_i)
+        self.dut.ft_rxf_n_i <= 1
+
+    @cocotb.coroutine
+    async def pc_request_data(self):
+        """
+        Signal the PC is asking to read data from the FPGA.
+        """
+        await RisingEdge(self.dut.ft_clkout_i)
+        self.dut.ft_txe_n_i <= 0
+        await RisingEdge(self.dut.ft_clkout_i)
+
+    @cocotb.coroutine
     # TODO add samples on falling edge for chan b
     async def gen_samples(self, inputs):
         sample_ctr = 0
@@ -97,15 +141,17 @@ async def rand_samples(dut):
 
     wrdata = random_samples(input_width, num_writes)
     cocotb.fork(top.gen_samples(wrdata))
-    top.dut.ft_rxf_n_i <= 0
-    top.dut.ft_data_io <= 1
-    await RisingEdge(top.dut.ft_clkout_i)
-    top.dut.ft_data_io <= 1
-    await RisingEdge(top.dut.ft_clkout_i)
-    top.dut.ft_rxf_n_i <= 1
-    await RisingEdge(top.dut.ft_clkout_i)
+    # top.dut.ft_rxf_n_i <= 0
+    # top.dut.ft_data_io <= 1
+    # await RisingEdge(top.dut.ft_clkout_i)
+    # top.dut.ft_data_io <= 1
+    # await RisingEdge(top.dut.ft_clkout_i)
+    # top.dut.ft_rxf_n_i <= 1
+    # await RisingEdge(top.dut.ft_clkout_i)
+    await top.pc_request_mode("raw")
 
-    top.dut.ft_txe_n_i <= 0
+    # top.dut.ft_txe_n_i <= 0
+    await top.pc_request_data()
     i = 0
     while i < num_writes:
         # await ReadOnly()
