@@ -8,6 +8,7 @@ module control (
    input wire clk,
    input wire rst_n,
    input wire adf_done,
+   input wire ramp_start,
    input wire window_valid,
    input wire fifo_full,
    input wire fft_done,
@@ -39,7 +40,7 @@ module control (
          ADF_CONFIG_STATE:
            begin
               fifo_rd_delay <= 1'b0;
-              if (adf_done) begin
+              if (adf_done && ramp_start) begin
                  state <= FIR_STATE;
               end else begin
                  state <= ADF_CONFIG_STATE;
@@ -68,8 +69,11 @@ module control (
 
          FT245_STATE:
            begin
-              if (ft245_empty) begin
-                 state  <= ADF_CONFIG_STATE;
+              // if the ft245 fifo isn't empty by the time the ramp
+              // start signal occurs, we'll wait a full ramp plus
+              // delay (3ms) and try again.
+              if (ramp_start && ft245_empty) begin
+                 state <= FIR_STATE;
               end else begin
                  state <= FT245_STATE;
               end
@@ -110,7 +114,7 @@ module control (
 
       FFT_STATE:
         begin
-           adf_en    = 1'b0;
+           adf_en    = 1'b1;
            fir_en    = 1'b0;
            fifo_wren = 1'b0;
            fifo_rden = 1'b1;
@@ -123,7 +127,7 @@ module control (
 
       FT245_STATE:
         begin
-           adf_en    = 1'b0;
+           adf_en    = 1'b1;
            fir_en    = 1'b0;
            fifo_wren = 1'b0;
            fifo_rden = 1'b0;
