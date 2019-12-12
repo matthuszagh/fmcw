@@ -17,7 +17,7 @@
 #define FFT_LEN 1024
 #define RAW_LEN 8000
 #define BUFSIZE 2048
-#define BACKG_DEFAULT 1000
+#define BACKG_DEFAULT 100
 /* Indicates a command to Python subprocess. */
 #define CMD 1
 #define DATA 0
@@ -63,6 +63,8 @@ struct data {
 	int backg;
 	int backg_ctr;
 	int32_t **backg_arr;
+	/* subtract last */
+	int sub_last;
 	struct cmd_flags flags;
 };
 
@@ -128,6 +130,7 @@ static void proc_fir(uint64_t rdval, struct data *data);
  */
 static void interp_lin(int *data, unsigned int *valid, int len);
 static void subtract_background(struct data *data);
+static void subtract_last(struct data *data);
 static int read_callback(uint8_t *buffer, int length, FTDIProgressInfo *progress, void *userdata);
 static void *producer_fn(void *arg);
 static void *consumer_fn(void *arg);
@@ -169,19 +172,20 @@ int main(int argc, char **argv)
 			    .stat = 0,
 			    .backg_ctr = 0,
 			    .backg_arr = NULL,
+			    .sub_last = 1,
 			    .flags = {.out = FFT, .fir = 1, .wind = 1, .fft = 1},
 			    .a_arr = NULL,
 			    .b_arr = NULL,
 			    .ctr_arr = NULL,
 			    .pipe = NULL};
 
-	while ((opt = getopt(argc, argv, "a:b:hi:n:p:su:")) != -1) {
+	while ((opt = getopt(argc, argv, "a:b:hi:l:n:p:su:")) != -1) {
 		switch (opt) {
 		case 'h':
 			printf("Usage: %s [OPTION]\n\n"
 			       "  -a  specify radar action\n"
 			       "      values: 'dist' or 'angle' (defaults to dist)\n\n"
-			       "  -b  subtract background\n"
+			       "  -b  subtract static background\n"
 			       "      values: a non-negative integral value (defaults to %d)\n"
 			       "      A value of 0 does not perform any background subtraction.\n"
 			       "      A value of n averages the first n FFTs and subtracts that\n"
@@ -190,6 +194,11 @@ int main(int argc, char **argv)
 			       "  -i  get data from an intermediary step\n"
 			       "      values: 'raw', 'fir', 'window', or 'fft' (defaults to fft)\n"
 			       "      fft retrieves fully processed output\n\n"
+			       "  -l  subtract last sweep.\n"
+			       "      values: 0 (don't subtract) or 1 (subtract) (defaults to 1)\n"
+			       "      Rather than subtracting the average of the first n sweeps\n"
+			       "      from all later sweeps (which -b does), this subtracts the\n"
+			       "      most recent sweep from each sweep.\n\n"
 			       "  -n  interpolation method for missing data\n"
 			       "      values: 'lin', 'none' (defaults to 'lin')\n"
 			       "      If you specify none, all missing data will be set to 0.\n\n"
@@ -257,13 +266,22 @@ int main(int argc, char **argv)
 			} else if (strcmp(optarg, "fft") == 0) {
 				/* default value */
 				data.a_arr = malloc(FFT_LEN * sizeof(int32_t));
+				/* channel B is used when subtracting
+				 * last sweep */
+				data.b_arr = malloc(FFT_LEN * sizeof(int32_t));
 				data.ctr_arr = malloc(FFT_LEN * sizeof(int32_t));
 				memset(data.a_arr, 0, FFT_LEN * sizeof(int32_t));
+				memset(data.b_arr, 0, FFT_LEN * sizeof(int32_t));
 				memset(data.ctr_arr, 0, FFT_LEN * sizeof(int32_t));
-				/* don't compute a distance FFT for
-				 * channel B. */
 			} else {
 				fprintf(stderr, "Invalid -i option: %s\n", optarg);
+				goto cleanup;
+			}
+			break;
+		case 'l':
+			data.sub_last = (int)strtol(optarg, NULL, 10);
+			if (data.sub_last != 0 && data.sub_last != 1) {
+				fprintf(stderr, "Invalid -l option: %s\n", optarg);
 				goto cleanup;
 			}
 			break;
@@ -326,8 +344,10 @@ int main(int argc, char **argv)
 
 	if (!interm_flag_passed) {
 		data.a_arr = malloc(FFT_LEN * sizeof(int32_t));
+		data.b_arr = malloc(FFT_LEN * sizeof(int32_t));
 		data.ctr_arr = malloc(FFT_LEN * sizeof(int32_t));
 		memset(data.a_arr, 0, FFT_LEN * sizeof(int32_t));
+		memset(data.b_arr, 0, FFT_LEN * sizeof(int32_t));
 		memset(data.ctr_arr, 0, FFT_LEN * sizeof(int32_t));
 	}
 
@@ -614,6 +634,15 @@ void subtract_background(struct data *data)
 	}
 }
 
+void subtract_last(struct data *data)
+{
+	for (int i = 0; i < FFT_LEN; ++i) {
+		int sub = data->a_arr[i] - data->b_arr[i];
+		data->b_arr[i] = data->a_arr[i];
+		data->a_arr[i] = sub > 0 ? sub : 0;
+	}
+}
+
 void proc_fft(uint64_t rdval, struct data *data)
 {
 	int32_t fft;
@@ -650,6 +679,9 @@ void proc_fft(uint64_t rdval, struct data *data)
 				}
 				if (data->backg > 0) {
 					subtract_background(data);
+				}
+				if (data->sub_last) {
+					subtract_last(data);
 				}
 				if (data->backg_ctr > data->backg || data->backg == 0) {
 					send_data(data);

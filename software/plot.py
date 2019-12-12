@@ -16,7 +16,7 @@ RAW_LEN = 8000
 
 # number of x points in the plot or hist
 PLOT_DOMAIN = 2000
-HIST_LEVELS = [0, 1000]
+HIST_LEVELS = [0, 200]
 
 DOWNSAMPLE_FACTOR = 20
 
