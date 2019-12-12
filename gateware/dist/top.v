@@ -268,12 +268,13 @@ module top #(
       .DATA_WIDTH  (FIR_OUTPUT_WIDTH ),
       .COEFF_WIDTH (16               )
    ) kaiser (
-      .clk    (clk_i                         ),
-      .rst_n  (rst_n                         ),
-      .en     (clk_2mhz_pos_en && fir_dvalid ),
-      .di     (chan_a_filtered               ),
-      .dvalid (kaiser_dvalid                 ),
-      .dout   (kaiser_out                    )
+      .clk    (clk_i           ),
+      .rst_n  (rst_n           ),
+      .en     (fir_dvalid      ),
+      .clk_en (clk_2mhz_pos_en ),
+      .di     (chan_a_filtered ),
+      .dvalid (kaiser_dvalid   ),
+      .dout   (kaiser_out      )
    );
 
    wire signed [FIR_OUTPUT_WIDTH-1:0] fft_in;

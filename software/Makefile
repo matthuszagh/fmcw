@@ -5,7 +5,7 @@ PLOT		= 0
 ifeq ($(DEBUG),1)
 CFLAGS	= -O0 -g3
 else
-CFLAGS	= -O3
+CFLAGS	= -O3 -march=native
 endif
 STRICT_CFLAGS	= $(CFLAGS) -Wall -Wextra -Wshadow -Wstrict-aliasing -ansi -pedantic -Werror
 FTDI_CFLAGS	:= $(shell libftdi1-config --cflags)
@@ -14,7 +14,7 @@ LINKER_FLAGS	:= $(shell libftdi1-config --libs) -lm -lpthread
 .PHONY: acquire
 acquire: fmcw
 ifeq ($(DEBUG),0)
-	./fmcw -a dist -i raw -u 000
+	./fmcw
 endif
 
 fmcw: fmcw.c bitmanip.c bitmanip.h
