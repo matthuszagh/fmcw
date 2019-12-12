@@ -1,7 +1,6 @@
 export
 
 GATEWARE_DIR	= gateware
-DIST_DIR	= $(GATEWARE_DIR)/dist
 SOFTWARE_DIR	= software
 
 DEBUG		= 0
@@ -15,11 +14,11 @@ run_dist: dist_bitstream dist_prog
 
 .PHONY: dist_bitstream
 dist_bitstream:
-	$(MAKE) -C $(DIST_DIR) pnr
+	$(MAKE) -C $(GATEWARE_DIR) pnr
 
 .PHONY: dist_prog
 dist_prog: dist_bitstream
-	$(MAKE) -C $(DIST_DIR) prog
+	$(MAKE) -C $(GATEWARE_DIR) prog
 
 # .PHONY: run_angle
 # run_angle:
