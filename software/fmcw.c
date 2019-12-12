@@ -17,6 +17,7 @@
 #define FFT_LEN 1024
 #define RAW_LEN 8000
 #define BUFSIZE 2048
+#define BACKG_DEFAULT 1000
 /* Indicates a command to Python subprocess. */
 #define CMD 1
 #define DATA 0
@@ -58,6 +59,10 @@ struct data {
 	/* 1: report packet loss statistics; 0: don't report
 	 * statistics */
 	int stat;
+	/* subtract background */
+	int backg;
+	int backg_ctr;
+	int32_t **backg_arr;
 	struct cmd_flags flags;
 };
 
@@ -122,6 +127,7 @@ static void proc_fir(uint64_t rdval, struct data *data);
  * items in each array.
  */
 static void interp_lin(int *data, unsigned int *valid, int len);
+static void subtract_background(struct data *data);
 static int read_callback(uint8_t *buffer, int length, FTDIProgressInfo *progress, void *userdata);
 static void *producer_fn(void *arg);
 static void *consumer_fn(void *arg);
@@ -148,29 +154,38 @@ int main(int argc, char **argv)
 	int dist;
 	int plot_flag_passed;
 	int interm_flag_passed;
+	int background_flag_passed;
 	unsigned char fpga_wrval;
 	unsigned char python_wrval;
 	pthread_t producer_thread;
 	pthread_t consumer_thread;
 	pthread_t input_monitor_thread;
 	/* set argument defaults. */
+	dist = 1;
+	plot_flag_passed = 0;
+	interm_flag_passed = 0;
+	background_flag_passed = 0;
 	struct data data = {.interp = LIN,
 			    .stat = 0,
+			    .backg_ctr = 0,
+			    .backg_arr = NULL,
 			    .flags = {.out = FFT, .fir = 1, .wind = 1, .fft = 1},
 			    .a_arr = NULL,
 			    .b_arr = NULL,
 			    .ctr_arr = NULL,
 			    .pipe = NULL};
 
-	dist = 1;
-	plot_flag_passed = 0;
-	interm_flag_passed = 0;
-	while ((opt = getopt(argc, argv, "a:hi:n:p:su:")) != -1) {
+	while ((opt = getopt(argc, argv, "a:b:hi:n:p:su:")) != -1) {
 		switch (opt) {
 		case 'h':
 			printf("Usage: %s [OPTION]\n\n"
 			       "  -a  specify radar action\n"
 			       "      values: 'dist' or 'angle' (defaults to dist)\n\n"
+			       "  -b  subtract background\n"
+			       "      values: a non-negative integral value (defaults to %d)\n"
+			       "      A value of 0 does not perform any background subtraction.\n"
+			       "      A value of n averages the first n FFTs and subtracts that\n"
+			       "      from all later FFTs.\n\n"
 			       "  -h  display this message and exit\n\n"
 			       "  -i  get data from an intermediary step\n"
 			       "      values: 'raw', 'fir', 'window', or 'fft' (defaults to fft)\n"
@@ -197,13 +212,21 @@ int main(int argc, char **argv)
 			       "            any of these bits to 0, the FPGA will still\n"
 			       "            perform all processing steps.\n"
 			       "      example usage: 100 (perform filtering and nothing else)\n\n",
-			       argv[0]);
+			       argv[0], BACKG_DEFAULT);
 			goto cleanup;
 		case 'a':
 			if (strcmp(optarg, "dist") != 0) {
 				dist = 0;
 			}
 			/* dist=1 is default */
+			break;
+		case 'b':
+			background_flag_passed = 1;
+			data.backg = (int)strtol(optarg, NULL, 10);
+			data.backg_arr = malloc(data.backg * sizeof(int32_t *));
+			for (int i = 0; i < data.backg; ++i) {
+				data.backg_arr[i] = malloc(FFT_LEN * sizeof(int32_t));
+			}
 			break;
 		case 'i':
 			interm_flag_passed = 1;
@@ -290,6 +313,14 @@ int main(int argc, char **argv)
 			break;
 		default:
 			break;
+		}
+	}
+
+	if (!background_flag_passed) {
+		data.backg = BACKG_DEFAULT;
+		data.backg_arr = malloc(data.backg * sizeof(int32_t *));
+		for (int i = 0; i < data.backg; ++i) {
+			data.backg_arr[i] = malloc(FFT_LEN * sizeof(int32_t));
 		}
 	}
 
@@ -404,6 +435,10 @@ int main(int argc, char **argv)
 	fprintf(stderr, "Capture ended.\n");
 cleanup:
 	pclose(data.pipe);
+	for (int i = 0; i < data.backg; ++i) {
+		free(data.backg_arr[i]);
+	}
+	free(data.backg_arr);
 	free(data.a_arr);
 	free(data.b_arr);
 	free(data.ctr_arr);
@@ -553,6 +588,32 @@ void interp_lin(int *data, unsigned int *valid, int len)
 	}
 }
 
+void subtract_background(struct data *data)
+{
+	if (data->backg_ctr < data->backg) {
+		for (int i = 0; i < FFT_LEN; ++i) {
+			data->backg_arr[data->backg_ctr][i] = data->a_arr[i];
+		}
+		++data->backg_ctr;
+	} else {
+		if (data->backg_ctr == data->backg) {
+			for (int i = 0; i < FFT_LEN; ++i) {
+				double avg = 0;
+				for (int j = 0; j < data->backg; ++j) {
+					avg += data->backg_arr[j][i];
+				}
+				avg /= data->backg;
+				data->backg_arr[0][i] = (int32_t)avg;
+			}
+			++data->backg_ctr;
+		}
+		for (int i = 0; i < FFT_LEN; ++i) {
+			int sub = data->a_arr[i] - data->backg_arr[0][i];
+			data->a_arr[i] = sub > 0 ? sub : 0;
+		}
+	}
+}
+
 void proc_fft(uint64_t rdval, struct data *data)
 {
 	int32_t fft;
@@ -587,7 +648,12 @@ void proc_fft(uint64_t rdval, struct data *data)
 				if (data->interp == LIN) {
 					interp_lin(data->a_arr, data->ctr_arr, FFT_LEN);
 				}
-				send_data(data);
+				if (data->backg > 0) {
+					subtract_background(data);
+				}
+				if (data->backg_ctr > data->backg || data->backg == 0) {
+					send_data(data);
+				}
 			}
 		}
 		data->last_rev_ctr = rev_ctr;
