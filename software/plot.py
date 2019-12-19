@@ -10,13 +10,14 @@ import numpy as np
 from scipy import signal
 from pyqtgraph.Qt import QtGui
 import pyqtgraph as pg
+import pyqtgraph.exporters
 
 FFT_LEN = 1024
 RAW_LEN = 8000
 
 # number of x points in the plot or hist
 PLOT_DOMAIN = 2000
-HIST_LEVELS = [0, 200]
+HIST_LEVELS = [0, 100]
 
 DOWNSAMPLE_FACTOR = 20
 
@@ -49,6 +50,7 @@ class PType(IntEnum):
 class Plot:
     def __init__(self):
         self.plot_type = None
+        self.fname = 0
         # initialize Qt
         self.app = QtGui.QApplication([])
         self.win = None
@@ -97,10 +99,27 @@ class Plot:
     def update_plot(self, data):
         if self.win is None:
             self._initialize_plot(data)
+        # TODO this is a temporary fix to remove the 500KHz tone. The
+        # proper solution is to fix the hardware.
+        llim = 256
+        ulim = 268
+        for i in range(llim, ulim):
+            if i < len(data.data[0]):
+                data.data[0][i] = data.data[0][i - (ulim - llim)]
         if self.plot_type == PType.HIST:
             val = data.data[0]
             if self.xval == PLOT_DOMAIN - 1:
-                # TODO is this the most efficient way to do this?
+                # save plot to 'plots' dir
+                exporter = pg.exporters.ImageExporter(self.img)
+                exporter.params.param("width").setValue(
+                    1920, blockSignal=exporter.widthChanged
+                )
+                exporter.params.param("height").setValue(
+                    1080, blockSignal=exporter.heightChanged
+                )
+                exporter.export("plots/" + str(self.fname) + ".png")
+                self.fname += 1
+                # zero data
                 self.data = np.zeros(np.shape(self.data))
                 self.xval = 0
             else:
@@ -112,6 +131,19 @@ class Plot:
         else:
             for val in data.data[0]:
                 if self.xval == PLOT_DOMAIN - 1:
+                    # save plot to 'plots' dir
+                    exporter = pg.exporters.ImageExporter(
+                        self.win.getPlotItem()
+                    )
+                    exporter.params.param("width").setValue(
+                        1080, blockSignal=exporter.widthChanged
+                    )
+                    exporter.params.param("height").setValue(
+                        1080, blockSignal=exporter.heightChanged
+                    )
+                    exporter.export("plots/" + str(self.fname) + ".png")
+                    self.fname += 1
+                    # zero data
                     self.data = np.zeros(np.shape(self.data))
                     self.xval = 0
                 else:

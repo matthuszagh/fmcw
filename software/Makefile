@@ -13,6 +13,8 @@ LINKER_FLAGS	:= $(shell libftdi1-config --libs) -lm -lpthread
 
 .PHONY: acquire
 acquire: fmcw
+	rm -rf plots
+	mkdir plots
 ifeq ($(DEBUG),0)
 	./fmcw
 endif
