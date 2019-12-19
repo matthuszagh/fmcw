@@ -97,7 +97,7 @@ module top #(
    localparam [$clog2(FFT_N-1)-1:0] FFT_N_CMP = FFT_N - 1;
    /* verilator lint_on WIDTH */
 
-   assign led_o       = ft245_en;
+   assign led_o       = ~pa_en_n_o;
    assign ext1_io[0]  = ramp_on;
    assign ext1_io[1]  = ramp_start;
    assign ext1_io[2]  = ft245_wrfifo_empty;
