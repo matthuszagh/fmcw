@@ -1,6 +1,6 @@
 EESchema Schematic File Version 4
 LIBS:fmcw-cache
-EELAYER 26 0
+EELAYER 30 0
 EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
@@ -1089,4 +1089,6 @@ Wire Wire Line
 	4000 1050 5400 1050
 Wire Wire Line
 	5650 1550 5950 1550
+Text Label 5150 1050 0    50   ~ 0
+3V0
 $EndSCHEMATC

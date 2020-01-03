@@ -1,4 +1,4 @@
-EESchema Schematic File Version 5
+EESchema Schematic File Version 4
 LIBS:fmcw-cache
 EELAYER 30 0
 EELAYER END

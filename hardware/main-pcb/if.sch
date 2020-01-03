@@ -1,6 +1,6 @@
 EESchema Schematic File Version 4
 LIBS:fmcw-cache
-EELAYER 26 0
+EELAYER 30 0
 EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
@@ -536,7 +536,7 @@ Wire Wire Line
 Text HLabel 2350 1950 0    60   Input ~ 0
 3V3
 $Comp
-L Amplifier_Difference:ADA4940-2 U?
+L fmcw-rescue:ADA4940-2-Amplifier_Difference U?
 U 1 1 5C3DAB96
 P 7750 2600
 AR Path="/5C3DAB96" Ref="U?"  Part="1" 
@@ -570,7 +570,7 @@ Connection ~ 7750 5600
 Wire Wire Line
 	7750 5600 7750 5700
 $Comp
-L Amplifier_Difference:ADA4940-2 U?
+L fmcw-rescue:ADA4940-2-Amplifier_Difference U?
 U 2 1 5C5E7E6D
 P 7750 5050
 AR Path="/5C5E7E6D" Ref="U?"  Part="2" 
@@ -708,7 +708,7 @@ Connection ~ 7300 5250
 Wire Wire Line
 	7300 5250 7450 5250
 $Comp
-L Amplifier_Difference:ADA4940-2 U39
+L fmcw-rescue:ADA4940-2-Amplifier_Difference U39
 U 3 1 5C404FEA
 P 2500 2850
 F 0 "U39" H 2652 2896 50  0000 L CNN
@@ -720,7 +720,7 @@ F 4 "ADA4940-2ACPZ-R2" H 0   0   50  0001 C CNN "MFN"
 	1    0    0    -1  
 $EndComp
 $Comp
-L Amplifier_Difference:ADA4940-2 U39
+L fmcw-rescue:ADA4940-2-Amplifier_Difference U39
 U 4 1 5C40EFFA
 P 2550 5250
 F 0 "U39" H 2602 5296 50  0000 L CNN

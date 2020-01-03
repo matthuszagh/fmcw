@@ -1,6 +1,6 @@
 EESchema Schematic File Version 4
 LIBS:fmcw-cache
-EELAYER 26 0
+EELAYER 30 0
 EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
@@ -1165,7 +1165,7 @@ Wire Wire Line
 Text Label 4300 4650 0    60   ~ 0
 3V3D
 $Comp
-L Memory_EEPROM:93LCxxBxxOT U8
+L fmcw-rescue:93LCxxBxxOT-Memory_EEPROM U8
 U 1 1 5C920D7F
 P 3500 7050
 F 0 "U8" H 3250 7300 50  0000 C CNN
