@@ -1,0 +1,639 @@
+#+title: Operation
+
+* Overview
+Broadly, the radar works by emitting a frequency ramp signal that
+reflects off a remote object and is detected by a receiver. Because
+the transmitted signal ramps at a known rate and travels through air
+at the speed of light, the frequency difference between the
+transmitted and received signals can be used to determine the distance
+to the remote object.
+
+* Physics
+** Operating principle
+The distance to a remote object is
+
+\(\begin{aligned}
+d &= \frac{c\Delta t}{2} \\
+\end{aligned}\)
+
+where \(\Delta t\) is the time delay between the transmitted and received
+signals and \(c\) is the speed of light in air. The factor of \(2\)
+accounts for the fact that the signal must travel the round-trip
+distance. The transmitted and received signals at the input to the
+mixer (see the [[id:012a28eb-d2bd-4cf4-8eed-832482c535cf][block diagram section]]) are shown in the plot below (as
+pictured, these are sawtooth ramp signals with a time delay between
+ramps).
+
+\begin{latex}
+\def\off{0.1}
+\def\sep{0.3}
+\begin{tikzpicture}[
+declare function={
+  f(\x) = and(\x >= 0, \x < 1) * \x
+          + and(\x >= 1, \x < 3) * 0
+          + and(\x >= 3, \x < 4) * (\x-3)
+          + and(\x >= 4, \x < 6) * 0
+          + and(\x >= 6, \x < 7) * (\x-6)
+          + and(\x >= 7, \x < 9) * 0
+          + and(\x >= 9, \x < 10) * (\x-9);
+},
+declare function={
+  tx(\x) = f(x-\off)+\off;
+},
+declare function={
+  rx(\x) = f(x-\off-\sep)+\off;
+}
+]
+\begin{axis}[
+  title=FMCW Tx - Rx Signal Delay,
+  xlabel={$t$},
+  ylabel={$f$},
+  width=15cm, height=8cm,
+  axis x line=bottom,
+  axis y line=left,
+  legend entries={tx, rx},
+  legend style={
+    fill=bg,
+    draw=fgcolor
+  },
+  xmin=0, ymin=0,
+  set layers=axis on top,
+  xtick=\empty,
+  ytick=\empty,
+]
+  \addplot[
+    domain=0:7,
+    samples=1000
+  ]
+  {tx(x)};
+  \addplot[
+    blue!20,
+    domain=0:7,
+    samples=1000
+  ]
+  {rx(x)};
+  \draw[dashed] (axis cs:3.3,0.3) --++(axis cs:\sep,0);
+  \draw ($(axis cs:3.3,0.3)+(axis cs:\sep/2,0)$) node[below,fill=bg] {$\Delta t$};
+  \draw[dashed] (axis cs:3.3+\sep,0.3) --++(axis cs:0,\sep);
+  \draw ($(axis cs:3.3+\sep,0.3)+(axis cs:0,\sep/2)$) node[right,fill=bg] {$\Delta f$};
+\end{axis}
+\end{tikzpicture}
+\end{latex}
+
+The ramp slope and duration are explicitly programmed. So, by finding
+the frequency difference between the transmitted and received signals,
+we can find the time difference and thus the distance:
+
+\(\begin{aligned}
+\Delta t &= \frac{\Delta f}{f_{\mathit{ramp}}} \\
+d &= \frac{c \Delta f}{2 f_{\mathit{ramp}}} \\
+\end{aligned}\)
+
+To find the frequency difference we note that the transmitted signal
+has the form (note that I've restricted \(t\) and \(t-\Delta t\) to be
+within the bounds of a single ramp period)
+
+\(\begin{aligned}
+s_{t}(t) &= T \sin\left(\omega(t) t\right)
+  && \text{$T$ is the transmission signal amplitude} \\
+&= T \sin\left(2 \pi f(t) t\right) \\
+&= T \sin\left(2 \pi t \left( f_0 + t \frac{f_{\mathit{ramp}}}{t_{\mathit{ramp}}}
+  \right) \right) \\
+\end{aligned}\)
+
+The received signal is just a time-delayed copy of the transmitted
+signal with a different amplitude. The amplitude changes because
+energy is lost as the wave propogates through air. Energy is
+proportional to the amplitude squared.
+
+\(\begin{aligned}
+s_r(t) &= \frac{R}{T} s_t(t-\Delta t) \\
+s_r(t) &= R \sin\left(\omega(t-\Delta t) \left(t-\Delta t\right)\right) \\
+&= R \sin\left(2 \pi f(t-\Delta t) \left(t-\Delta t\right)\right) \\
+\end{aligned}\)
+
+We can write this expression equivalently as
+
+\(\begin{aligned}
+s_r &= R \sin{\left(at - a\Delta t\right)} \\
+\end{aligned}\)
+
+where \(a=2\pi f(t-\Delta t)\). It's easy to see that this is
+approximately equal to \(R \sin{\left(at\right)}\). Look back at our
+distance equation in terms of the time delay. The max distance we'll
+try to detect is \(250\si{m}\) (more on this later). Using that value,
+we see that the maximum time delay is less than \(1.7\si{\mu s}\). In
+contrast the value of \(t\) during a sweep ranges from
+\(0-1\si{ms}\). So, for almost the entire ramp period, it's fair to
+assume \(t>>\Delta t\). Using this approximation, the equation for our
+received signal turns into
+
+\(\begin{aligned}
+s_r(t) &= R \sin\left(2 \pi t \left( f_0 + (t -\Delta t)
+  \frac{f_{\mathit{ramp}}}{t_{\mathit{ramp}}}\right)\right) \\
+\end{aligned}\)
+
+The product of two sine functions can be equivalently represented as
+
+\(\begin{aligned}
+\sin{\theta} \sin{\phi} &=
+  \frac{1}{2} \left[ \cos{\left(\theta - \phi\right)}
+  - \cos{\left(\theta + \phi\right)} \right] \\
+\end{aligned}\)
+
+In other words, as a combination of a sinusoid of the frequency sum
+and a sinusoid of the frequency difference. It's precisely the
+frequency difference that we want. Moreover, the frequency sum will be
+much higher than the frequency difference (about 4 orders of magnitude
+in our case). As a result, the circuitry that we use to pick up the
+difference frequency won't detect the sum frequency. Using this
+knowledge, we see that if we multiply the transmitted and received
+signals we get
+
+\(\begin{aligned}
+m &= TR \sin\left(2 \pi t \left( f_0 + t \frac{f_{\mathit{ramp}}}{t_{\mathit{ramp}}}
+  \right) \right) \sin\left(2 \pi t \left( f_0 + (t -\Delta t) \frac{f_{\mathit{ramp}}}{t_{\mathit{ramp}}}
+  \right) \right) \\
+&\approx TR \sin{\left(2\pi t \Delta t
+  \frac{f_{\mathit{ramp}}}{t_{\mathit{ramp}}}\right)} \\
+&\approx TR \sin{\left(2\pi t \Delta f\right)} \\
+\end{aligned}\)
+
+So, using a Fourier transform on the mixer output will tell us the
+frequency difference and thus the distance.
+
+** TODO Maximum range
+The maximum range of a radar can be determined using the radar
+equation, presented below.
+
+\(\begin{aligned}
+R_{max} &= \sqrt[4]{\frac{P_t G^2 \lambda^2 \sigma}
+  {P_{min}\left(4\pi\right)^3}} \\
+\end{aligned}\)
+
+where \(P_t\) is the transmitted power, \(G\) is the antenna gain,
+\(\lambda\) is the wavelength of our signal frequency, \(\sigma\) is
+the target cross-sectional area, and \(P_{min}\) is the minimum
+detectable signal power. I'll present the values here, but I will
+additionally explain how I got to them in the [[id:2892ed74-7258-4776-ae3d-a5a417dda02c][transmitter]] and [[id:5b91918a-80ec-4cff-af24-e620558c087a][receiver]]
+sections.
+
+TODO the transmitted power (antenna efficiency) and antenna gain need
+to be simulated, and are in general not in accordance with the values
+presented in the original PDF.
+
+For the wavelength, we use the center frequency of \(5.6\si{GHz}\)
+(\(\lambda = c/f_0\)), which corresponds to a wavelength of roughly
+\(5.4\si{cm}\). For the cross-sectional area we'll somewhat
+arbitrarily take \(1\si{m^2}\). It's worth noting for smaller objects
+that the max distance is proportional to the square root of one
+dimension of the remote object (assuming square objects). So, cutting
+the dimension in half (\(0.5\times 0.5\si{m}\)) makes the range
+roughly \(2/3\) of what we could expect previously.
+
+TODO minimum detectable power. See the PDF.
+
+** TODO Minimum range
+See the PDF. Also, I'm not sure if this should be its own
+section. Maybe they should be subsections under a "Range" section.
+
+** TODO Angle calculation
+** TODO Additional considerations
+*** TODO Doppler shift
+See PDF.
+
+* Block Diagram
+:PROPERTIES:
+:ID:       012a28eb-d2bd-4cf4-8eed-832482c535cf
+:END:
+
+\begin{latex}
+\newdimen\XCoord
+\newdimen\YCoord
+\newcommand*{\ExtractCoordinate}[1]{\path (#1); \pgfgetlastxy{\XCoord}{\YCoord};}%
+\ctikzset{resistors/scale=0.4}
+% tx
+\begin{circuitikz}[color=fgcolor]
+\draw (6,0) node[coupler](cpl){};
+\ExtractCoordinate{cpl.3}
+\draw (10,\YCoord) node[bareTXantenna](tx){Tx};
+\draw (cpl.3) -- (tx.bottom);
+\draw (cpl.1) --++(-0.5,0) to[R] ++(0,-1) node[tlground]{};
+\draw ($(cpl.4)-(6,0)$) node[oscillator](fs){};
+\draw (fs.east) to[amp,t=PA] (cpl.4);
+\draw (fs.north) node[above]{Frequency};
+\draw (fs.south) node[below]{Synthesizer};
+% rx
+\ExtractCoordinate{tx.center};
+\draw (\XCoord, -4) node[bareRXantenna, xscale=-1](rx){\scalebox{-1}[1]{Rx}};
+\draw (rx.center) to[short] ++(-2,0)
+  to[amp,t={\scalebox{-1}[-1]{\footnotesize LNA}}] ++(-2,0)
+  to[amp,t={\scalebox{-1}[-1]{RF}}] ++(-2,0) coordinate (n1);
+\draw (3, -4) node[mixer](mix){};
+\draw (n1) to[short] (mix.3);
+\ExtractCoordinate{mix.4};
+\draw (cpl.2) --++(1,0) --++(0,-2) -| (mix.4);
+\draw (mix.1) --++(-0.5,0) to[bandpass] ++(-2,0) to[amp,t={\scalebox{-1}[-1]{IF}}]
+  ++(-2,0) to[adc] ++(-2,0) --++(0,-2) coordinate (fpga) --++(0,-2)
+  to[twoport,t=FIR] ++(2,0) to[twoport,t=$20\downarrow$] ++(2,0)
+  to[twoport,name=window] ++(2,0) to[fft] ++(2,0) to[short,-o] ++(1,0)
+  node[right] {PC};
+\draw (window.north) node[above] {Window};
+\draw[dashed] ($(fpga)-(2,0)$) -- ($(fpga)+(8,0)$) node[below
+  left]{FPGA} -- ($(fpga)+(8,-4)$);
+\end{circuitikz}
+\end{latex}
+#+caption: FMCW radar block diagram. Note that downsampling is
+#+caption: actually performed as part of the FIR filter (not after)
+#+caption: for efficiency reasons. Functionally, the result is
+#+caption: identical.
+
+A frequency synthesizer generates a sinusoidal signal that ramps in
+frequency from \(5.3\) to \(5.9\si{GHz}\) over a duration of
+\(1\si{ms}\). The signal is then amplified and most of the power is
+sent to the transmission antenna. The remaining power is redirected to
+a mixer for multiplication with the received signal. The light echo of
+the transmitted signal is picked up by a reception antenna and
+amplified with a low-noise amplifier followed by a high-frequency
+amplifier. This amplified signal is mixed with the coupled portion of
+the transmitted signal and output as a differential signal. The mixer
+output is passed through a bandpass filter, which has a flat frequency
+response between about \(10\si{kHz}\) and \(1\si{MHz}\). The signal is
+then amplified again, digitized at a sampling rate of \(40\si{MHz}\),
+and passed to the FPGA. The FPGA first uses a polyphase FIR filter to
+simultaneously filter signals of frequency greater than \(1\si{MHz}\)
+and downsample the signal by a factor of 20 which reduces the
+computational load for subsequent processing/transmission stages. The
+signal is then multiplied by a kaiser window and finally transformed
+into its frequency composition with a 1024-point FFT. The frequency
+bins are then sent to a host PC for further processing and realtime
+plotting.
+
+* Transmitter
+:PROPERTIES:
+:ID:       2892ed74-7258-4776-ae3d-a5a417dda02c
+:END:
+The transmitter consists of a frequency synthesizer, VCO
+(voltage-controlled oscillator), and power amplifier, along with an
+amplifier, wilkinson power divider, several attenuators, and a
+directional coupler.
+
+\begin{circuitikz}[color=fgcolor]
+\ctikzset{multipoles/dipchip/width=2}
+\ctikzset{resistors/scale=0.4}
+\ctikzset{capacitors/scale=0.4}
+\ctikzset{grounds/scale=0.6}
+\draw (0,0) node[dipchip, num pins=10, hide numbers, no topmark,
+  external pins width=0](fs){ADF4158};
+\draw (fs.n) --++(0,0.5) node[vcc]{};
+\draw (fs.s) --++(0,-0.5) node[ground]{};
+\draw (fs.bpin 9) node[left, font=\tiny] {CP};
+\draw (fs.bpin 7) node[left, font=\tiny] {$f_{\text{VCO}}$};
+\draw (fs.w) node[right,font=\tiny]{$f_{\text{in}}$};
+\draw (fs.w) to[short,-o] ++(-0.5,0);
+\draw (fs.bpin 9) to[short,-*] ++(0.5,0) coordinate(cp) to[amp] ++(2,0)
+  to[vco] ++(1,0) to[TL] ++(2,0) node[wilkinson,anchor=in](wilk){};
+\draw (cp) to[C] ++(0,-0.75) node[tlground]{};
+\draw (wilk.out2) to[tattenuator,label=\SI{5}{dB}] ++(2,0) to[amp,t=PA] ++(2,0)
+  node[coupler,anchor=4](coupler){\SI{20}{dB}};
+\draw (coupler.3) --++(1,0) node[bareTXantenna,anchor=center]{};
+\draw (coupler.1) --++(-0.5,0) to[R] ++(0,-1) node[tlground]{};
+\draw (coupler.2) --++(0.5,0) to[short,-o] ++(0,-1) node[below]{to receiver};
+\draw (wilk.out1) --++(0.5,0) --++(0,-1)
+  to[tattenuator,mirror,label=\SI{3}{dB}] ++(-7,0) |- (fs.bpin 7);
+\end{circuitikz}
+#+caption: Transmitter block diagram.
+
+I included a single transmission line after the VCO to indicate that a
+transmission line with characteristic impedance of \(\SI{50}{\Omega}\)
+is required for each connection after the VCO (I've ommitted most of
+them to save space). The [[id:f361bbcc-7225-453e-a107-3f4793e4dd4a][RF simulation section]] describes how to design
+the microstrip transmission line.
+
+The ADF4158 frequency synthesizer is based on a fractional-N PLL
+(phase-locked loop) design. Chapter 13 of the Art of Electronics (3e)
+provides an excellent description of how a PLL works. I explain the
+relevant points here. The frequency synthesizer consists of a phase
+detector, lowpass filter, amplifier and VCO (our VCO is an external
+component). It looks like this (note that this diagram, along with the
+phase detector and VCO diagrams are adapted from AoE).
+
+\begin{circuitikz}[color=fgcolor]
+\draw[->] (0,0) node[left]{$f_{\mathit{REF}}$} to[short,o-] ++(1,0)
+  node[fourport,anchor=4,t=$\phi$-detector](phi){};
+\draw[->] ($(phi.3)!0.5!(phi.2)$) --++(1,0)
+  node[lowpassshape,anchor=w](lp){};
+\draw[->] (lp.e) --++(1,0) node[ampshape,anchor=w](amp){};
+\gettikzxy{(0,0)}{\finx}{\finy}
+\draw (amp.e) --++(1,0) --++(0,-1.5) coordinate(c1);
+\gettikzxy{(c1)}{\cx}{\cy}
+\gettikzxy{(phi.1)}{\phix}{\phiy}
+\draw[->] (c1) --++({(\finx-\cx)/2},0) coordinate(c3);
+\draw (c3) node[vcoshape,anchor=e](vco){};
+\gettikzxy{(vco.e)}{\vcoex}{\vcoey}
+\gettikzxy{(vco.w)}{\vcowx}{\vcowy}
+\draw (vco.w) --++({(\finx-\cx)/2+(\vcoex-\vcowx)},0)
+  --++(0,\phiy-\cy) coordinate(c2);
+\draw[->] (c2) -- (phi.1);
+\draw (c2) node[left]{$f_{\mathit{VCO}}$};
+\end{circuitikz}
+
+The phase detector, as the name suggests, outputs a voltage signal
+which corresponds to the difference in phase between two input
+frequencies. The VCO generates a frequency that is proportional to an
+input voltage. When the rising edge of \(f_{\mathit{REF}}\) occurs
+before the rising edge of
+
+\(f_{\mathit{in}}\) is a reference clock frequency (\(\SI{40}{MHz}\)
+from a crystal oscillator in our case).
+
+* Receiver
+:PROPERTIES:
+:ID:       5b91918a-80ec-4cff-af24-e620558c087a
+:END:
+* RF Simulations
+** Microstrip
+:PROPERTIES:
+:ID:       f361bbcc-7225-453e-a107-3f4793e4dd4a
+:END:
+*** via fence
+*** SMT ground cutout
+** Wilkinson power divider
+** Attenuator
+** SMA connector
+** Couplers
+*** 3dB
+*** 5dB
+*** 6dB
+** Antennas
+*** Horn
+*** Patch Array
+* Spice Simulations
+* FPGA
+:PROPERTIES:
+:ID:       6d0ccb21-c85b-417a-961e-5bbfb78717d9
+:END:
+* PC Software
+* OLD
+** block diagram
+** physics
+This FMCW radar can compute the 2-dimensional position to remote
+objects. It does this by computing the range and angle. Unlike some
+other radars, this radar does not measure doppler shift and as a
+result does not directly measure the speed of remote objects. However,
+the speed can be computed by taking the change in position over time.
+
+*** range
+The distance computation is performed by measuring the time between
+when a signal is transmitted and when it is received after having
+bounced off a remote object. Using the relationship between the speed
+of light and time of travel, we can back out the distance to a remote
+target.
+
+\(\displaystyle
+d = \frac{ct_d}{2}
+\)
+
+In order to measure the round-trip travel time, we transmit a
+sinusoidal signal that ramps in frequency at a predetermined rate
+between predetermined start and stop frequencies. The frequency-time
+graph of the transmitted and received signals is shown below.
+
+#+caption: FMCW frequency ramp.
+[[./data/fmcw-principle.png]]
+
+Since we know the ramp rate and duration of one ramp, we can replace
+our dependence on round-trip time with a dependence on frequency
+difference between our transmitted and received signals.
+
+\(\displaystyle
+d = \frac{ct_{\text{ramp}} \Delta f}{2f_{\text{ramp}}}
+\)
+
+Take the equation for a transmitted signal as
+
+\(\begin{aligned}
+  s_{\text{t}}(t) &= T \sin\left(\omega_{\text{t}}(t) t\right)  && \text{$T$ is the transmitted
+                                                                   signal's amplitude.} \\
+                  &= T \sin\left(2 \pi f(t) t\right) \\
+                  &= T \sin\left(2 \pi t \left( f_0 + t \frac{f_{\text{ramp}}}{t_{\text{ramp}}}
+                    \right) \right)
+\end{aligned}\)
+
+The corresponding received signal is (ignoring the doppler shift which
+is insignificant at the speeds we care about)
+
+\(\begin{aligned}
+  s_{\text{r}}(t) &= R \sin\left(\omega_{\text{r}}(t) t\right) \\
+                  &= R \sin\left(\omega_{\text{t}}(t-t_d) t\right) \\
+                  &= R \sin\left(2 \pi f(t-t_d) t\right) \\
+                  &= R \sin\left(2 \pi t \left( f_0 + (t-t_d) \frac{f_{\text{ramp}}}{t_{\text{ramp}}}
+                    \right) \right)
+\end{aligned}\)
+
+Mixing the transmitted and received signals gives
+
+\(\begin{aligned}
+  m &= TR \sin\left(2 \pi t \left( f_0 + t \frac{f_{\text{ramp}}}{t_{\text{ramp}}}
+                    \right) \right)
+      \sin\left(2 \pi t \left( f_0 + (t-t_d) \frac{f_{\text{ramp}}}{t_{\text{ramp}}}
+      \right) \right) \\
+  \sin\theta\sin\phi &= \frac{1}{2} \left[\cos(\theta-\phi) -
+                       \cos(\theta+\phi)\right] \\
+  &\approx \frac{1}{2}\cos(\theta-\phi) && \texttt{$\cos(\theta+\phi)$ is too high to
+    detect} \\
+  m &\approx \frac{1}{2}TR\cos(2\pi\Delta f t)
+\end{aligned}\)
+
+We can compute the fourier transform of the mixer output to get the
+frequency and then plug that into the range equation above to get the
+distance to the target. The amplitude of the mixer output is related
+to strength of the signal.
+
+*** angle
+The angle to the target is computed by beamforming
+(i.e. phase-shifting one channel and summing both channels). See
+hforsten's blog post for a description of this.
+
+**** WRONG
+To compute the angle to our target we can find the difference in
+distance computed by each channel. Naively, we could try to do this by
+using the same method as for the range calculation (i.e. compute the
+difference in the difference frequencies). However, the difference
+between the frequencies picked up by each receiver channel would be
+too small to detect. To see this, solve the distance equation above
+using a max distance difference of $\lambda/2$ (the distance between the
+receiver antennas). Using a center frequency of 5.6GHz and a ramp
+bandwidth of 600MHz, we get a maximum difference frequency of
+200Hz. When we compute the [[id:9a522962-63bc-4569-b042-3b691549b8a6][fourier transform]], the frequency bins will
+be spaced at 600kHz, which is way too crude to detect a 200Hz
+difference frequency.
+
+Instead, we can use the phase difference between the signals
+
+** modules
+*** fpga
+At startup, configure the ADF4158. Then, perform 8 consecutive signal
+ramps where each ramp delay is 2us and each duration is 0.512ms
+(0.512ms to pick up all 1024 desired samples, plus a delay at the
+beginning to avoid picking up any signals from the previous ramp,
+corresponding to the max distance of 250m). The first ramp is for
+antennas 1 and 2. The second is for antennas 3 and 4. The third and
+fourth are for antennas 5 and 6, and 7 and 8, respectively. The fifth
+ramp is for antennas 1 and 2 again. And so on until 8 ramps have
+completed. The FIR polyphase decomposition filter is performed in
+realtime during sampling. Additionally, since each antenna is recorded
+twice and averaged, we store 4x 1024, 16-bit samples (i.e. 65kb
+total).
+
+**** state machine
+
+\begin{latex}
+\usetikzlibrary{positioning}
+\usetikzlibrary{automata}
+\begin{tikzpicture}[shorten >=1pt, auto]
+  \node[state,initial] (adfconfig) {$\texttt{ADF config}$ \nodepart{lower} adf4158.enable=1};
+  \node[state, node distance=4] (fir) [right=of adfconfig] {$\texttt{FIR}$};
+  \node[state] (fifo) [right=of fir] {$\texttt{FIFO}$};
+  \node[state] (fft) [right=of fifo] {$\texttt{FFT}$};
+  \node[state] (ft245) [right=of fft] {$\texttt{FT245}$};
+
+  \path[->] (adfconfig) edge node {adf\_config\_done} (fir);
+\end{tikzpicture}
+\end{latex}
+
+*** frequency synthesizer
+Each frequency step is 300kHz and lasts $0.5\si{\mu s}$. There are 1028 steps.
+
+*** USB interface
+A FT2232H chip is used to pass data between the host PC and FPGA. It
+is used in 245 synchronous FIFO mode, which allows USB 2.0 high-speed
+transfer rates (480Mb/s).
+
+**** write transaction
+A write transaction transmits data from the FPGA to the host PC.
+
+***** timing details
+The FPGA sends the FT2232H chip data for transmission using the 8-bit
+ADBUS channel. The FT2232H registers this data and sends it over the
+DM and DP USB data lines to the PC. FT2232H signals that it can
+receive new data for transmission by driving the TXE# line low. When
+the TXE# line is low, the FPGA can signal data for transmission by
+driving the WR# line low and making the data available on the ADBUS
+channel.
+
+#+caption: FT2232H write transaction timing diagram. The setup time
+#+caption: for WR# and ADBUS0 is between 1/2 and 1 clock period.
+
+\begin{tikztimingtable}[%
+  timing/dslope=0.1,
+  timing/.style={x=5ex,y=2ex},
+  x=5ex,
+  timing/rowdist=3ex,
+  timing/name/.style={font=\sffamily\scriptsize}
+]
+\busref{CLKOUT (60MHz)} & 25{c} \\
+\busref{TXE\#}          & 3h 20l 2h \\
+\busref{WR\#}           & 5h 18l 2h \\
+\busref{ADBUS[7:0]}     & 5x 3d{0} 2d{1} 2d{2} 2d{3} 2d{4} 2d{5} 2d{6} 2d{7} 3x \\
+\extracode
+  \begin{pgfonlayer}{background}
+    \begin{scope}[thick]
+      \vertlines[blue]{3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5, 10.5}
+    \end{scope}
+  \end{pgfonlayer}
+\end{tikztimingtable}
+
+**** read transaction
+A read transaction sends data from the host PC to the FPGA.
+*** receiver
+*** digitization
+The ADC reads both analog input channels simultaneously and
+multiplexes the digital output on its 12-bit digital output
+channel. Channel A data is output roughly in line with the clock at
+high voltage and channel B is output roughly in line with the clock at
+low voltage.
+
+*** signal processing
+The FPGA receives a 12-bit sample from each channel every 25ns (40MHz)
+over a sweep duration of 1ms. Following the 1ms sweep, no data is
+received for 2ms after which the process repeats.
+
+**** big picture
+There are 8 antennas multiplexed over 2 receiver channels. Data is
+sampled at 40MHz with a twos complement precision of 12 bits. The data
+is filtered in real time by a polyphase decomposition FIR filter that
+removes signals over 1MHz (transition band from 0.95-1MHz). The
+polyphase filter downsamples to 2MHz. The reason for filtering >1MHz
+and downsampling to 2MHz is that once we downsample, our new sampling
+frequency will be 2MHz and so we won't be able to detect any
+frequencies above 1MHz. In fact, I believe any frequencies >1MHz will
+show up (incorrectly) as frequencies below 1MHz (this is aliasing). We
+want 1024 samples per channel (for the FFT) which, at 2MHz, means a
+sweep duration of just over 0.5ms (set with the ADF4158
+registers). There should then be a short delay of about 2us so that we
+don't sample a signal transmitted in a previous sweep. We sample every
+antenna twice and average over both sample sets, leaving 8 sequences
+of 1024 12-bit data points stored in block ram. We then perform an FFT
+on each of these 8 sequences. Then we perform an FFT across the angle
+dimension.
+
+**** filters
+***** FIR
+Use a polyphase decimation filter as described in Discrete-Time Signal
+Processing page 182.
+
+\begin{latex}
+  \def\dff(#1){
+  }
+  \begin{circuitikz}
+    \node at (0,-2) [twoport,draw,t=$\texttt{M}$] {};
+  \end{circuitikz}
+\end{latex}
+
+***** kaiser window
+After the FIR filter, a kaiser window is applied to the sample. This
+also occurs in real-time on the sample and involves a simple pointwise
+multiplication of each kaiser window coefficient by each sample.
+
+**** downsampling
+In order to make our data easier to process, we decimate it down to
+2MHz. This leaves us with 2000 samples per channel per 3ms.
+
+***** TODO correspondence b/e new frequency and max distance
+
+**** fft
+:PROPERTIES:
+:ID:       9a522962-63bc-4569-b042-3b691549b8a6
+:END:
+After downsampling we perform a real FFT. By pipelining, we can
+perform this in real-time as the signal is sampled. See the ZipCPU
+tutorial on how to do this.
+
+***** broad strokes
+We sample each receiver channel at a frequency of 2MHz over 1ms. This
+corresponds to 2000 samples per channel per sweep. We then take the
+FFT of each channel, which yields 2000 frequency bins. Since frequency
+resolution is equal to $\Delta f = f_s/N$, the frequency resolution is
+1kHz. However, only the first half of the bins give real results
+(critical sampling rate is twice nyquist frequency), so we are left
+with 1000 freq bins of 1kHz resolution. Using the range equation we
+can translate these frequency bins into distance bins, spaced 0.25m
+apart. The max distance is 250m. The magnitude in each bin corresponds
+to the strength of the signal at that distance.
+
+Now we have 2 rows of 1000 elements each. If we add 98 rows of 1000
+zeros each, and compute the fft for each column of 100, the first
+column represents the signal strength between 0 and 0.25m for each
+angle between -\pi and \pi radians?? The starting angle is the first row
+and the ending angle is the last row. The last column is the 250m
+distance for the same angles. Basically, we're left with the signal
+strength at each angle and distance.
+
+*** graphical rendering
+The host PC takes the range/angle data from the FPGA and plots it
+using matplotlib. See [[https://matplotlib.org/3.1.1/api/animation_api.html][this example]] and the [[https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.animation.FuncAnimation.html#matplotlib.animation.FuncAnimation][FuncAnimation]] documentation
+for how to perform realtime plots with matplotlib. The host PC
+simultaneously plots the realtime range and angle (using a polar plot,
+where each point is a dB strength) and an incrementally updated (also
+realtime) range-time plot. It provides the option to record both.
