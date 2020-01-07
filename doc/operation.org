@@ -310,42 +310,138 @@ is required for each connection after the VCO (I've ommitted most of
 them to save space). The [[id:f361bbcc-7225-453e-a107-3f4793e4dd4a][RF simulation section]] describes how to design
 the microstrip transmission line.
 
+** Frequency Synthesizer
 The ADF4158 frequency synthesizer is based on a fractional-N PLL
 (phase-locked loop) design. Chapter 13 of the Art of Electronics (3e)
 provides an excellent description of how a PLL works. I explain the
 relevant points here. The frequency synthesizer consists of a phase
-detector, lowpass filter, amplifier and VCO (our VCO is an external
-component). It looks like this (note that this diagram, along with the
-phase detector and VCO diagrams are adapted from AoE).
+detector and VCO (our VCO is an external component). It looks like
+this (note that this diagram, along with the phase detector and VCO
+diagrams are adapted from AoE).
 
 \begin{circuitikz}[color=fgcolor]
 \draw[->] (0,0) node[left]{$f_{\mathit{REF}}$} to[short,o-] ++(1,0)
-  node[fourport,anchor=4,t=$\phi$-detector](phi){};
-\draw[->] ($(phi.3)!0.5!(phi.2)$) --++(1,0)
-  node[lowpassshape,anchor=w](lp){};
-\draw[->] (lp.e) --++(1,0) node[ampshape,anchor=w](amp){};
-\gettikzxy{(0,0)}{\finx}{\finy}
-\draw (amp.e) --++(1,0) --++(0,-1.5) coordinate(c1);
-\gettikzxy{(c1)}{\cx}{\cy}
-\gettikzxy{(phi.1)}{\phix}{\phiy}
-\draw[->] (c1) --++({(\finx-\cx)/2},0) coordinate(c3);
-\draw (c3) node[vcoshape,anchor=e](vco){};
-\gettikzxy{(vco.e)}{\vcoex}{\vcoey}
-\gettikzxy{(vco.w)}{\vcowx}{\vcowy}
-\draw (vco.w) --++({(\finx-\cx)/2+(\vcoex-\vcowx)},0)
-  --++(0,\phiy-\cy) coordinate(c2);
-\draw[->] (c2) -- (phi.1);
-\draw (c2) node[left]{$f_{\mathit{VCO}}$};
+  node[twoportshape,t=$\div r$,anchor=w](r){};
+\draw[->] (r.e) --++(1,0) node[fourport,anchor=4,t=$\phi$-detector](det){};
+\draw[->] ($(det.3)!0.5!(det.2)$) --++(1,0) coordinate(c1);
+\draw (c1) node[vcoshape,anchor=w](vco){};
+\draw[->] (vco.e) --++(2,0) node[right]{$f_{\mathit{VCO}}$};
+\draw[->] (vco.e) ++(1,0) to[short,*-] ++(0,-1.5) --++(-1,0)
+  node[twoportshape,t=$\div n$,anchor=e](n){};
+\draw[->] (n.w) --++(-3.5,0) |- (det.1);
 \end{circuitikz}
 
 The phase detector, as the name suggests, outputs a voltage signal
 which corresponds to the difference in phase between two input
 frequencies. The VCO generates a frequency that is proportional to an
-input voltage. When the rising edge of \(f_{\mathit{REF}}\) occurs
-before the rising edge of
+input voltage. Forget the frequency divider blocks for a minute. We'll
+get back to them. \(f_{\mathit{REF}}\) is a reference frequency. In
+our case this is a \(\SI{40}{MHz}\) clock frequency. Imagine that the
+rising edge of \(f_{\mathit{REF}}\) occurs before the rising edge of
+\(f_{\mathit{VCO}}\). In response, the phase detector increases it's
+output voltage corresponding to the duration of time that
+\(f_{\mathit{REF}}\) leads \(f_{\mathit{VCO}}\). This causes the VCO
+output frequency to increase accordingly and the next edge of the VCO
+output to occur sooner than the previous one. So, the phase gap
+diminishes. The opposite occurs when \(f_{\mathit{REF}}\) lags behind
+\(f_{\mathit{VCO}}\). The phase detector is detecting differences in
+phase, not frequency. However, any differences in frequency will lead
+to phase differences and thus the phase detector will cause the
+frequency and phase of \(f_{\mathit{VCO}}\) to converge to that of
+\(f_{\mathit{REF}}\). It's worth noting that we're talking about
+signal edges even though \(f_{\mathit{VCO}}\) is a sinusoidal
+signal. We can use a Schmitt trigger to turn this into a fast edge.
 
-\(f_{\mathit{in}}\) is a reference clock frequency (\(\SI{40}{MHz}\)
-from a crystal oscillator in our case).
+All we've done so far is take \(f_{\mathit{REF}}\) and generate
+another signal \(f_{\mathit{VCO}}\) with identical frequency and
+phase, which isn't particularly useful. This is where the frequency
+dividers come in. The R divider takes \(f_{\mathit{REF}}\) and outputs
+a frequency \(f_{\mathit{REF}}/r\). The N divider does the same thing
+for \(f_{\mathit{VCO}}\). So, what we're doing is setting
+
+\(\begin{aligned}
+\frac{f_{\mathit{VCO}}}{n} &= \frac{f_{\mathit{REF}}}{r}\\
+f_{\mathit{VCO}} &= f_{\mathit{REF}} \left(\frac{n}{r}\right)\\
+\end{aligned}\)
+
+By setting \(n\) much larger than \(r\), we can generate an output
+frequency that is much higher than the reference frequency. The
+diagram above isn't completely accurate. What we've shown is an
+integer-N frequency synthesizer, whereas the device we're using is a
+fractional-N frequency synthesizer. The practical difference is that
+our value of \(n\) can be non-integral and thus allows more precise
+control of the output voltage.
+
+*** Phase Detector
+I've ommitted some important details about how the phase-detector
+controls the voltage input to the VCO, which I'll discuss now.
+
+Here's a possible implementation of a phase detector, taken from AoE.
+
+\begin{circuitikz}[color=fgcolor]
+\ctikzset{flipflops/scale=0.8}
+\draw (0,0) node[flipflop D, add async SR](ff1){};
+\draw (0,-3) node[flipflop D, add async SR](ff2){};
+\draw ($(ff1.pin 1)+(-1,1)$) node[above]{$V_+$} to[short,o-*] ++(0,-1) coordinate(c1)
+  --++(1,0);
+\draw (c1) |- (ff2.pin 1);
+\draw (ff1.pin 3) to[short,-o] ++(-2,0) node[left]{$f_{\mathit{REF}}$};
+\draw (ff2.pin 3) to[short,-o] ++(-2,0) node[left]{$f_{\mathit{VCO}}$};
+\draw (ff1.pin 6) to[short,-*] ++(2,0) coordinate(c2);
+\draw[->] (c2) --++(4,0) coordinate(c3);
+\draw (c3) node[isourceAMshape,anchor=s,rotate=-90](i1){};
+\draw (ff2.pin 6) to[short,-*] ++(2,0) coordinate(c4);
+\draw[->] (c4) --++(4,0) coordinate(c5);
+\draw (c5) node[isourceAMshape,anchor=s,rotate=-90](i2){};
+\draw ($(c2)!0.5!(c4)+(2,0)$) node[american and port](and){};
+\draw (c2) |- (and.in 1);
+\draw (c4) |- (and.in 2);
+\draw (and.out) --++(0.5,0) --++(0,-4) --++(-0.5,0) node[american not
+  port,anchor=in,xscale=-1](n1){};
+\draw (n1.out) --++(-0.5,0) node[american not port,anchor=in,xscale=-1](n2){};
+\draw (n2.out) --++(-0.5,0) coordinate(c7) -| (ff2.down);
+\draw (c7) to[short,*-] ++(0,3.5) --++(-0.5,0) -| (ff1.down);
+\draw (i1.w) --++(0,1) node[vcc]{};
+\draw (i2.e) --++(0,-1) node[ground](gnd){};
+\draw (i1.e) -- (i2.w);
+\draw ($(i1.e)!0.5!(i2.w)$) to[short,*-*] ++(2,0) coordinate(c6)
+  to[short,-o] ++(2,0) node[right]{$V_{\mathit{out}}$};
+\gettikzxy{(gnd)}{\gndx}{\gndy}
+\gettikzxy{(c6)}{\cx}{\cy}
+\draw (c6) to[C] ++(0,\gndy-\cy) node[ground]{};
+\end{circuitikz}
+
+A high voltage level at the left input of each current source
+activates the current source. Ignore the NOT buffers for now, I'll
+discuss them in a minute. A positive voltage is constantly applied to
+the D-input of each flip-flop. The outputs are set (brought to
+digital 1) when the rising edge of the clock signal appears. Because
+of the AND gate, both outputs are cleared (brought down to digital 0)
+when both outputs are simultaneously set. Therefore, each flip-flop's
+current source is only active for the duration of time when its
+flip-flop is set and the other flip-flop is not set. The current
+sources act as a charge pump. The top current source charges up the
+capacitor and thus increases the voltage across it linearly with time
+\(dV=(I/C)dt\). Similarly, the bottom current source decreases the
+voltage across the capacitor. In other words, we are able to increase
+or decrease the voltage to the VCO proportional to the phase lag
+between the two signals.
+
+Even if the purpose of the NOT gates is not immediately clear, it
+should be easy to see that they are harmless. That is, the effect of
+both current sources being active simultaneously is the same as both
+being inactive since the bottom current source will sink all the
+current from the top source and the voltage across the capacitor will
+remain unchanged. The delay provided by the chained NOT gates is
+necessary to ensure phase-locking when the phase difference between
+the signals becomes very small. The reason for this is that the
+transistor used to implement the current source has a parasitic
+capacitance between the base and emitter, or gate and
+source. Therefore the voltage difference between the terminals has a
+nonzero rise time and so for very short activation periods, the
+base-emitter or gate-source voltage will never rise enough to allow
+the transistor to conduct, preventing the frequencies from ever
+locking.
 
 * Receiver
 :PROPERTIES:
