@@ -8,6 +8,19 @@ at the speed of light, the frequency difference between the
 transmitted and received signals can be used to determine the distance
 to the remote object.
 
+** Note to the reader
+A number of sections go into significant detail about various parts of
+the radar. This information is not necessary to understand what the
+radar does and broadly how it does it. Furthermore, it can even
+distract from these goals. However, I believe this information is
+important, especially for people attempting to understand the radar in
+detail and reproduce it themselves, and so I've kept it in. I've
+placed the detailed information in subsections with links at the top
+of those sections to the next high-level section. I hope that by
+making it easy to skip these sections, this documentation will
+simultaneously be useful to people who just want the overview and to
+people who want to go into more detail.
+
 * Physics
 ** Operating principle
 The distance to a remote object is
