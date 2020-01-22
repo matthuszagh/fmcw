@@ -12,7 +12,7 @@ to the remote object.
 A number of sections go into significant detail about various parts of
 the radar. This information is not necessary to understand what the
 radar does and broadly how it does it. Furthermore, it can even
-distract from these goals. However, I believe this information is
+distract from these goals. Still, I believe this information is
 important, especially for people attempting to understand the radar in
 detail and reproduce it themselves, and so I've kept it in. I've
 placed the detailed information in subsections with links at the top
@@ -482,6 +482,102 @@ locking.
 :PROPERTIES:
 :ID:       6d0ccb21-c85b-417a-961e-5bbfb78717d9
 :END:
+
+\begin{circuitikz}[color=fgcolor]
+\ctikzset{multipoles/dipchip/width=6/5}
+\tikzset{demux/.style={muxdemux, muxdemux def={Lh=1, Rh=2, NL=1, NB=0,
+  NR=2, w=1}}}
+\tikzset{smallMux/.style={muxdemux, muxdemux def={Lh=2, Rh=1, NL=2, NB=0,
+  NR=1, w=1}}}
+\tikzset{largeMux/.style={muxdemux, muxdemux def={Lh=4, Rh=2, NL=4, NB=0,
+  NT=1, NR=1, w=1.5}}}
+\def\block{node[dipchip, num pins=6, hide numbers, no topmark, external
+  pins width=0,anchor=bpin 2]}
+\def\blockTop{node[dipchip, num pins=6, hide numbers, no topmark, external
+  pins width=0,anchor=n]}
+\def\smallBlock{node[dipchip, num pins=2, hide numbers, no topmark, external
+  pins width=0,anchor=n]}
+\def\smallBlockRight{node[dipchip, num pins=2, hide numbers, no topmark, external
+  pins width=0,anchor=bpin 2]}
+\def\smallBlockBottom{node[dipchip, num pins=2, hide numbers, no topmark, external
+  pins width=0,anchor=s]}
+\def\pcblock{node[dipchip, num pins=4, hide numbers, no topmark, external
+  pins width=0,anchor=bpin 3]}
+%% ADF4158 and control
+\draw (0,0) node[left]{\footnotesize muxout} --++(2,0)
+  node[inputarrow]{} \block(adf){\footnotesize ADF4158};
+\draw (adf.bpin 5) to[short] ++(1.5,0) node[inputarrow]{}
+  \block(control){\footnotesize control};
+%% ADC
+\draw (0,-3) node[left]{\footnotesize adc\_d\_i} --++(2,0)
+  node[inputarrow]{} node[demux, anchor=west](demux){};
+%% processing blocks
+\draw ($(adf.bpin 5)!0.5!(control.bpin 2)$) node[above]{\tiny ramp start};
+\draw (control.bpin 4) -|++(1,-1) node[inputarrow,rotate=-90]{} coordinate (b);
+\draw (b) node[below]{\tiny en} \blockTop(fir){\footnotesize FIR};
+\draw (fir.bpin 5) --++(1,0) node[inputarrow]{}
+  \block(kaiser){\footnotesize kaiser};
+\draw ($(fir.bpin 5)!0.5!(kaiser.bpin 2)$) node[above]{\tiny
+  2MHz} coordinate(firOut);
+\draw (control.bpin 5) -| (kaiser.n) node[inputarrow,rotate=-90]{}
+  node[below]{\tiny en};
+\draw (kaiser.bpin 5) --++(1,0) node[inputarrow]{}
+  \block(fifo){\footnotesize FIFO};
+\draw ($(kaiser.bpin 5)!0.5!(fifo.bpin 2)$) coordinate(kaiserOut);
+\draw (fifo.bpin 5) --++(1,0) node[inputarrow]{}
+  \block(fft){\footnotesize FFT};
+\draw ($(fifo.bpin 5)!0.5!(fft.bpin 2)$) node[above]{\tiny 40MHz};
+\draw (control.bpin 6) -| (fft.n) node[inputarrow,rotate=-90]{}
+  node[below]{\tiny en};
+%% ADC to FIR
+\draw (demux.rpin 1) node[above right]{\tiny chA} --++(1,0) |-
+  (fir.bpin 2) node[inputarrow]{};
+\draw (demux.rpin 2) node[right]{\tiny chB} node[ocirc,fill=bg]{};
+%% data output
+\draw ($(fft.s)-(0.28,0)$) node[above]{\tiny Im}
+  --++(0,-1) coordinate (fftIm);
+\draw ($(fft.s)+(0.28,0)$) node[above]{\tiny Re}
+  --++(0,-1) coordinate (fftRe);
+\draw (fftIm) node[smallMux,anchor=lpin 2,rotate=-90](smallMux){};
+\draw (smallMux.rpin 1) --++(0,-0.3) node[left]{\tiny 80MHz}
+  --++(0,-0.7) coordinate(c) \smallBlock(ellipsisBlock){\tiny
+  \textellipsis};
+\draw (ellipsisBlock.s) \smallBlock(imblock){\tiny Im};
+\draw (imblock.s) \smallBlock(reblock){\tiny Re};
+\draw (reblock.s) --++(0,-1) node[inputarrow,rotate=-90]{}
+  \blockTop(fifob){\footnotesize FIFO};
+\gettikzxy{(control.bpin 5)}{\controlRightX}{\controlRightY}
+\gettikzxy{(fifob.bpin 2)}{\fifoBLeftX}{\fifoBLeftY}
+\draw (fifob.bpin 2) node[above left]{\tiny 40MHz}
+  --++(\controlRightX-\fifoBLeftX,0) node[largeMux,anchor=lpin
+  4,xscale=-1](largemux){};
+\gettikzxy{(adf.bpin 5)}{\adfRightX}{\adfRightY}
+\gettikzxy{(largemux.rpin 1)}{\largemuxOutX}{\largemuxOutY}
+\draw (largemux.rpin 1) --++(\adfRightX-\largemuxOutX,0)
+  node[inputarrow,rotate=180]{} \smallBlockRight(wrfifo){\tiny write
+  FIFO};
+\draw (wrfifo.n) \smallBlockBottom(rdfifo){\tiny read FIFO};
+\draw (rdfifo.n) node[above]{\footnotesize FT245};
+\draw (rdfifo.bpin 2) --++(0.25,0) |-++(0.25,2) node[inputarrow]{}
+  \block(controlb){\footnotesize control};
+\draw (controlb.bpin 5) -| (largemux.tpin 1) node[left]{\tiny
+  OP STATE};
+\draw (firOut) to[short,*-] ++(0,-1) |- (largemux.lpin 2);
+\draw (kaiserOut) to[short,*-] ++(0,-1) |- (largemux.lpin 3);
+\draw (1.5,-3) node[above]{\tiny 40MHz} to[short,*-] ++(0,-1)
+  --++(6,0) |- (largemux.lpin 1);
+\gettikzxy{(wrfifo.bpin 1)}{\wrfifoLeftX}{\wrfifoLeftY}
+\draw (wrfifo.bpin 1) --++(-\wrfifoLeftX,0)
+  node[inputarrow,rotate=180]{} \pcblock(pc){\footnotesize PC};
+\draw (pc.bpin 4) -- (rdfifo.bpin 1) node[inputarrow]{};
+%% PCB and PC demarcation
+\draw[dashed] (0.5,1) node[below left]{\footnotesize PCB} |- (-1,-4);
+\draw[dashed] (-1,-7) node[below right]{\footnotesize PC} -| (0.5,-11);
+\end{circuitikz}
+
+** FIR
+** Kaiser Window
+** FFT
 * PC Software
 * OLD
 ** block diagram
