@@ -612,13 +612,32 @@ the fully-processed FFT output.
 \draw (pc.bpin 4) -- (rdfifo.bpin 1) node[inputarrow]{};
 %% PCB and PC demarcation
 \draw[dashed] (0.5,1) node[below left]{\footnotesize PCB} |- (-1,-4);
-\draw[dashed] (-1,-7) -| (0.5,-11) node[above left]{\footnotesize PC};
+\draw[dashed] (-1,-7) -| (0.5,-11);
 \end{circuitikz}
 
-** FIR
+** FIR Polyphase Decimation Filter
 :PROPERTIES:
 :ID:       feb22339-7b6b-495b-9432-3999c179b164
 :END:
+The FIR polyphase decimation filter has two functions: it filters out
+signals above 1MHz and downsamples the data to 2MHz. 1MHz corresponds
+to the maximum distance and the new 2MHz sampling rate ensures we stay
+above the Nyquist rate to avoid aliasing.
+
+We can't downsample before filtering because that would alias signals
+above 1MHz into our filtered output. However, filtering before
+downsampling requires us to perform filtering on the full 40MHz input,
+which is inefficient because most of this data would be immediately
+discarded. Fortunately, we can use a polyphase decimation filter to
+get the best of both worlds (see the [[id:491617b7-7ba2-4a76-9a68-89ff7f8608b9][implementation section]] for
+details).
+
+*** TODO Implementation
+:PROPERTIES:
+:ID:       491617b7-7ba2-4a76-9a68-89ff7f8608b9
+:END:
+Next high-level section: [[id:0a0cea3d-b2d1-4b95-bc76-719e0f499fec][Kaiser Window]]
+
 ** Kaiser Window
 :PROPERTIES:
 :ID:       0a0cea3d-b2d1-4b95-bc76-719e0f499fec
