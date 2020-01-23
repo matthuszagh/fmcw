@@ -622,8 +622,9 @@ the fully-processed FFT output.
 :END:
 The FIR polyphase decimation filter has two functions: it filters out
 signals above 1MHz and downsamples the data to 2MHz. 1MHz corresponds
-to the maximum distance and the new 2MHz sampling rate ensures we stay
-above the Nyquist rate to avoid aliasing.
+to the maximum distance we're interested in detecting and the new 2MHz
+sampling rate ensures we stay above the Nyquist rate to avoid
+aliasing.
 
 We can't downsample before filtering because that would alias signals
 above 1MHz into our filtered output. However, filtering before
