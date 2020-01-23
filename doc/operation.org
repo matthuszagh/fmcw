@@ -644,6 +644,326 @@ Next high-level section: [[id:0a0cea3d-b2d1-4b95-bc76-719e0f499fec][Kaiser Windo
 :PROPERTIES:
 :ID:       0a0cea3d-b2d1-4b95-bc76-719e0f499fec
 :END:
+Windowing is used to reduce spectral leakage in our input signal
+before performing an FFT on that signal. This section's subsections
+describe [[id:d6b994f0-0684-404f-ba91-36ab68e4f6b1][what spectral leakage is]], [[id:f4a4c107-8006-4ed5-ab5c-5ecfedc450e1][how windowing helps to reduce it]],
+and [[id:b3437309-97a4-47fc-b51f-9ac373300bf8][how to implement a window function on an FPGA]].
+
+*** Spectral Leakage
+:PROPERTIES:
+:ID:       d6b994f0-0684-404f-ba91-36ab68e4f6b1
+:END:
+Next high-level section: [[id:5535c7fa-c614-4b3e-ac41-efa5581223b6][FFT]]
+
+Spectral leakage occurs when an operation introduces frequencies into
+a signal that were not present in the original signal. In our case,
+spectral leakage is due to an implicit rectangular window performed on
+our input by taking a finite-duration subsample of the original
+signal. The plots below illustrate this effect for a single-frequency
+sinusoidal input.
+
+\begin{tikzpicture}
+\def\freq{4.5}
+\begin{groupplot}[
+  group style={group size=1 by 3, vertical sep=1cm},
+  axis x line=middle,
+  axis y line=middle,
+  height=4cm, width=10cm,
+  xmin=-2*pi, xmax=2*pi,
+  ymin=-1.5, ymax=1.5,
+  xtick=\empty, xticklabels=\empty,
+  ytick=\empty, yticklabels=\empty,
+  xticklabel style={
+    fill=bg
+  },
+]
+  \nextgroupplot[
+    title={\footnotesize Pure Sine Wave Input},
+    xlabel={$t$},
+    ylabel={$A$},
+  ]
+  \addplot[
+    domain=-2*pi:2*pi,
+    samples=1000,
+    blue!20,
+  ] {sin(deg(\freq*x))};
+
+  \nextgroupplot[
+    title={\footnotesize Implicit Rectangular Window},
+  ]
+  \addplot[
+    domain=-pi:pi,
+    samples=100,
+    blue!20,
+  ] {1};
+  \addplot[
+    domain=-2*pi:-pi,
+    samples=100,
+    blue!20,
+  ] {0};
+  \addplot[
+    domain=pi:2*pi,
+    samples=100,
+    blue!20,
+  ] {0};
+  \draw[blue!20] (axis cs:(-pi,0) -- (-pi,1));
+  \draw[blue!20] (axis cs:(pi,0) -- (pi,1));
+
+  \nextgroupplot[
+    title={\footnotesize Actual Input},
+  ]
+  \addplot[
+    domain=-pi:pi,
+    samples=500,
+    blue!20,
+  ] {sin(deg(\freq*x))};
+  \addplot[
+    domain=-2*pi:-pi,
+    samples=100,
+    blue!20,
+  ] {0};
+  \addplot[
+    domain=pi:2*pi,
+    samples=100,
+    blue!20,
+  ] {0};
+  \draw[blue!20] (axis cs:(-pi,0) -- (-pi,sin(deg(\freq*-pi))));
+  \draw[blue!20] (axis cs:(pi,0) -- (pi,sin(deg(\freq*pi))));
+\end{groupplot}
+\end{tikzpicture}
+
+We see that the beginning and end of the sample sequence jump from
+zero to some nonzero value. This corresponds to a range of frequency
+components not present in the original signal but that we can detect
+in the FFT output. Note that we could eliminate the spectral leakage
+by windowing an exact integral number of periods of the input
+signal. But, we can't rely on being able to do this, especially for
+signals composed of multiple frequencies.
+
+Let's use some example sample sequences to illustrate the various
+effects spectral leakage can have.
+
+Start with a simple sinusoid with frequency 1Hz. We'll always ensure
+the sampling rate is at or above the Nyquist rate to avoid aliasing.
+
+The first plot shows the input sample sequence.
+
+#+header: :file data/spectral-leakage-ex1-seq.dat
+#+header: :session spectral-leakage
+#+begin_src python :results output silent file :hidden
+import numpy as np
+
+f = 1
+ts = f / 3
+fs = 1 / ts
+t = np.arange(0, 5.1 * f, step=ts)
+s = np.sin(2*np.pi*f*t)
+print("time signal")
+for x, y in zip(t, s):
+    print("{:.5f} {:.5f}".format(x, y))
+#+end_src
+
+\begin{tikzpicture}
+\begin{axis}[
+  xlabel={$t$},
+  axis x line=middle,
+  axis y line=middle,
+  set layers=axis on top,
+  xticklabel style={
+    fill=bg
+  }
+]
+  \addplot[
+    domain=0:5,
+    samples=500,
+  ] {sin(deg(2*pi*x))};
+  \addplot[
+    only marks,
+    mark options={blue!50,scale=0.75},
+  ] table[x=time, y=signal] {data/spectral-leakage-ex1-seq.dat};
+\end{axis}
+\end{tikzpicture}
+
+This yields the fourier transform output
+
+#+header: :file data/spectral-leakage-ex1-fft.dat
+#+header: :session spectral-leakage
+#+begin_src python :results output silent file :hidden
+fft = np.absolute(np.fft.rfft(s))
+fft /= np.sum(fft)
+bins = np.fft.rfftfreq(len(t))
+print("bin fft")
+for x, y in zip(bins, fft):
+    print("{:.5f} {:.5f}".format(x * fs, y))
+#+end_src
+
+\begin{tikzpicture}
+\begin{axis}[
+  xlabel={$f$},
+  set layers=axis on top,
+  xtick=data,
+  xticklabel style={
+    font=\footnotesize,
+    fill=bg
+  },
+  ybar,
+]
+  \addplot[fill=blue!75] table[x=bin, y=fft] {data/spectral-leakage-ex1-fft.dat};
+\end{axis}
+\end{tikzpicture}
+
+If the FFT were correctly representing the true input signal, the
+entire spectral content would be within the 0.94Hz frequency bin (this
+includes the 1Hz frequency). The fact that it also registers spectral
+content at other frequencies is the spectral leakage.
+
+If we change the phase of the input signal, the output will change as
+well, which shows the dependence of our output on uncontrolled
+variations in the input.
+
+#+header: :file data/spectral-leakage-ex2-seq.dat
+#+header: :session spectral-leakage2
+#+begin_src python :results output silent file :hidden
+import numpy as np
+
+f = 1
+ts = f / 3
+fs = 1 / ts
+t = np.arange(0, 5.1 * f, step=ts)
+s = np.sin(2*np.pi*f*t + (f/2))
+print("time signal")
+for x, y in zip(t, s):
+    print("{:.5f} {:.5f}".format(x, y))
+#+end_src
+
+\begin{tikzpicture}
+\begin{axis}[
+  xlabel={$t$},
+  axis x line=middle,
+  axis y line=middle,
+  set layers=axis on top,
+  xticklabel style={
+    fill=bg
+  }
+]
+  \addplot[
+    domain=0:5,
+    samples=500,
+  ] {sin(deg(2*pi*x+(1/2)))};
+  \addplot[
+    only marks,
+    mark options={blue!50,scale=0.75},
+  ] table[x=time, y=signal] {data/spectral-leakage-ex2-seq.dat};
+\end{axis}
+\end{tikzpicture}
+
+#+header: :file data/spectral-leakage-ex2-fft.dat
+#+header: :session spectral-leakage2
+#+begin_src python :results output silent file :hidden
+fft = np.absolute(np.fft.rfft(s))
+fft /= np.sum(fft)
+bins = np.fft.rfftfreq(len(t))
+print("bin fft")
+for x, y in zip(bins, fft):
+    print("{:.5f} {:.5f}".format(x * fs, y))
+#+end_src
+
+\begin{tikzpicture}
+\begin{axis}[
+  xlabel={$f$},
+  set layers=axis on top,
+  xtick=data,
+  xticklabel style={
+    font=\footnotesize,
+    fill=bg
+  },
+  ybar,
+  legend entries={original, phase-shifted},
+  legend pos=north west,
+  legend style={
+    fill=bg,
+    draw=fgcolor
+  },
+]
+  \addplot[fill=fgcolor] table[x=bin, y=fft] {data/spectral-leakage-ex1-fft.dat};
+  \addplot[blue!75,fill=blue!75] table[x=bin, y=fft] {data/spectral-leakage-ex2-fft.dat};
+\end{axis}
+\end{tikzpicture}
+
+The plot below shows the effect of using a larger FFT on the spectral
+leakage. Namely, the leakage still exists, but is less
+pronounced. This is expected since in the limit that the FFT length
+approaches infinity, the spectral leakage should disappear.
+
+#+header: :file data/windowing-purpose.dat
+#+begin_src python :results output silent file :hidden
+import numpy as np
+
+f = 1
+ts = f / 3
+fs = 1 / ts
+
+x = [np.arange(i, step=ts) for i in (5.1, 1e3 + 0.1)]
+y = [np.sin(2 * np.pi * f * i) for i in x]
+fft = [np.absolute(np.fft.rfft(i)) for i in y]
+sample_bins = [np.fft.rfftfreq(len(i)) for i in x]
+# rebin all ffts to first fft bins so they can be compared
+fft_rebin = [np.zeros(len(sample_bins[0])) for i in range(len(x))]
+for i, bin_cmp in enumerate(sample_bins[0]):
+    if i < len(sample_bins[0]) - 1:
+        next_bin = sample_bins[0][i + 1]
+    else:
+        # choice of 1 is arbitrary, just needs to be at least an
+        # additional interval
+        next_bin = bin_cmp + 1
+    for bin_idx in range(1, len(x)):
+        bins = sample_bins[bin_idx]
+        for j, bin_other in enumerate(bins):
+            if bin_other >= bin_cmp and bin_other < next_bin:
+                fft_rebin[bin_idx][i] += fft[bin_idx][j]
+
+fft_rebin[0] = fft[0]
+# normalize fft
+fft_norm = [i / np.sum(i) for i in fft_rebin]
+print("{:5}  {:10}  {:10}".format("bin", "fft0", "fft1"))
+for i, bin_val in enumerate(sample_bins[0]):
+    print(
+        "{:.3f}  {:.8f}  {:.8f}".format(
+            bin_val * fs, fft_norm[0][i], fft_norm[1][i]
+        )
+    )
+#+end_src
+
+\begin{tikzpicture}
+\begin{axis}[
+  title=Spectral Leakage (FFT Length Effect),
+  xlabel={$f$},
+  ylabel={FFT Amplitude},
+  ybar,
+  legend entries={$N=16$, $N=3001$},
+  legend pos=north west,
+  legend style={
+    fill=bg,
+    draw=fgcolor
+  },
+  set layers=axis on top,
+  xticklabel style={
+    fill=bg
+  }
+]
+  \addplot[fill=fgcolor] table[x=bin, y=fft0] {data/windowing-purpose.dat};
+  \addplot[blue!75, fill=blue!75] table[x=bin, y=fft1] {data/windowing-purpose.dat};
+\end{axis}
+\end{tikzpicture}
+
+*** Effect of Windowing on Spectral Leakage
+:PROPERTIES:
+:ID:       f4a4c107-8006-4ed5-ab5c-5ecfedc450e1
+:END:
+*** Implementation
+:PROPERTIES:
+:ID:       b3437309-97a4-47fc-b51f-9ac373300bf8
+:END:
 ** FFT
 :PROPERTIES:
 :ID:       5535c7fa-c614-4b3e-ac41-efa5581223b6
