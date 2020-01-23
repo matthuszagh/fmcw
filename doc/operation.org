@@ -311,7 +311,8 @@ directional coupler.
   node[coupler,anchor=4](coupler){\SI{20}{dB}};
 \draw (coupler.3) --++(1,0) node[bareTXantenna,anchor=center]{};
 \draw (coupler.1) --++(-0.5,0) to[R] ++(0,-1) node[tlground]{};
-\draw (coupler.2) --++(0.5,0) to[short,-o] ++(0,-1) node[below]{to receiver};
+\draw (coupler.2) --++(0.5,0) --++(0,-1) node[inputarrow,rotate=-90]{}
+  node[below]{to receiver};
 \draw (wilk.out1) --++(0.5,0) --++(0,-1)
   to[tattenuator,mirror,label=\SI{3}{dB}] ++(-7,0) |- (fs.bpin 7);
 \end{circuitikz}
