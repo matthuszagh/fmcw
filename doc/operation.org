@@ -960,6 +960,127 @@ for i, bin_val in enumerate(sample_bins[0]):
 :PROPERTIES:
 :ID:       f4a4c107-8006-4ed5-ab5c-5ecfedc450e1
 :END:
+Certain window functions are effective at reducing spectral
+leakage. For example,
+
+#+header: :file data/window-spectral-leakage.dat
+#+begin_src python :results output silent file :hidden
+import numpy as np
+
+f = 1
+fs = 3 * f
+ts = 1 / fs
+
+t = np.arange(15.1, step=ts)
+kaiser = np.kaiser(len(t), 6)
+s = np.sin(2*np.pi*f*t)
+s_kaiser = np.multiply(s, kaiser)
+bins = np.fft.rfftfreq(len(s))
+fft = np.absolute(np.fft.rfft(s))
+fft /= np.sum(fft)
+fft_kaiser = np.absolute(np.fft.rfft(s_kaiser))
+fft_kaiser /= np.sum(fft_kaiser)
+
+print("bin unwindowed windowed")
+for bin_val, fft_val, fft_kaiser_val in zip(bins, fft, fft_kaiser):
+    print("{:.5f} {:.5f} {:.5f}".format(bin_val * fs, fft_val, fft_kaiser_val))
+#+end_src
+
+\begin{tikzpicture}
+\begin{axis}[
+  title=Effect of Windowing on Spectral Leakage,
+  xlabel={$f$},
+  ylabel={FFT Amplitude},
+  legend entries={no window, window},
+  legend style={
+    fill=bg,
+    draw=fgcolor
+  },
+  legend pos=north west,
+  set layers=axis on top,
+  xticklabel style={
+    fill=bg
+  },
+  ybar,
+  bar width=3pt,
+]
+  \addplot[fill=fgcolor] table[x=bin, y=unwindowed] {data/window-spectral-leakage.dat};
+  \addplot[
+    blue!50,
+    fill=blue!50,
+  ] table[x=bin, y=windowed] {data/window-spectral-leakage.dat};
+\end{axis}
+\end{tikzpicture}
+
+We see that for the windowed function, the spectral content outside
+the immediate vicinity of the signal frequency is almost zero. To
+understand how the window works, it is informative to compare the
+original time-domain signal with the time-domain signal after
+windowing.
+
+#+header: :file data/window-spectral-leakage-time-domain.dat
+#+header: :session window-spectral-leakage
+#+begin_src python :results output silent file :hidden
+import numpy as np
+
+f = 1
+fs = 3 * f
+ts = 1 / fs
+
+t = np.arange(5.1, step=ts)
+kaiser = np.kaiser(len(t), 6)
+s = np.sin(2*np.pi*f*t)
+s_kaiser = np.multiply(s, kaiser)
+print("time orig windowed")
+for time, s_orig, s_kais in zip(t, s, s_kaiser):
+        print("{:.5f} {:.5f} {:.5f}".format(time, s_orig, s_kais))
+#+end_src
+
+#+header: :file data/window-spectral-leakage-time-domain-full-sine.dat
+#+header: :session window-spectral-leakage
+#+begin_src python :results output silent file :hidden
+tfine = np.linspace(0, 5, num=1000)
+kaiser_fine = np.kaiser(len(tfine), 6)
+sfine = np.sin(2*np.pi*f*tfine)
+sfine_kaiser = np.multiply(sfine, kaiser_fine)
+print("time s")
+for time, s in zip(tfine, sfine_kaiser):
+        print("{:.5f} {:.5f}".format(time, s))
+#+end_src
+
+\begin{tikzpicture}
+\begin{axis}[
+  xlabel={$t$},
+  axis x line=middle,
+  axis y line=middle,
+  set layers=axis on top,
+  xticklabel style={
+    fill=bg
+  }
+]
+  \addplot[
+    domain=0:5,
+    samples=500,
+  ] {sin(deg(2*pi*x))};
+  \addplot[
+    only marks,
+    mark options={scale=0.75},
+  ] table[x=time, y=orig] {data/window-spectral-leakage-time-domain.dat};
+  \addplot[
+    blue!50,
+  ] table[x=time, y=s] {data/window-spectral-leakage-time-domain-full-sine.dat};
+  \addplot[
+    only marks,
+    mark options={blue!50,scale=0.75},
+  ] table[x=time, y=windowed] {data/window-spectral-leakage-time-domain.dat};
+\end{axis}
+\end{tikzpicture}
+
+We see that the kaiser window works by reducing the strength of the
+signal at the beginning and end of the sequence. This makes sense,
+since it is these parts of the sample that create the discontinuities
+and generate frequencies not present in the original signal.
+
 *** Implementation
 :PROPERTIES:
 :ID:       b3437309-97a4-47fc-b51f-9ac373300bf8
