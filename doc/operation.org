@@ -465,24 +465,6 @@ locking.
 :PROPERTIES:
 :ID:       cecb79d6-db88-42bb-90b1-c61545fa00fc
 :END:
-* RF Simulations
-** Microstrip
-:PROPERTIES:
-:ID:       f361bbcc-7225-453e-a107-3f4793e4dd4a
-:END:
-*** via fence
-*** SMT ground cutout
-** Wilkinson power divider
-** Attenuator
-** SMA connector
-** Couplers
-*** 3dB
-*** 5dB
-*** 6dB
-** Antennas
-*** Horn
-*** Patch Array
-* Spice Simulations
 * FPGA
 :PROPERTIES:
 :ID:       6d0ccb21-c85b-417a-961e-5bbfb78717d9
@@ -1093,10 +1075,32 @@ and generate frequencies not present in the original signal.
 :PROPERTIES:
 :ID:       a0e92e3e-3444-4956-8c07-b4d14d1f2489
 :END:
+** Additional Considerations
+*** Formal Verification
+*** Convergent Rounding
+*** Automated Testing
 * PC Software
 :PROPERTIES:
 :ID:       a434cb1f-9f49-407b-aa58-2d561982d98d
 :END:
+* RF Simulations
+** Microstrip
+:PROPERTIES:
+:ID:       f361bbcc-7225-453e-a107-3f4793e4dd4a
+:END:
+*** via fence
+*** SMT ground cutout
+** Wilkinson power divider
+** Attenuator
+** SMA connector
+** Couplers
+*** 3dB
+*** 5dB
+*** 6dB
+** Antennas
+*** Horn
+*** Patch Array
+* Spice Simulations
 * OLD
 ** block diagram
 ** physics
