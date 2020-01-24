@@ -610,17 +610,185 @@ aliasing.
 
 We can't downsample before filtering because that would alias signals
 above 1MHz into our filtered output. However, filtering before
-downsampling requires us to perform filtering on the full 40MHz input,
-which is inefficient because most of this data would be immediately
-discarded. Fortunately, we can use a polyphase decimation filter to
-get the best of both worlds (see the [[id:491617b7-7ba2-4a76-9a68-89ff7f8608b9][implementation section]] for
-details).
+downsampling would require us to perform filtering on the full 40MHz
+input, which is inefficient because most of this data would be
+immediately discarded. Fortunately, we can use a polyphase decimation
+filter to get the best of both worlds (see the [[id:491617b7-7ba2-4a76-9a68-89ff7f8608b9][implementation section]]
+for details).
 
-*** TODO Implementation
+*** Implementation
 :PROPERTIES:
 :ID:       491617b7-7ba2-4a76-9a68-89ff7f8608b9
 :END:
 Next high-level section: [[id:0a0cea3d-b2d1-4b95-bc76-719e0f499fec][Kaiser Window]]
+
+In order for our polyphase decimation FIR filter to work it needs to
+produce results identical what we'd get if we first filtered our
+signal and then downsampled. Our input signal arrives at 40MHz and
+then we downsample to 2MHz by only keeping every 20th signal.
+
+Start with the normal equation for an FIR filter:
+
+\(\begin{aligned}
+  y[n] &= (h*x)(n) = \sum_{k=0}^{N-1} h[k] x[n-k]\\
+\end{aligned}\)
+
+\(x[n]=x[0],x[1],\ldots\) is our input sequence where \(x[0]\) is the
+first sample, etc. \(h[n]\) is the filter's impulse response (I use a
+120-tap filter) which we precompute in software (I've used scipy, see
+the code for details). We need 1024 post-downsampling samples for the
+FFT. Expanding this out, we get
+
+\(\begin{aligned}
+  y[0] &= h[0]x[0] \\
+  y[1] &= h[0]x[1] + h[1]x[0] \\
+  y[2] &= h[0]x[2] + h[1]x[1] + h[2]x[0] \\
+  &\ldots \\
+  y[20] &= h[0]x[20] + h[1]x[19] + \ldots + h[20]x[0] \\
+  &\ldots \\
+  y[119] &= h[0]x[119] + h[1]x[118] + \ldots + h[119]x[0] \\
+  y[120] &= h[0]x[120] + h[1]x[119] + \ldots + h[119]x[1] \\
+  &\ldots \\
+\end{aligned}\)
+
+The pattern is easy to see, but let me draw your attention to the last
+term of the last equation in case you rushed through it. Specifically,
+once the number of coefficients becomes less than the historical
+number of inputs, we drop the oldest input each time we add a new
+input. None of this is different than a normal FIR filter yet.
+
+The difference comes in noticing that the only results we want after
+filtering and downsampling are
+
+\(\begin{aligned}
+  y[0] &= h[0]x[0] \\
+  y[20] &= h[0]x[20] + h[1]x[19] + \ldots + h[20]x[0] \\
+  y[40] &= h[0]x[40] + h[1]x[39] + \ldots + h[40]x[0] \\
+  y[60] &= h[0]x[60] + h[1]x[59] + \ldots + h[60]x[0] \\
+  &\ldots \\
+  y[120] &= h[0]x[120] + h[1]x[119] + \ldots + h[119]x[1] \\
+  &\ldots \\
+\end{aligned}\)
+
+And these should arrive at the output at a frequency of 2MHz.
+
+We need to figure out how to compute this directly; i.e. without
+filtering and then downsampling as we did above. The schematic below
+implements this.
+
+\begin{circuitikz}[color=fgcolor]
+\ctikzset{flipflops/scale=0.5}
+\ctikzset{blocks/scale=0.3}
+\ctikzset{multipoles/flipflop/font=\scriptsize}
+\tikzset{flipflop ff/.style={flipflop,
+  flipflop def={t1=D, c3=1, t6=Q}}
+}
+\def\bank#1#2#3#4#5#6#7#8{%
+  \draw #1 node[flipflop ff, anchor=pin 1](ff0){};
+  \draw (ff0.pin 3) --++(-0.25,0) node[left]{\tiny $\SI{2}{MHz}$};
+  \draw ($(ff0.pin 1)-(0.25,0)$) coordinate(ffout0);
+  \draw (ffout0) --++(0,0.5) node[mixer,anchor=2](mix0){};
+  \draw (mix0.1) --++(-0.25,0) node[left]{\tiny #2};
+  \draw (ff0.pin 6) --++(0.25,0) coordinate(ffout1)
+    --++(0.25,0) node[flipflop ff, anchor=pin 1](ff){};
+  \draw (ffout1) --++(0,0.5) node[mixer,anchor=2](mix){};
+  \draw (mix.1) --++(-0.25,0) node[left]{\tiny #3};
+  \draw (mix.3) -|++(0.1,0.5) node[adder,anchor=2](add){};
+  \draw (mix0.3) --++(0.1,0) |-(add.1);
+  \draw (ff0.pin 3) --++(0,-0.5) -| (ff.pin 3);
+  \foreach \coeff in {#4, #5, #6} {
+    \gettikzxy{(ff.pin 3)}{\fflastclkx}{\fflastclky}
+    \draw (ff.pin 6) --++(0.25,0) coordinate(ffout)
+    --++(0.25,0) node[flipflop ff, anchor=pin 1](ff){};
+    \draw (ffout) --++(0,0.5) node[mixer,anchor=2](mix){};
+    \draw (mix.1) --++(-0.25,0) node[left]{\tiny \coeff};
+    \gettikzxy{(add.3)}{\addlastx}{\addlasty}
+    \draw (mix.3) -|++(0.1,0.5) node[adder,anchor=2](add){};
+    \draw (\addlastx,\addlasty) -- (add.1);
+    \draw ($(\fflastclkx,\fflastclky)-(0,0.5)$) -| (ff.pin 3);
+  }
+  \draw (ff.pin 6) --++(0.25,0) node[mixer,anchor=1](mix){};
+  \draw (mix.4) --++(0,0.25) node[above]{\tiny #7};
+  \draw (mix.3) --++(0.25,0) node[adder,anchor=1](addnew){};
+  \draw (add.3) -| (addnew.4);
+  \draw (addnew.3) coordinate(#8);
+}
+\draw (0,0) node[left]{$x[n]$} --++(1,0) coordinate(a)
+--++(3,0) coordinate(b);
+\bank{(b)}{$h[0]$}{$h[20]$}{$h[40]$}{$h[60]$}{$h[80]$}{$h[100]$}{outa};
+\draw (a) |-++(0.25,-1.5) node[flipflop ff, anchor=pin 1](ff1){};
+\draw (ff1.pin 3) --++(-1,0) node[left]{\tiny $\SI{40}{MHz}$};
+\draw (ff1.pin 6) -|++(0.25,-2.5) coordinate(c);
+\gettikzxy{(a)}{\ax}{\ay}
+\gettikzxy{(b)}{\bx}{\by}
+\gettikzxy{(c)}{\cx}{\cy}
+\draw (c) --++(\bx-\cx,0) coordinate(d);
+\bank{(d)}{$h[1]$}{$h[21]$}{$h[41]$}{$h[61]$}{$h[81]$}{$h[101]$}{outb};
+\draw (c) --++(\ax-\cx,0) |-++(0.25,-1.5) node[flipflop ff, anchor=pin 1](ff2){};
+\draw (ff2.pin 6) -|++(0.25,-2.5) coordinate(d);
+\draw (d) --++(\bx-\cx,0) coordinate(e);
+\bank{(e)}{$h[2]$}{$h[22]$}{$h[42]$}{$h[62]$}{$h[82]$}{$h[102]$}{outc};
+\draw ($(ff1.pin 3)-(0.75,0)$) |- (ff2.pin 3);
+\draw ($(ff2.pin 3)-(0.75,0)$) --++(0,-3) coordinate(f);
+\gettikzxy{(d)}{\dx}{\dy}
+\gettikzxy{(f)}{\fx}{\fy}
+\draw (d) --++(\ax-\cx,0) --++(0,\fy-\dy) coordinate(g);
+\draw ($(f)+(0.25,-0.5)$) node[]{\Huge $\ldots$};
+\draw ($(g)-(0,1)$) |-++(0.25,-1.5) node[flipflop ff, anchor=pin 1](ff3){};
+\draw ($(f)-(0,1)$) |-(ff3.pin 3);
+\draw (ff3.pin 6) -|++(0.25,-2.5) coordinate(h);
+\draw (h) --++(\bx-\cx,0) coordinate(i);
+\bank{(i)}{$h[19]$}{$h[39]$}{$h[59]$}{$h[79]$}{$h[99]$}{$h[119]$}{outd};
+\draw (outc) --++(2,0) node[dipchip, num pins=10, hide numbers, no
+topmark, external pins width=0, anchor=bpin 3](adder){\Huge $+$};
+\draw (outa) --++(1,0) |- (adder.bpin 1);
+\draw (outb) --++(0.5,0) |- (adder.bpin 2);
+\draw (adder.bpin 4) node[left]{$\ldots$};
+\draw (outd) --++(0.5,0) |- (adder.bpin 5);
+\draw (adder.bpin 8) --++(1,0) node[right]{$y[n]$};
+\end{circuitikz}
+
+The leftmost (vertically stacked) flip-flops make up a shift register
+clocked at 40MHz. Each horizontal set of flip flops make up another
+shift register, all clocked at 2MHz. The first input, \(x[0]\), will
+be registered in the leftmost flip-flop of the top 2MHz shift
+register. It will also be multiplied by \(h[0]\) and pass to the
+output so that the first output value is \(y[0]=h[0]x[0]\) as
+expected. The horizontal shift registers will not register another
+input until the new input is \(x[20]\) and the vertical shift register
+has values, \(x[19]\), \(x[18]\), \(\ldots\) and \(x[1]\), proceeding
+from the top flip flop down. The corresponding output will be the sum
+of \(h[0]x[20]\), \(h[1]x[19]\), \(h[2]x[18]\), \(\ldots\),
+\(h[19]x[1]\), and \(h[20]x[0]\), which comes from the second
+multiplier in the top shift register. It's easy to follow this pattern
+and see that we get the intended output.
+
+You may have observed that if we were to follow this diagram
+precisely, we would need 120 multiplication blocks. That's
+significantly more than the 45 DSP slices we get on our XC7A15T
+FPGA. Luckily, we can deviate from the diagram and use our multiplies
+much more efficiently. The key to this is to notice that DSP slices
+can be clocked at a much higher frequency (typically several hundred
+MHz) than the frequency we're using them at (2MHz). So, by
+time-multiplexing DSP slices we can use significantly fewer physical
+multiply blocks than in the naive implementation. Theoretically, we
+should be able to use a single DSP element for all 120
+multiplies. However, I've used 10 (each DSP element is shared by 2
+filter banks), which simplifies the control logic. Additionally, by
+using the multiplies more efficiently, the number of DSP elements is
+no longer the resource-limiting factor. Instead, we're limited by the
+number of flip-flops needed for the filter banks. In the current
+implementation we have 120 filter bank memory elements that must each
+store 12 bits, which means 1440 flip-flops. We have room to increase
+this, but a 120-tap filter should be good enough. We could potentially
+cut down on resources by replacing the filter bank flip-flops with
+time-multiplexed block RAM in much the same way as the DSP
+slices. However, this is not that easy because the output of every
+filter bank memory element must be available at every 2MHz clock
+pulse. Since we're already time-multiplexing the multiplies, we would
+need to synchronize this with the RAM access. This is worth pursuing
+if we run low on resources or need a better filter. Otherwise, the
+current implementation should be sufficient for our needs.
 
 ** Kaiser Window
 :PROPERTIES:
