@@ -1063,10 +1063,20 @@ signal at the beginning and end of the sequence. This makes sense,
 since it is these parts of the sample that create the discontinuities
 and generate frequencies not present in the original signal.
 
+*** TODO Choosing a Window Function
+Check [[https://www.electronicdesign.com/technologies/analog/article/21798689/choose-the-right-fft-window-function-when-evaluating-precision-adcs][this link]].
+
 *** Implementation
 :PROPERTIES:
 :ID:       b3437309-97a4-47fc-b51f-9ac373300bf8
 :END:
+A window function works by simply multiplying the input signal by the
+window coefficients. Therefore, implementing one on an FPGA is very
+easy. We can use numpy to generate the coefficients for us, write
+these values in hexadecimal format to a file and load them into an
+FPGA rom with ~readmemh~. See the ~window~ module for details. The
+only possibly difficult part is [[id:b7eba33e-b557-4af0-80cb-5e0fa982b567][convergent rounding]].
+
 ** FFT
 :PROPERTIES:
 :ID:       5535c7fa-c614-4b3e-ac41-efa5581223b6
@@ -1078,6 +1088,9 @@ and generate frequencies not present in the original signal.
 ** Additional Considerations
 *** Formal Verification
 *** Convergent Rounding
+:PROPERTIES:
+:ID:       b7eba33e-b557-4af0-80cb-5e0fa982b567
+:END:
 *** Automated Testing
 * PC Software
 :PROPERTIES:
