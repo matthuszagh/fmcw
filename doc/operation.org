@@ -22,7 +22,10 @@ simultaneously be useful to people who just want the overview and to
 people who want to go into more detail.
 
 * Physics
-** Operating principle
+** Operating Principle
+:PROPERTIES:
+:ID:       285aab15-835c-464a-9a66-043078cfda28
+:END:
 The distance to a remote object is
 
 \(\begin{aligned}
@@ -175,7 +178,7 @@ m &= TR \sin\left(2 \pi t \left( f_0 + t \frac{f_{\mathit{ramp}}}{t_{\mathit{ram
 So, using a Fourier transform on the mixer output will tell us the
 frequency difference and thus the distance.
 
-** TODO Maximum range
+** TODO Maximum Range
 The maximum range of a radar can be determined using the radar
 equation, presented below.
 
@@ -206,13 +209,13 @@ roughly \(2/3\) of what we could expect previously.
 
 TODO minimum detectable power. See the PDF.
 
-** TODO Minimum range
+** TODO Minimum Range
 See the PDF. Also, I'm not sure if this should be its own
 section. Maybe they should be subsections under a "Range" section.
 
-** TODO Angle calculation
-** TODO Additional considerations
-*** TODO Doppler shift
+** TODO Angle Calculation
+** TODO Additional Considerations
+*** TODO Doppler Shift
 See PDF.
 
 * Block Diagram
@@ -220,42 +223,38 @@ See PDF.
 :ID:       012a28eb-d2bd-4cf4-8eed-832482c535cf
 :END:
 
-\begin{latex}
-\newdimen\XCoord
-\newdimen\YCoord
-\newcommand*{\ExtractCoordinate}[1]{\path (#1); \pgfgetlastxy{\XCoord}{\YCoord};}%
-\ctikzset{resistors/scale=0.4}
-% tx
 \begin{circuitikz}[color=fgcolor]
-\draw (6,0) node[coupler](cpl){};
-\ExtractCoordinate{cpl.3}
-\draw (10,\YCoord) node[bareTXantenna](tx){Tx};
+\ctikzset{resistors/scale=0.4}
+\ctikzset{blocks/scale=1.5}
+% tx
+\draw (6,0) node[coupler,scale=0.75](cpl){};
+\gettikzxy{(cpl.3)}{\cplx}{\cply}
+\draw (10,\cply) node[bareTXantenna](tx){\footnotesize Tx};
 \draw (cpl.3) -- (tx.bottom);
 \draw (cpl.1) --++(-0.5,0) to[R] ++(0,-1) node[tlground]{};
 \draw ($(cpl.4)-(6,0)$) node[oscillator](fs){};
-\draw (fs.east) to[amp,t=PA] (cpl.4);
-\draw (fs.north) node[above]{Frequency};
-\draw (fs.south) node[below]{Synthesizer};
+\draw (fs.east) to[amp,t=\footnotesize PA] (cpl.4);
+\draw (fs.north) node[above]{\footnotesize Frequency};
+\draw (fs.south) node[below]{\footnotesize Synthesizer};
 % rx
-\ExtractCoordinate{tx.center};
-\draw (\XCoord, -4) node[bareRXantenna, xscale=-1](rx){\scalebox{-1}[1]{Rx}};
+\gettikzxy{(tx.center)}{\txx}{\txy}
+\draw (\txx, -4) node[bareRXantenna,
+  xscale=-1](rx){\scalebox{-1}[1]{\footnotesize Rx}};
 \draw (rx.center) to[short] ++(-2,0)
   to[amp,t={\scalebox{-1}[-1]{\footnotesize LNA}}] ++(-2,0)
-  to[amp,t={\scalebox{-1}[-1]{RF}}] ++(-2,0) coordinate (n1);
+  to[amp,t={\scalebox{-1}[-1]{\footnotesize RF}}] ++(-2,0) coordinate (n1);
 \draw (3, -4) node[mixer](mix){};
 \draw (n1) to[short] (mix.3);
-\ExtractCoordinate{mix.4};
 \draw (cpl.2) --++(1,0) --++(0,-2) -| (mix.4);
-\draw (mix.1) --++(-0.5,0) to[bandpass] ++(-2,0) to[amp,t={\scalebox{-1}[-1]{IF}}]
+\draw (mix.1) --++(-0.5,0) to[bandpass] ++(-2,0)
+  to[amp,t={\scalebox{-1}[-1]{\footnotesize IF}}]
   ++(-2,0) to[adc] ++(-2,0) --++(0,-2) coordinate (fpga) --++(0,-2)
-  to[twoport,t=FIR] ++(2,0) to[twoport,t=$20\downarrow$] ++(2,0)
-  to[twoport,name=window] ++(2,0) to[fft] ++(2,0) to[short,-o] ++(1,0)
-  node[right] {PC};
-\draw (window.north) node[above] {Window};
+  to[twoport,t=\footnotesize FIR] ++(2,0) to[twoport,t=$20\downarrow$] ++(2,0)
+  to[twoport,t=\footnotesize window] ++(2,0) to[fft] ++(2,0) to[short,-o] ++(1,0)
+  node[right] {\footnotesize PC};
 \draw[dashed] ($(fpga)-(2,0)$) -- ($(fpga)+(8,0)$) node[below
-  left]{FPGA} -- ($(fpga)+(8,-4)$);
+  left]{\footnotesize FPGA} -- ($(fpga)+(8,-4)$);
 \end{circuitikz}
-\end{latex}
 #+caption: FMCW radar block diagram. Note that downsampling is
 #+caption: actually performed as part of the FIR filter (not after)
 #+caption: for efficiency reasons. Functionally, the result is
