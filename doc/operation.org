@@ -285,10 +285,15 @@ plotting.
 :PROPERTIES:
 :ID:       2892ed74-7258-4776-ae3d-a5a417dda02c
 :END:
-The transmitter consists of a frequency synthesizer, VCO
-(voltage-controlled oscillator), and power amplifier, along with an
-amplifier, wilkinson power divider, several attenuators, and a
-directional coupler.
+The transmitter is responsible for generating a frequency ramp that is
+transmitted through space via an antenna and coupled back into [[id:5b91918a-80ec-4cff-af24-e620558c087a][the
+receiver]]. A frequency synthesizer (ADF4158) and VCO together generate
+the ramp signal. A wilkinson power divider then splits the signal,
+sending half the power to the power amplifier for transmission and the
+other half back to the frequency synthesizer (see the [[id:8fa29eb6-36de-46e4-bcb7-93e611fa4a36][frequency
+synthesizer section]]). The power amplifier amplifies the signal, most
+of which is sent to the antenna for transmission. The remainder is
+coupled back to the receiver with a coupler.
 
 \begin{circuitikz}[color=fgcolor]
 \ctikzset{multipoles/dipchip/width=2}
@@ -321,9 +326,16 @@ I included a single transmission line after the VCO to indicate that a
 transmission line with characteristic impedance of \(\SI{50}{\Omega}\)
 is required for each connection after the VCO (I've ommitted most of
 them to save space). The [[id:f361bbcc-7225-453e-a107-3f4793e4dd4a][RF simulation section]] describes how to design
-the microstrip transmission line.
+the microstrip transmission line. There are also several attenuators
+used to keep input power within specification for the various
+components.
 
 ** Frequency Synthesizer
+:PROPERTIES:
+:ID:       8fa29eb6-36de-46e4-bcb7-93e611fa4a36
+:END:
+Next high-level section: [[id:5b91918a-80ec-4cff-af24-e620558c087a][Receiver]]
+
 The ADF4158 frequency synthesizer is based on a fractional-N PLL
 (phase-locked loop) design. Chapter 13 of the Art of Electronics (3e)
 provides an excellent description of how a PLL works. I explain the
