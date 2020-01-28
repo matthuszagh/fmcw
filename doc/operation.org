@@ -1862,6 +1862,56 @@ benches. Again, see code for details.
 :PROPERTIES:
 :ID:       a434cb1f-9f49-407b-aa58-2d561982d98d
 :END:
+Although most of the data processing is performed on the FPGA, the
+host PC software still has several non-trivial tasks.
+
+\begin{circuitikz}[color=fgcolor]
+\ctikzset{multipoles/dipchip/width=1.25}
+\ctikzset{multipoles/dipchip/pin spacing=0.25}
+\def\block#1{%
+  node[dipchip, num pins=10, hide numbers, no topmark, external pins
+  width=0, anchor=#1]
+}
+\def\circleBuf#1#2#3{%
+  \def\largeRad{1}
+  \def\smallRad{0.8}
+  \def\angleUnit{20}
+  \draw #1 circle[radius=\largeRad]{};
+  \draw #1 circle[radius=\smallRad]{};
+  \foreach \ang in {0,\angleUnit,...,360}{
+    \draw ($#1+(\ang:\smallRad)$) -- ($#1+(\ang:\largeRad)$);
+  }
+  \path ($#1+(225:\largeRad)$) coordinate(#2);
+  \path ($#1+(315:\largeRad)$) coordinate(#3);
+  \draw #1 node[align=center]{\footnotesize shared\\\footnotesize buffer};
+}
+\draw (0,0) node[left=2pt]{\footnotesize radar}
+  node[ocirc,fill=bgcolor,anchor=0]{} --++(1,0) node[inputarrow]{}
+  \block{bpin 3}(producer){};
+\draw (producer.center) node[align=center]{\footnotesize
+  producer\\\footnotesize thread};
+\circleBuf{($(producer.n)+(2,2)$)}{a}{b}
+\draw[->] (producer.n) -- (a);
+\draw($(producer.n)+(4,0)$) \block{n}(consumer){};
+\draw (consumer.center) node[align=center]{\footnotesize
+  consumer\\\footnotesize thread};
+\draw[->] (b) -- (consumer.n);
+\draw (consumer.bpin 8) --++(1,0) node[inputarrow]{}
+  node[cylinder,shape aspect=0.5,draw,anchor=west](pipe){\footnotesize
+  pipe};
+\draw ($(pipe.east)-(0.11,0)$) --++(1,0) node[inputarrow]{} \block{bpin
+  3}(plot){};
+\draw (plot.center) node[align=center]{\footnotesize
+  python\\\footnotesize plot};
+\draw ($(producer.s)+(2,-1)$) \block{n}(monitor){};
+\draw (monitor.center) node[align=center]{\footnotesize
+  monitor\\\footnotesize thread};
+\gettikzxy{(monitor.center)}{\monx}{\mony}
+\draw (0,\mony) node[left=2pt]{\footnotesize user input}
+  node[ocirc,fill=bgcolor,anchor=0]{} -- (monitor.bpin 3)
+  node[inputarrow]{};
+\end{circuitikz}
+
 * RF Simulations
 ** Microstrip
 :PROPERTIES:
