@@ -1843,13 +1843,21 @@ and \(I\).
 :END:
 Is this section necessary?
 
+** TODO FT245
 ** Additional Considerations
-*** Formal Verification
-*** Convergent Rounding
+*** Formal Verification and Testing
+A number of Verilog modules use [[https://symbiyosys.readthedocs.io/en/latest/quickstart.html][Symbiyosys]] for formal
+verification. None of the modules are thoroughly verified; instead
+I've used it primarily as an additional form of testing. See the code
+for details (the asynchronous FIFO module is a good example).
+
+I've used [[https://cocotb.readthedocs.io/en/latest/introduction.html][Cocotb]] for creating and running automated test
+benches. Again, see code for details.
+
+*** TODO Convergent Rounding
 :PROPERTIES:
 :ID:       b7eba33e-b557-4af0-80cb-5e0fa982b567
 :END:
-*** Automated Testing
 * PC Software
 :PROPERTIES:
 :ID:       a434cb1f-9f49-407b-aa58-2d561982d98d
@@ -2135,3 +2143,7 @@ for how to perform realtime plots with matplotlib. The host PC
 simultaneously plots the realtime range and angle (using a polar plot,
 where each point is a dB strength) and an incrementally updated (also
 realtime) range-time plot. It provides the option to record both.
+* Footnotes
+
+[fn:1]S. He and M. Torkelson. A New Approach to Pipeline FFT
+Processor. 1996.
