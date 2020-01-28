@@ -1863,7 +1863,24 @@ benches. Again, see code for details.
 :ID:       a434cb1f-9f49-407b-aa58-2d561982d98d
 :END:
 Although most of the data processing is performed on the FPGA, the
-host PC software still has several non-trivial tasks.
+host PC software still has several non-trivial tasks. Most
+importantly, it has to perform some form of error detection so that
+bytes lost during transmission do not lead to erroneous data in the
+final output. Additionally, I've setup the software to be able to
+request any intermediate form of data on the FPGA (see the [[id:6d0ccb21-c85b-417a-961e-5bbfb78717d9][FPGA
+section]] for how this is implemented on the FPGA side), and can perform
+all the processing steps the FPGA can perform. This means that we can
+share data processing steps arbitrarily between hardware and
+software. For instance, we could request that filtering be performed
+on the FPGA and windowing and the FFT be performed in software. In
+that case, the final output plot should be identical (albeit updated
+more slowly) to what we would get if everything had been performed on
+the FPGA. This makes the hardware much easier to debug since we can
+directly compare the hardware result to the software result.
+
+Finally, I've multithreaded the program so that reading data from the
+radar, processing and plotting the data, and getting user input are
+all separate threads. This is shown in the block diagram below.
 
 \begin{circuitikz}[color=fgcolor]
 \ctikzset{multipoles/dipchip/width=1.25}
@@ -1901,8 +1918,7 @@ host PC software still has several non-trivial tasks.
   pipe};
 \draw ($(pipe.east)-(0.11,0)$) --++(1,0) node[inputarrow]{} \block{bpin
   3}(plot){};
-\draw (plot.center) node[align=center]{\footnotesize
-  python\\\footnotesize plot};
+\draw (plot.center) node[align=center]{\footnotesize plot};
 \draw ($(producer.s)+(2,-1)$) \block{n}(monitor){};
 \draw (monitor.center) node[align=center]{\footnotesize
   monitor\\\footnotesize thread};
@@ -1910,7 +1926,19 @@ host PC software still has several non-trivial tasks.
 \draw (0,\mony) node[left=2pt]{\footnotesize user input}
   node[ocirc,fill=bgcolor,anchor=0]{} -- (monitor.bpin 3)
   node[inputarrow]{};
+\draw[dashed] ($(pipe.north)+(0,4)$) node[below left]{C} node[below
+  right]{Python} -- (pipe.north);
+\draw[dashed] (pipe.south) -- ($(pipe.south)-(0,4)$);
 \end{circuitikz}
+
+This means that reading data from the radar does not block processing
+and plotting it and vice versa (at least until the internal buffer
+fills up). Additionally, since user input gets its own thread, the
+program responds immediately to user input. Currently, this isn't
+very useful because the only possible user input after the program
+starts is to terminate the program. However, this will be useful when
+I extend the software the be able to change the data requested and
+plotted output while running.
 
 * RF Simulations
 ** Microstrip
