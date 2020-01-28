@@ -1253,17 +1253,596 @@ A window function works by simply multiplying the input signal by the
 window coefficients. Therefore, implementing one on an FPGA is very
 easy. We can use numpy to generate the coefficients for us, write
 these values in hexadecimal format to a file and load them into an
-FPGA rom with ~readmemh~. See the ~window~ module for details. The
+FPGA ROM with ~readmemh~. See the ~window~ module for details. The
 only possibly difficult part is [[id:b7eba33e-b557-4af0-80cb-5e0fa982b567][convergent rounding]].
 
 ** FFT
 :PROPERTIES:
 :ID:       5535c7fa-c614-4b3e-ac41-efa5581223b6
 :END:
-** ADF4158 Frequency Synthesizer
+An FFT is a computationally-efficient implementation of a DFT, which
+decomposes a discretized, time-domain signal into its frequency
+spectrum. The frequency is [[id:285aab15-835c-464a-9a66-043078cfda28][related to the remote object distance]], so
+it's a short step from the frequency data to the final, processed
+distance data.
+
+*** Implementation
+Next high level section: [[id:a0e92e3e-3444-4956-8c07-b4d14d1f2489][ADF4158 Frequency Synthesizer]]
+
+There are several important considerations when implementing an FFT in
+hardware. First, it should be pipelined in a way that allows a high
+clock rate and bandwidth. Additionally, it should use as few physical
+resources as possible, which for an FFT means number of multipliers,
+adders and memory size. I spent some time looking through relevant
+research papers to find a resource-efficient algorithm that would fit
+on a low-cost FPGA. I decided on the
+\(\text{R2\textsuperscript{2}SDF}\) algorithm[fn:1], which requires
+that \(N\) be a power of 4 and uses \(\log_4{\left(N\right)}-1\)
+complex multipliers, \(4\log_4{\left(N\right)}\) adders and \(N-1\)
+memory elements.
+
+Here's a block diagram of the hardware implementation, adapted from
+the original paper.
+
+\begin{circuitikz}[color=fgcolor]
+\ctikzset{blocks/scale=0.3}
+\ctikzset{multipoles/dipchip/width=0.5}
+\def\butterfly{node[dipchip, num pins=4, hide numbers, no topmark, external
+  pins width=0,anchor=bpin 2]}
+\def\sr{node[dipchip, num pins=2, hide numbers, no topmark, external
+  pins width=0,anchor=bpin 2]}
+\def\bfs#1#2#3#4{
+  \draw #1 --++(0.5,0) node[inputarrow]{}
+    \butterfly(bfi){\tiny BF2I};
+  \draw (bfi.bpin 4) -|++(0.5,1) --++(-0.5,0)
+    node[inputarrow,rotate=180]{} \sr(sri){\tiny #2};
+  \draw (sri.bpin 1) --++(-0.5,0) |- (bfi.bpin 1) node[inputarrow]{};
+  \draw (bfi.bpin 3) --++(1.3,0) node[inputarrow]
+    \butterfly(bfii){\tiny BF2II};
+  \draw (bfi.s) node[above]{\tiny s} node[inputarrow,rotate=90]{}
+    --++(0,-0.5) coordinate(bfia) --++(0,-0.5);
+  \draw (bfia) -| ($(bfii.s)-(0.15,0)$) node[inputarrow,rotate=90]{}
+    node[above]{\tiny t};
+  \draw ($(bfii.s)+(0.15,0)$) node[inputarrow,rotate=90]{}
+    node[above]{\tiny s} --++(0,-1);
+  \draw (bfii.bpin 4) -|++(0.5,1) --++(-0.5,0)
+    node[inputarrow,rotate=180]{} \sr(srii){\tiny #3};
+  \draw (srii.bpin 1) --++(-0.5,0) |- (bfii.bpin 1) node[inputarrow]{};
+  \draw (bfii.bpin 3) --++(0.5,0) node[inputarrow]{} coordinate(#4);
+}
+\def\mix#1#2#3{
+  \draw #1 node[mixer,anchor=1](mix){};
+  \draw (mix.2) node[inputarrow,rotate=90]{} --++(0,-0.5)
+    node[below]{\tiny #2};
+  \draw (mix.3) coordinate(#3);
+}
+\draw (0,0) node[left]{$x(n)$} \bfs{(0,0)}{$N/2$}{$N/4$}{a}
+  \mix{(a)}{$W1(n)$}{b};
+\bfs{(b)}{$N/8$}{$N/16$}{c} \mix{(c)}{$W2(n)$}{d};
+\draw (d) --++(0.5,0) node[inputarrow]{} coordinate(e);
+\draw ($(e)+(0.5,0)$) node[]{$\ldots$};
+\bfs{($(e)+(1,0)$)}{$2$}{$1$}{f};
+\draw (f) node[right]{$X(k)$};
+\end{circuitikz}
+
+And here's a detailed schematic of the last 2 stages.
+
+
+\begin{circuitikz}
+\def\col{fgcolor}
+\tikzset{
+  s0bf1/.pic={
+    %% shift regs
+    \foreach \y/\i in {1.25/7,1.65/6,2.05/5,2.45/4,2.85/3,3.25/2,3.65/1,4.05/0} {
+      \draw (-0.3125,\y) rectangle ++(1,0.4);
+      \draw (0.1875,\y+0.2) node[font=\tiny] {\texttt{sr[\i]}};
+      \fill[\col] (0.1875-0.05,\y) --++(0.1,0) --++(-0.05,0.1) --cycle;
+    }
+    \foreach \y in {1.65,2.05,2.45,2.85,3.25,3.65,4.05} {
+      \draw (0.6875,\y-0.1) node[inputarrow,rotate=180,color=\col] (0.6875,\y-0.1);
+      \draw (0.6875,\y-0.1) --++(0:0.5) --++(90:0.2) --++(180:0.5);
+    }
+    %% xfsr re
+    \draw (0,0)coordinate (O)--++(30:0.5)coordinate (A)--++(90:0.5)coordinate (B)--++(150:0.5)coordinate (C)--cycle;
+    % 0 input
+    \draw (-0.3125,1.35) to[short,-,l=$\texttt{re}$] (-2,1.35) -- (-2,0.66);
+    \draw (-1.75,0.66) to[short,*-,color=\col] (-1.75,-2.6)
+      --++(1.30675,0) --++(0,0.25) node[inputarrow,rotate=90,color=\col];
+    \draw ($(C)!0.33!(O)$) --++(180:1) ++(-0.05,0) node[inputarrow,color=\col];
+    \draw ($(C)!0.33!(O)$)++(180:0.0625) node[right,font=\small] {$\texttt{0}$};
+    % 1 input
+    \draw ($(C)!0.66!(O)$)--++(180:0.25) ++(180:0.2)
+      node[adder,color=\col,scale=0.4,name=A1BF1] {}
+      (A1BF1.west) node[inputarrow,color=\col] --++(180:0.35)
+      to[short,-*,color=\col] ++(90:0.33)
+      to[short,-,color=\col] ++(180:1);
+    \draw ($(C)!0.66!(O)$)++(180:0.0625) node[right,font=\small] {$\texttt{1}$};
+    % output
+    \draw ($(A)!0.5!(B)$)--++(0:2.5)--++(0,-2.125)--++(1.15,0);
+    \draw ($(A)!0.5!(B)$)++(2.9,-3.775) node[below] {\texttt{-}};
+    \draw ($(A)!0.5!(B)$)++(0:2.5)++(0,-2.125)
+      to[short,*-,color=\col] ++(0,-1.65) --++(1.15,0);
+    % sel
+    \draw ($(O)!0.5!(A)$)--++(-90:0.25) --++(0:0.5) to[short,-*,color=\col] ++(-90:1.25);
+
+    %% xfsr im
+    \draw (0,-1.25)coordinate (O)--++(30:0.5)coordinate (A)--++(90:0.5)coordinate (B)--++(150:0.5)coordinate (C)--cycle;
+    % 0 input
+    \draw (-0.3125,1.55) to[short,-] (-2.5,1.55)
+      ++(1.15625,0) node[above] {\texttt{im}} ++(-1.15625,0)
+      -- (-2.5,0.66-1.25);
+    \draw (-2.25,0.66-1.25) to[short,*-,color=\col] (-2.25,-3.85)
+      --++(1.80675,0) --++(0,0.25) node[inputarrow,rotate=90,color=\col];
+    \draw ($(C)!0.33!(O)$) --++(180:1) ++(-0.05,0)
+      node[inputarrow,color=\col] --++(180:1.45);
+    \draw ($(C)!0.33!(O)$)++(180:0.0625) node[right,font=\small] {$\texttt{0}$};
+    % 1 input
+    \draw ($(C)!0.66!(O)$)--++(180:0.25) ++(180:0.2)
+      node[adder,color=\col,scale=0.4,name=A1BF1] {}
+      (A1BF1.west) node[inputarrow,color=\col] --++(180:0.35)
+      to[short,-*,color=\col] ++(90:0.33);
+    \draw ($(C)!0.66!(O)$)++(180:0.0625) node[right,font=\small] {$\texttt{1}$};
+    % output
+    \draw ($(A)!0.5!(B)$)++(0:2)--++(0,-1.2525)--++(1.65,0);
+    \draw ($(A)!0.5!(B)$)++(0:2)++(0,-1.2525)
+      to[short,*-,color=\col] ++(0,-0.9) --++(1.65,0);
+    %%\draw ($(A)!0.5!(B)$)++(3.1,-1.2525) node[below] {\texttt{-}};
+    \draw ($(A)!0.5!(B)$)--++(0:2);
+    % sel
+    \draw ($(O)!0.5!(A)$)--++(-90:0.25) --++(0:0.5) to[short,-*,color=\col] ++(-90:1.25);
+
+    %% x re
+    \draw (0,-2.5)coordinate (O)--++(30:0.5)coordinate (A)--++(90:0.5)coordinate (B)--++(150:0.5)coordinate (C)--cycle;
+    % 0 input
+    \draw ($(C)!0.33!(O)$)--++(180:1) to[short,-,color=\col] ++(180:1.5) node[left] {\texttt{x\_re(15) ... x\_re(1) x\_re(0)}};
+    \draw ($(C)!0.33!(O)$) ++(180:2) to[short,*-,color=\col] ++(90:1.5)
+      --++(0:1.55) --++(90:0.45) node[inputarrow,color=\col,rotate=90];
+    \draw ($(C)!0.33!(O)$)++(180:0.0625) node[right,font=\small] {$\texttt{0}$};
+    % 1 input
+    \draw ($(C)!0.66!(O)$)--++(180:0.25) ++(180:0.2)
+      node[adder,color=\col,scale=0.4,name=A1BF1] {}
+      (A1BF1.west) ++(-0.2,-0.2) node[] {\texttt{-}}
+      (A1BF1.west) node[inputarrow,color=\col] --++(180:0.35)
+      to[short,-*,color=\col] ++(90:0.33);
+    \draw ($(C)!0.66!(O)$)++(180:0.0625) node[right,font=\small] {$\texttt{1}$};
+    % output
+    \draw ($(A)!0.5!(B)$)--++(0:1.75) ++(0,0) node[above left] {\texttt{re}}
+      ++(0,0) --++(90:7)--++(180:2.25)--++(-90:0.55) node[inputarrow,rotate=-90,color=\col];
+    % sel
+    \draw ($(O)!0.5!(A)$)--++(-90:0.25) --++(0:0.5) to[short,-*,color=\col] ++(-90:1.25);
+
+    %% x im
+    \draw (0,-3.75)coordinate (O)--++(30:0.5)coordinate (A)--++(90:0.5)coordinate (B)--++(150:0.5)coordinate (C)--cycle;
+    % 0 input
+    \draw ($(C)!0.33!(O)$)--++(180:1) to[short,-,color=\col] ++(180:1.5) node[left] {\texttt{x\_im(15) ... x\_im(1) x\_im(0)}};
+    \draw ($(C)!0.33!(O)$) ++(180:1.5) to[short,*-,color=\col] ++(90:1.5)
+      --++(0:1.05) --++(90:0.45) node[inputarrow,color=\col,rotate=90];
+    \draw ($(C)!0.33!(O)$)++(180:0.0625) node[right,font=\small] {$\texttt{0}$};
+    % 1 input
+    \draw ($(C)!0.66!(O)$)--++(180:0.25) ++(180:0.2)
+      node[adder,color=\col,scale=0.4,name=A1BF1] {}
+      (A1BF1.west) ++(-0.2,-0.2) node[] {\texttt{-}}
+      (A1BF1.west) node[inputarrow,color=\col] --++(180:0.35)
+      to[short,-*,color=\col] ++(90:0.33);
+      node[left] {\texttt{0}};
+    \draw ($(C)!0.66!(O)$)++(180:0.0625) node[right,font=\small] {$\texttt{1}$};
+    % output
+    \draw ($(A)!0.5!(B)$)--++(0:1) ++(0,0) node[above left] {\texttt{im}}
+      ++(0,0) --++(90:8)--++(180:1)--++(-90:0.3) node[inputarrow,rotate=-90,color=\col];
+    % sel
+    \draw ($(O)!0.5!(A)$)--++(-90:0.25) --++(0:0.5) --++(-90:0.25) node[below,font=\small]{$\texttt{sel0i}$};
+  }
+}
+\tikzset{
+  s0bf2/.pic={
+    %% shift regs
+    \foreach \y/\i in {1.25/3,1.65/2,2.05/1,2.45/0} {
+      \draw (-0.3125,\y) rectangle ++(1,0.4);
+      \draw (0.1875,\y+0.2) node[font=\tiny] {\texttt{sr[\i]}};
+      \fill[\col] (0.1875-0.05,\y) --++(0.1,0) --++(-0.05,0.1) --cycle;
+    }
+    \foreach \y in {1.65,2.05,2.45} {
+      \draw (0.6875,\y-0.1) node[inputarrow,rotate=180,color=\col] (0.6875,\y-0.1);
+      \draw (0.6875,\y-0.1) --++(0:0.5) --++(90:0.2) --++(180:0.5);
+    }
+    %% xfsr re
+    \draw (0,0)coordinate (O)--++(30:0.5)coordinate (A)--++(90:0.5)coordinate (B)--++(150:0.5)coordinate (C)--cycle;
+    % 0 input
+    \draw (-0.3125,1.35) to[short,-,l=$\texttt{re}$] (-2,1.35) -- (-2,0.66);
+    \draw (-1.75,0.66) to[short,*-,color=\col] (-1.75,-2.6)
+      --++(1.30675,0) --++(0,0.25) node[inputarrow,rotate=90,color=\col];
+    \draw ($(C)!0.33!(O)$) --++(180:1) ++(-0.05,0) node[inputarrow,color=\col];
+    \draw ($(C)!0.33!(O)$)++(180:0.0625) node[right,font=\small] {$\texttt{0}$};
+    % 1 input
+    \draw ($(C)!0.66!(O)$)--++(180:0.25) ++(180:0.2)
+      node[adder,color=\col,scale=0.4,name=A1BF1] {}
+      (A1BF1.west) node[inputarrow,color=\col] --++(180:0.35)
+      to[short,-*,color=\col] ++(90:0.33)
+      to[short,--,color=\col] ++(180:1);
+    \draw ($(C)!0.66!(O)$)++(180:0.0625) node[right,font=\small] {$\texttt{1}$};
+    % output
+    \draw ($(A)!0.5!(B)$)--++(0:2.5)--++(0,-2.25)--++(1.37,0) node[inputarrow,color=\col];
+    % sel
+    \draw ($(O)!0.5!(A)$)--++(-90:0.25) --++(0:0.5) to[short,-*,color=\col] ++(-90:1.25);
+
+    %% xfsr im
+    \draw (0,-1.25)coordinate (O)--++(30:0.5)coordinate (A)--++(90:0.5)coordinate (B)--++(150:0.5)coordinate (C)--cycle;
+    % 0 input
+    \draw (-0.3125,1.55) to[short,-] (-2.5,1.55)
+      ++(1.15625,0) node[above] {\texttt{im}} ++(-1.15625,0)
+      -- (-2.5,0.66-1.25);
+    \draw (-2.25,0.66-1.25) to[short,*-,color=\col] (-2.25,-3.85)
+      --++(1.80675,0) --++(0,0.25) node[inputarrow,rotate=90,color=\col];
+    \draw ($(C)!0.33!(O)$) --++(180:1) ++(-0.05,0)
+      node[inputarrow,color=\col] --++(180:1.45);
+    \draw ($(C)!0.33!(O)$)++(180:0.0625) node[right,font=\small] {$\texttt{0}$};
+    % 1 input
+    \draw ($(C)!0.66!(O)$)--++(180:0.25) ++(180:0.2)
+      node[adder,color=\col,scale=0.4,name=A1BF1] {}
+      (A1BF1.west) node[inputarrow,color=\col] --++(180:0.35)
+      to[short,-*,color=\col] ++(90:0.33);
+    \draw ($(C)!0.66!(O)$)++(180:0.0625) node[right,font=\small] {$\texttt{1}$};
+    % output
+    \draw ($(A)!0.5!(B)$)--++(0:2)--++(0,-1.55)--++(1.9,0) node[inputarrow,color=\col];
+    % sel
+    \draw ($(O)!0.5!(A)$)--++(-90:0.25) --++(0:0.5) to[short,-*,color=\col] ++(-90:1.25);
+
+    %% x re
+    \draw (0,-2.5)coordinate (O)--++(30:0.5)coordinate (A)--++(90:0.5)coordinate (B)--++(150:0.5)coordinate (C)--cycle;
+    % 0 input
+    \draw ($(C)!0.33!(O)$)--++(180:1) to[short,-,color=\col] ++(180:1.5)
+      ++(-0.425,-0.5) coordinate (O1)--++(30:0.5)coordinate (A1)--++(90:0.5)coordinate (B1)--++(150:0.5)coordinate (C1)--cycle;
+    \draw ($(C1)!0.33!(O1)$)++(180:0.0625) node[right,font=\small] {$\texttt{0}$};
+    \draw ($(C1)!0.66!(O1)$)++(180:0.0625) node[right,font=\small] {$\texttt{1}$};
+    \draw ($(C)!0.33!(O)$) ++(180:2) to[short,*-,color=\col] ++(90:1.5)
+      --++(0:1.55) --++(90:0.45) node[inputarrow,color=\col,rotate=90];
+    \draw ($(C)!0.33!(O)$)++(180:0.0625) node[right,font=\small] {$\texttt{0}$};
+    % 1 input
+    \draw ($(C)!0.66!(O)$)--++(180:0.25) ++(180:0.2)
+      node[adder,color=\col,scale=0.4,name=A1BF1] {}
+      (A1BF1.west) ++(-0.2,-0.2) node[] {\texttt{-}}
+      (A1BF1.west) node[inputarrow,color=\col] --++(180:0.35)
+      to[short,-*,color=\col] ++(90:0.33);
+    \draw ($(C)!0.66!(O)$)++(180:0.0625) node[right,font=\small] {$\texttt{1}$};
+    % output
+    \draw ($(A)!0.5!(B)$)--++(0:1.75) ++(0,0) node[above left] {\texttt{re}}
+      ++(0,0) --++(90:5.4)--++(180:2.25)--++(-90:0.55) node[inputarrow,rotate=-90,color=\col];
+    % sel
+    \draw ($(O)!0.5!(A)$)--++(-90:0.25) --++(0:0.5) to[short,-*,color=\col] ++(-90:1.25);
+
+    %% x im
+    \draw (0,-3.75)coordinate (O)--++(30:0.5)coordinate (A)--++(90:0.5)coordinate (B)--++(150:0.5)coordinate (C)--cycle;
+    % 0 input
+    \draw ($(C)!0.33!(O)$)--++(180:1) to[short,-,color=\col] ++(180:1.5)
+      ++(-0.425,-0.5) coordinate (O1)--++(30:0.5)coordinate (A1)--++(90:0.5)coordinate (B1)--++(150:0.5)coordinate (C1)--cycle;
+    \draw ($(C1)!0.33!(O1)$)++(180:0.0625) node[right,font=\small] {$\texttt{0}$};
+    \draw ($(C1)!0.66!(O1)$)++(180:0.0625) node[right,font=\small] {$\texttt{1}$};
+    \draw ($(C)!0.33!(O)$) ++(180:1.5) to[short,*-,color=\col] ++(90:1.5)
+      --++(0:1.05) --++(90:0.45) node[inputarrow,color=\col,rotate=90];
+    \draw ($(C)!0.33!(O)$)++(180:0.0625) node[right,font=\small] {$\texttt{0}$};
+    % 1 input
+    \draw ($(C)!0.66!(O)$)--++(180:0.25) ++(180:0.2)
+      node[adder,color=\col,scale=0.4,name=A1BF1] {}
+      (A1BF1.west) ++(-0.2,-0.2) node[] {\texttt{-}}
+      (A1BF1.west) node[inputarrow,color=\col] --++(180:0.35)
+      to[short,-*,color=\col] ++(90:0.33);
+      node[left] {\texttt{0}};
+    \draw ($(C)!0.66!(O)$)++(180:0.0625) node[right,font=\small] {$\texttt{1}$};
+    % output
+    \draw ($(A)!0.5!(B)$)--++(0:1) ++(0,0) node[above left] {\texttt{im}}
+      ++(0,0) --++(90:6.4)--++(180:1)--++(-90:0.3) node[inputarrow,rotate=-90,color=\col];
+    % sel
+    \draw ($(O)!0.5!(A)$)--++(-90:0.25) --++(0:0.5) --++(-90:1) node[right,font=\small]{$\texttt{sel0ii}$};
+
+    %% sel and tsel
+    \draw ($(O)!0.5!(A)$)++(-1.5,-0.75) node[and port,rotate=180,color=\col,scale=0.5] (myand) {};
+    \node at (myand.bin 1) [ocirc,right,color=\col]{};
+    \draw (myand.in 1) --++(0.5,0) --++(0,-0.36) node[below,font=\small] {$\texttt{sel0i}$};
+    \draw (myand.in 2) to[short,-*,color=\col] ++(1.3,0);
+    \draw (myand.out) --++(-1.35,0) to[short,*-,color=\col] ++(0,0) --++(0,0.92);
+    \draw (myand.out) ++(-1.35,0) --++(-0.5,0)--++(0,1.9)--++(0.5,0)--++(0,0.25);
+  }
+}
+\tikzset{
+  s1bf1/.pic={
+    %% shift regs
+    \foreach \y/\i in {1.25/1,1.65/0} {
+      \draw (-0.3125,\y) rectangle ++(1,0.4);
+      \draw (0.1875,\y+0.2) node[font=\tiny] {\texttt{sr[\i]}};
+      \fill[\col] (0.1875-0.05,\y) --++(0.1,0) --++(-0.05,0.1) --cycle;
+    }
+    \foreach \y in {1.65} {
+      \draw (0.6875,\y-0.1) node[inputarrow,rotate=180,color=\col] (0.6875,\y-0.1);
+      \draw (0.6875,\y-0.1) --++(0:0.5) --++(90:0.2) --++(180:0.5);
+    }
+    %% xfsr re
+    \draw (0,0)coordinate (O)--++(30:0.5)coordinate (A)--++(90:0.5)coordinate (B)--++(150:0.5)coordinate (C)--cycle;
+    % 0 input
+    \draw (-0.3125,1.35) to[short,-,l=$\texttt{re}$] (-2,1.35) -- (-2,0.66);
+    \draw (-1.75,0.66) to[short,*-,color=\col] (-1.75,-2.6)
+      --++(1.30675,0) --++(0,0.25) node[inputarrow,rotate=90,color=\col];
+    \draw ($(C)!0.33!(O)$) --++(180:1) ++(-0.05,0) node[inputarrow,color=\col];
+    \draw ($(C)!0.33!(O)$)++(180:0.0625) node[right,font=\small] {$\texttt{0}$};
+    % 1 input
+    \draw ($(C)!0.66!(O)$)--++(180:0.25) ++(180:0.2)
+      node[adder,color=\col,scale=0.4,name=A1BF1] {}
+      (A1BF1.west) node[inputarrow,color=\col] --++(180:0.35)
+      to[short,-*,color=\col] ++(90:0.33)
+      to[short,-,color=\col] ++(180:1);
+    \draw ($(C)!0.66!(O)$)++(180:0.0625) node[right,font=\small] {$\texttt{1}$};
+    % output
+    \draw ($(A)!0.5!(B)$)--++(0:2.5)--++(0,-2.125)--++(1.15,0);
+    \draw ($(A)!0.5!(B)$)++(2.9,-3.775) node[below] {\texttt{-}};
+    \draw ($(A)!0.5!(B)$)++(0:2.5)++(0,-2.125)
+      to[short,*-,color=\col] ++(0,-1.65) --++(1.15,0);
+    % sel
+    \draw ($(O)!0.5!(A)$)--++(-90:0.25) --++(0:0.5) to[short,-*,color=\col] ++(-90:1.25);
+
+    %% xfsr im
+    \draw (0,-1.25)coordinate (O)--++(30:0.5)coordinate (A)--++(90:0.5)coordinate (B)--++(150:0.5)coordinate (C)--cycle;
+    % 0 input
+    \draw (-0.3125,1.55) to[short,-] (-2.5,1.55)
+      ++(1.15625,0) node[above] {\texttt{im}} ++(-1.15625,0)
+      -- (-2.5,0.66-1.25);
+    \draw (-2.25,0.66-1.25) to[short,*-,color=\col] (-2.25,-3.85)
+      --++(1.80675,0) --++(0,0.25) node[inputarrow,rotate=90,color=\col];
+    \draw ($(C)!0.33!(O)$) --++(180:1) ++(-0.05,0)
+      node[inputarrow,color=\col] --++(180:1.45);
+    \draw ($(C)!0.33!(O)$)++(180:0.0625) node[right,font=\small] {$\texttt{0}$};
+    % 1 input
+    \draw ($(C)!0.66!(O)$)--++(180:0.25) ++(180:0.2)
+      node[adder,color=\col,scale=0.4,name=A1BF1] {}
+      (A1BF1.west) node[inputarrow,color=\col] --++(180:0.35)
+      to[short,-*,color=\col] ++(90:0.33);
+    \draw ($(C)!0.66!(O)$)++(180:0.0625) node[right,font=\small] {$\texttt{1}$};
+    % output
+    \draw ($(A)!0.5!(B)$)++(0:2)--++(0,-1.2525)--++(1.65,0);
+    \draw ($(A)!0.5!(B)$)++(0:2)++(0,-1.2525)
+      to[short,*-,color=\col] ++(0,-0.9) --++(1.65,0);
+    %%\draw ($(A)!0.5!(B)$)++(3.1,-1.2525) node[below] {\texttt{-}};
+    \draw ($(A)!0.5!(B)$)--++(0:2);
+    % sel
+    \draw ($(O)!0.5!(A)$)--++(-90:0.25) --++(0:0.5) to[short,-*,color=\col] ++(-90:1.25);
+
+    %% x re
+    \draw (0,-2.5)coordinate (O)--++(30:0.5)coordinate (A)--++(90:0.5)coordinate (B)--++(150:0.5)coordinate (C)--cycle;
+    % 0 input
+    \draw ($(C)!0.33!(O)$)--++(180:1) to[short,-,color=\col] ++(180:2.5);
+    \draw ($(C)!0.33!(O)$) ++(180:2) to[short,*-,color=\col] ++(90:1.5)
+      --++(0:1.55) --++(90:0.45) node[inputarrow,color=\col,rotate=90];
+    \draw ($(C)!0.33!(O)$)++(180:0.0625) node[right,font=\small] {$\texttt{0}$};
+    % 1 input
+    \draw ($(C)!0.66!(O)$)--++(180:0.25) ++(180:0.2)
+      node[adder,color=\col,scale=0.4,name=A1BF1] {}
+      (A1BF1.west) ++(-0.2,-0.2) node[] {\texttt{-}}
+      (A1BF1.west) node[inputarrow,color=\col] --++(180:0.35)
+      to[short,-*,color=\col] ++(90:0.33);
+    \draw ($(C)!0.66!(O)$)++(180:0.0625) node[right,font=\small] {$\texttt{1}$};
+    % output
+    \draw ($(A)!0.5!(B)$)--++(0:1.75) ++(0,0) node[above left] {\texttt{re}}
+      ++(0,0) --++(90:4.6)--++(180:2.25)--++(-90:0.55) node[inputarrow,rotate=-90,color=\col];
+    % sel
+    \draw ($(O)!0.5!(A)$)--++(-90:0.25) --++(0:0.5) to[short,-*,color=\col] ++(-90:1.25);
+
+    %% x im
+    \draw (0,-3.75)coordinate (O)--++(30:0.5)coordinate (A)--++(90:0.5)coordinate (B)--++(150:0.5)coordinate (C)--cycle;
+    % 0 input
+    \draw ($(C)!0.33!(O)$)--++(180:1)
+      to[short,-,color=\col] ++(180:1.5) --++(90:0.85) --++(180:1);
+    \draw ($(C)!0.33!(O)$) ++(180:1.5) to[short,*-,color=\col] ++(90:1.5)
+      --++(0:1.05) --++(90:0.45) node[inputarrow,color=\col,rotate=90];
+    \draw ($(C)!0.33!(O)$)++(180:0.0625) node[right,font=\small] {$\texttt{0}$};
+    % 1 input
+    \draw ($(C)!0.66!(O)$)--++(180:0.25) ++(180:0.2)
+      node[adder,color=\col,scale=0.4,name=A1BF1] {}
+      (A1BF1.west) ++(-0.2,-0.2) node[] {\texttt{-}}
+      (A1BF1.west) node[inputarrow,color=\col] --++(180:0.35)
+      to[short,-*,color=\col] ++(90:0.33);
+      node[left] {\texttt{0}};
+    \draw ($(C)!0.66!(O)$)++(180:0.0625) node[right,font=\small] {$\texttt{1}$};
+    % output
+    \draw ($(A)!0.5!(B)$)--++(0:1) ++(0,0) node[above left] {\texttt{im}}
+      ++(0,0) --++(90:5.6)--++(180:1)--++(-90:0.3) node[inputarrow,rotate=-90,color=\col];
+    % sel
+    \draw ($(O)!0.5!(A)$)--++(-90:0.25) --++(0:0.5) --++(-90:0.25) node[below,font=\small]{$\texttt{sel1i}$};
+  }
+}
+\tikzset{
+  s1bf2/.pic={
+    %% shift regs
+    \foreach \y/\i in {1.25/0} {
+      \draw (-0.3125,\y) rectangle ++(1,0.4);
+      \draw (0.1875,\y+0.2) node[font=\tiny] {\texttt{sr[\i]}};
+      \fill[\col] (0.1875-0.05,\y) --++(0.1,0) --++(-0.05,0.1) --cycle;
+    }
+    %% xfsr re
+    \draw (0,0)coordinate (O)--++(30:0.5)coordinate (A)--++(90:0.5)coordinate (B)--++(150:0.5)coordinate (C)--cycle;
+    % 0 input
+    \draw (-0.3125,1.35) to[short,-,l=$\texttt{re}$] (-2,1.35) -- (-2,0.66);
+    \draw (-1.75,0.66) to[short,*-,color=\col] (-1.75,-2.6)
+      --++(1.30675,0) --++(0,0.25) node[inputarrow,rotate=90,color=\col];
+    \draw ($(C)!0.33!(O)$) --++(180:1) ++(-0.05,0) node[inputarrow,color=\col];
+    \draw ($(C)!0.33!(O)$)++(180:0.0625) node[right,font=\small] {$\texttt{0}$};
+    % 1 input
+    \draw ($(C)!0.66!(O)$)--++(180:0.25) ++(180:0.2)
+      node[adder,color=\col,scale=0.4,name=A1BF1] {}
+      (A1BF1.west) node[inputarrow,color=\col] --++(180:0.35)
+      to[short,-*,color=\col] ++(90:0.33)
+      to[short,--,color=\col] ++(180:1);
+    \draw ($(C)!0.66!(O)$)++(180:0.0625) node[right,font=\small] {$\texttt{1}$};
+    % output
+    \draw ($(A)!0.5!(B)$)--++(0:2.5)--++(0,-2.25)--++(1.37,0) node[inputarrow,color=\col];
+    % sel
+    \draw ($(O)!0.5!(A)$)--++(-90:0.25) --++(0:0.5) to[short,-*,color=\col] ++(-90:1.25);
+
+    %% xfsr im
+    \draw (0,-1.25)coordinate (O)--++(30:0.5)coordinate (A)--++(90:0.5)coordinate (B)--++(150:0.5)coordinate (C)--cycle;
+    % 0 input
+    \draw (-0.3125,1.55) to[short,-] (-2.5,1.55)
+      ++(1.15625,0) node[above] {\texttt{im}} ++(-1.15625,0)
+      -- (-2.5,0.66-1.25);
+    \draw (-2.25,0.66-1.25) to[short,*-,color=\col] (-2.25,-3.85)
+      --++(1.80675,0) --++(0,0.25) node[inputarrow,rotate=90,color=\col];
+    \draw ($(C)!0.33!(O)$) --++(180:1) ++(-0.05,0)
+      node[inputarrow,color=\col] --++(180:1.45);
+    \draw ($(C)!0.33!(O)$)++(180:0.0625) node[right,font=\small] {$\texttt{0}$};
+    % 1 input
+    \draw ($(C)!0.66!(O)$)--++(180:0.25) ++(180:0.2)
+      node[adder,color=\col,scale=0.4,name=A1BF1] {}
+      (A1BF1.west) node[inputarrow,color=\col] --++(180:0.35)
+      to[short,-*,color=\col] ++(90:0.33);
+    \draw ($(C)!0.66!(O)$)++(180:0.0625) node[right,font=\small] {$\texttt{1}$};
+    % output
+    \draw ($(A)!0.5!(B)$)--++(0:2)--++(0,-1.55)--++(1.9,0) node[inputarrow,color=\col];
+    % sel
+    \draw ($(O)!0.5!(A)$)--++(-90:0.25) --++(0:0.5) to[short,-*,color=\col] ++(-90:1.25);
+
+    %% x re
+    \draw (0,-2.5)coordinate (O)--++(30:0.5)coordinate (A)--++(90:0.5)coordinate (B)--++(150:0.5)coordinate (C)--cycle;
+    % 0 input
+    \draw ($(C)!0.33!(O)$)--++(180:1) to[short,-,color=\col] ++(180:1.5)
+      ++(-0.425,-0.5) coordinate (O1)--++(30:0.5)coordinate (A1)--++(90:0.5)coordinate (B1)--++(150:0.5)coordinate (C1)--cycle;
+    \draw ($(C1)!0.33!(O1)$)++(180:0.0625) node[right,font=\small] {$\texttt{0}$};
+    \draw ($(C1)!0.66!(O1)$)++(180:0.0625) node[right,font=\small] {$\texttt{1}$};
+    \draw ($(C)!0.33!(O)$) ++(180:2) to[short,*-,color=\col] ++(90:1.5)
+      --++(0:1.55) --++(90:0.45) node[inputarrow,color=\col,rotate=90];
+    \draw ($(C)!0.33!(O)$)++(180:0.0625) node[right,font=\small] {$\texttt{0}$};
+    % 1 input
+    \draw ($(C)!0.66!(O)$)--++(180:0.25) ++(180:0.2)
+      node[adder,color=\col,scale=0.4,name=A1BF1] {}
+      (A1BF1.west) ++(-0.2,-0.2) node[] {\texttt{-}}
+      (A1BF1.west) node[inputarrow,color=\col] --++(180:0.35)
+      to[short,-*,color=\col] ++(90:0.33);
+    \draw ($(C)!0.66!(O)$)++(180:0.0625) node[right,font=\small] {$\texttt{1}$};
+    % output
+    \draw ($(A)!0.5!(B)$)--++(0:1.75) ++(0,0) node[above left] {\texttt{re}}
+      ++(0,0) --++(90:4.2)--++(180:2.25)--++(-90:0.55) node[inputarrow,rotate=-90,color=\col];
+    % sel
+    \draw ($(O)!0.5!(A)$)--++(-90:0.25) --++(0:0.5) to[short,-*,color=\col] ++(-90:1.25);
+
+    %% x im
+    \draw (0,-3.75)coordinate (O)--++(30:0.5)coordinate (A)--++(90:0.5)coordinate (B)--++(150:0.5)coordinate (C)--cycle;
+    % 0 input
+    \draw ($(C)!0.33!(O)$)--++(180:1) to[short,-,color=\col] ++(180:1.5)
+      ++(-0.425,-0.5) coordinate (O1)--++(30:0.5)coordinate (A1)--++(90:0.5)coordinate (B1)--++(150:0.5)coordinate (C1)--cycle;
+    \draw ($(C1)!0.33!(O1)$)++(180:0.0625) node[right,font=\small] {$\texttt{0}$};
+    \draw ($(C1)!0.66!(O1)$)++(180:0.0625) node[right,font=\small] {$\texttt{1}$};
+    \draw ($(C)!0.33!(O)$) ++(180:1.5) to[short,*-,color=\col] ++(90:1.5)
+      --++(0:1.05) --++(90:0.45) node[inputarrow,color=\col,rotate=90];
+    \draw ($(C)!0.33!(O)$)++(180:0.0625) node[right,font=\small] {$\texttt{0}$};
+    % 1 input
+    \draw ($(C)!0.66!(O)$)--++(180:0.25) ++(180:0.2)
+      node[adder,color=\col,scale=0.4,name=A1BF1] {}
+      (A1BF1.west) ++(-0.2,-0.2) node[] {\texttt{-}}
+      (A1BF1.west) node[inputarrow,color=\col] --++(180:0.35)
+      to[short,-*,color=\col] ++(90:0.33);
+      node[left] {\texttt{0}};
+    \draw ($(C)!0.66!(O)$)++(180:0.0625) node[right,font=\small] {$\texttt{1}$};
+    % output
+    \draw ($(A)!0.5!(B)$)--++(0:1) ++(0,0) node[above left] {\texttt{im}}
+      ++(0,0) --++(90:5.2)--++(180:1)--++(-90:0.3) node[inputarrow,rotate=-90,color=\col];
+    % sel
+    \draw ($(O)!0.5!(A)$)--++(-90:0.25) --++(0:0.5) --++(-90:1) node[right,font=\small]{$\texttt{sel1ii}$};
+
+    %% sel and tsel
+    \draw ($(O)!0.5!(A)$)++(-1.5,-0.75) node[and port,rotate=180,color=\col,scale=0.5] (myand) {};
+    \node at (myand.bin 1) [ocirc,right,color=\col]{};
+    \draw (myand.in 1) --++(0.5,0) --++(0,-0.36) node[below,font=\small] {$\texttt{sel1i}$};
+    \draw (myand.in 2) to[short,-*,color=\col] ++(1.3,0);
+    \draw (myand.out) --++(-1.35,0) to[short,*-,color=\col] ++(0,0) --++(0,0.92);
+    \draw (myand.out) ++(-1.35,0) --++(-0.5,0)--++(0,1.9)--++(0.5,0)--++(0,0.25);
+  }
+}
+  %%% stage 0 BF1
+  \path(0,0) pic{s0bf1};
+  %%% stage 0 BF2
+  \path(7,0) pic{s0bf2};
+  %%% mixer
+  \draw (12,-2) node[mixer,color=\col,scale=1.5] (mix0) {};
+  \draw (mix0.south) node[inputarrow,rotate=90,color=\col] --++(0,-1)
+    node[below] {\texttt{W1(n)}};
+  \draw (mix0.east)++(-0.08,0.25) to[short,-,l=$\texttt{re}$] ++(0.85,0) node[inputarrow,color=\col];
+  \draw (mix0.east)++(-0.08,-0.25) to[short,-,l=$\texttt{im}$] ++(0.85,0) node[inputarrow,color=\col];
+  %%% register
+  \draw (13.5,-2) to[twoport,t=\texttt{REG},color=\col] (14.5,-2);
+  \fill[\col] (14-0.1,-2.5) --++(0.2,0) --++(-0.1,0.2) --cycle;
+  \draw(15,-1.8) node[above] {\texttt{re}};
+  \draw(15,-2.2) node[below] {\texttt{im}};
+  %%% stage 1 BF1
+  \path(18,0) pic{s1bf1};
+  %%% stage 1 BF2
+  \path(25,0) pic{s1bf2};
+\end{circuitikz}
+
+There are a few things to notice here. Each shift register only
+requires 1 read and 1 write port and therefore can be implemented
+using dual-port block RAM. I've only done this for the sufficiently
+large shift registers where it's worth it (see the Verilog file for
+details). I've also added a register after the complex multiplier to
+show how this can be pipelined. I use more pipeline stages in the
+actual implementation. Lastly, the multiplier in the diagram is a
+complex multiplier meaning it requires 4 real multipliers. However,
+it's possible to use a single DSP slice for this. The first step in
+achieving this involves using 3 multiplies instead of 4. The general
+form for a complex multiplication is
+
+\(\begin{aligned}
+R+iI &= (a+ib) \times (c+id).\\
+\end{aligned}\)
+
+However, if we precompute the following values
+
+\(\begin{aligned}
+e&=a-b\\
+f&=c\times e\\
+\end{aligned}\)
+
+then, the result can be achieved with
+
+\(\begin{aligned}
+R &= b(c-d) + f\\
+I &= a(c+d) - f\\
+\end{aligned}\)
+
+The second step is to realize that, like with the [[id:491617b7-7ba2-4a76-9a68-89ff7f8608b9][FIR filter]], we can
+run our DSP slice much faster than the general FFT clock rate of
+\(\SI{40}{MHz}\). By time multiplexing the DSP slice and using the
+fact that DSP slices are good at multiply-accumulate operations and
+not just multiply operations, we can run the DSP slice at
+\(\SI{120}{MHz}\). In the first clock period we compute \(f\) above,
+and then use that value in the next 2 clock periods to compute \(R\)
+and \(I\).
+
+**** TODO potential alternative
+\begin{circuitikz}[color=fgcolor]
+\ctikzset{multipoles/dipchip/pin spacing=0.3}
+\ctikzset{multipoles/dipchip/width=0.75}
+\ctikzset{multipoles/thickness=1}
+\def\inteval#1{%
+  \pgfmathparse{int(#1)}\pgfmathresult
+}
+\def\srblock{%
+  node[dipchip, num pins=2, hide numbers, no topmark, external
+  pins width=0,anchor=s]
+}
+\def\sr#1#2{%
+  \path #1 coordinate(_a);
+  \foreach \reg in {1,...,#2} {
+    \draw (_a) \srblock(blk){\footnotesize \inteval{#2+1-\reg}};
+    \path (blk.n) coordinate(_a);
+  }
+}
+%\def\butterfly#1{
+%}
+\sr{(0,0)}{7}
+\end{circuitikz}
+
+** TODO ADF4158 Frequency Synthesizer
 :PROPERTIES:
 :ID:       a0e92e3e-3444-4956-8c07-b4d14d1f2489
 :END:
+Is this section necessary?
+
 ** Additional Considerations
 *** Formal Verification
 *** Convergent Rounding
