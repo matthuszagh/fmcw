@@ -472,6 +472,47 @@ locking.
 :PROPERTIES:
 :ID:       5b91918a-80ec-4cff-af24-e620558c087a
 :END:
+The receiver's purpose is to capture the transmitted signal echo,
+amplify it without introducing too much noise, mix it with the
+transmitted signal down to an intermediate frequency, filter out
+non-signal frequencies and then amplify it again for digitization by
+the ADC. A simplified block diagram of the receiver hardware is shown
+below.
+
+\begin{circuitikz}[color=fgcolor]
+\ctikzset{inductors/scale=0.5}
+\ctikzset{quadpoles/transformer/width=1}
+\ctikzset{grounds/scale=0.5}
+\ctikzset{amplifiers/plus={\tiny $+$}}
+\ctikzset{amplifiers/minus={\tiny $-$}}
+\draw (0,0) node[bareRXantenna](rx){Rx};
+\draw (rx.bottom) --++(1,0) node[plain mono
+  amp,anchor=in](lna){};
+\draw ($(lna.center)-(0.15,0)$) node[]{\footnotesize LNA};
+\draw (lna.out) --++(0.4,0) node[plain mono amp, anchor=in](rfamp){};
+\draw ($(rfamp.center)-(0.15,0)$) node[]{\footnotesize RF};
+\draw (rfamp.out) --++(0.4,0) node[transformer,anchor=A1](balun){};
+\draw (balun.A2) node[ground]{};
+\draw ($($(balun.B1)!0.5!(balun.B2)$)+(1,0)$) node[mixer,anchor=1](mix){};
+\draw (balun.B1) --++(0.5,0) |- ($(mix.1)+(0,0.1)$) node[inputarrow]{};
+\draw (balun.B2) --++(0.5,0) |- ($(mix.1)-(0,0.1)$) node[inputarrow]{};
+\draw (mix.4) node[inputarrow,rotate=-90]{} --++(0,0.5)
+  node[ocirc,fill=bgcolor,anchor=270]{} node[above=2pt]{\footnotesize
+  coupled tx signal};
+\draw ($(mix.3)+(3,0)$) node[fd op amp](if){};
+\draw ($(if.center)-(0.3,0)$) node[]{\footnotesize IF};
+\draw ($(mix.3)+(1,0)$) node[bandpassshape](bp){};
+\draw ($(mix.3)+(0,0.1)$) -- ($(bp.west)+(0,0.1)$);
+\draw ($(mix.3)-(0,0.1)$) -- ($(bp.west)-(0,0.1)$);
+\draw ($(bp.east)+(0,0.1)$) --++(0.5,0) |- (if.-);
+\draw ($(bp.east)-(0,0.1)$) --++(0.5,0) |- (if.+);
+\draw (if.out +) node[ocirc,fill=bgcolor,anchor=0]
+  node[right=2pt]{\footnotesize ADC +};
+\draw (if.out -) node[ocirc,fill=bgcolor,anchor=0]
+  node[right=2pt]{\footnotesize ADC -};
+\end{circuitikz}
+
+* Digitization and Data Processing
 * USB Interface
 :PROPERTIES:
 :ID:       cecb79d6-db88-42bb-90b1-c61545fa00fc
