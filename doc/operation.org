@@ -2276,17 +2276,30 @@ Although most of the data processing is performed on the FPGA, the
 host PC software still has several non-trivial tasks. Most
 importantly, it has to perform some form of error detection so that
 bytes lost during transmission do not lead to erroneous data in the
-final output. Additionally, I've setup the software to be able to
-request any intermediate form of data on the FPGA (see the [[id:6d0ccb21-c85b-417a-961e-5bbfb78717d9][FPGA
-section]] for how this is implemented on the FPGA side), and can perform
-all the processing steps the FPGA can perform. This means that we can
-share data processing steps arbitrarily between hardware and
-software. For instance, we could request that filtering be performed
-on the FPGA and windowing and the FFT be performed in software. In
-that case, the final output plot should be identical (albeit updated
-more slowly) to what we would get if everything had been performed on
-the FPGA. This makes the hardware much easier to debug since we can
-directly compare the hardware result to the software result.
+final output. I've used a simple and inefficient, but in this case
+effective, method of performing the error detection. Specifically,
+every 8-byte packet of data sent from the FPGA to host PC is sent
+twice. When two consecutive packets of data are not identical the data
+is discarded. I use a header and tail bit sequences to identify when a
+packet starts and stops. The duplicated packets and header/tail
+sequences are useful because the majority of data errors are single
+missed bytes. For errors like this duplicated packets are very
+unlikely to produce a false positive. The header and tail sequences
+ensure that reads don't get offset from the data packets. Ultimately,
+the inefficiency doesn't matter because the radar can produce data way
+faster than we can plot on the host PC.
+
+Additionally, I've setup the software to be able to request any
+intermediate form of data on the FPGA (see the [[id:6d0ccb21-c85b-417a-961e-5bbfb78717d9][FPGA section]] for how
+this is implemented on the FPGA side), and can perform all the
+processing steps the FPGA can perform. This means that we can share
+data processing steps arbitrarily between hardware and software. For
+instance, we could request that filtering be performed on the FPGA and
+windowing and the FFT be performed in software. In that case, the
+final output plot should be identical (albeit updated more slowly) to
+what we would get if everything had been performed on the FPGA. This
+makes the hardware much easier to debug since we can directly compare
+the hardware result to the software result.
 
 Finally, I've multithreaded the program so that reading data from the
 radar, processing and plotting the data, and getting user input are
@@ -2336,8 +2349,8 @@ all separate threads. This is shown in the block diagram below.
 \draw (0,\mony) node[left=2pt]{\footnotesize user input}
   node[ocirc,fill=bgcolor,anchor=0]{} -- (monitor.bpin 3)
   node[inputarrow]{};
-\draw[dashed] ($(pipe.north)+(0,4)$) node[below left]{C} node[below
-  right]{Python} -- (pipe.north);
+\draw[dashed] ($(pipe.north)+(0,4)$) node[below left=3pt]{C} node[below
+  right=3pt]{Python} -- (pipe.north);
 \draw[dashed] (pipe.south) -- ($(pipe.south)-(0,4)$);
 \end{circuitikz}
 
@@ -2348,7 +2361,10 @@ program responds immediately to user input. Currently, this isn't
 very useful because the only possible user input after the program
 starts is to terminate the program. However, this will be useful when
 I extend the software the be able to change the data requested and
-plotted output while running.
+plotted output while running. The software supports a number of other
+options (e.g. background subtraction and displaying packet loss
+statistics) that can be determined by running ~fmcw -h~.
+
 
 * RF Simulations
 ** Microstrip
