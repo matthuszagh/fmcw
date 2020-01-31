@@ -182,39 +182,123 @@ frequency difference and thus the distance.
 :PROPERTIES:
 :ID:       92c3042a-54ed-4ada-a099-bf8e2d27a729
 :END:
-The maximum range of a radar can be determined using the radar
-equation, presented below.
+It's possible to relate the range of a remote object to the power
+received at a reception antenna using something known as the radar
+range equation. I'll derive this equation since the derivation is
+simple and facilitates conceptual understanding. Note that most of the
+steps used in this derivation are identical to the derivation for the
+well-known Friis transmission formula.
+
+Start by imagining that our transmission antenna is isotropic. The
+power density at some remote distance \(R\) is given by
 
 \(\begin{aligned}
-R_{max} &= \sqrt[4]{\frac{P_t G^2 \lambda^2 \sigma}
-  {P_{min}\left(4\pi\right)^3}} \\
+p_i &= \frac{P_T}{4\pi R^2}\\
 \end{aligned}\)
 
-where \(P_t\) is the transmitted power, \(G\) is the antenna gain,
-\(\lambda\) is the wavelength of our signal frequency, \(\sigma\) is
-the target cross-sectional area, and \(P_{min}\) is the minimum
-detectable signal power. I'll present the values here, but the
-transmitted power and minimum detectable power will be explained in
-the [[id:75195f2c-0743-4694-bd4a-a6e3d34b42aa][transmitter]] and [[id:5b91918a-80ec-4cff-af24-e620558c087a][receiver]] sections, respectively.
+where \(P_T\) is the transmitted power. The \(4\pi R^2\) comes from
+the fact that the isotropic antenna by definition radiates power
+equally in all directions and therefore the power density at some
+distance is inversely related to the surface area of the sphere
+centered at the transmission antenna. Now we replace the isotropic
+antenna with an antenna with gain \(G_T\) in the direction of \(R\)
+and the equation becomes
+
+\(\begin{aligned}
+p &= \frac{P_TG_T}{4\pi R^2}\\
+\end{aligned}\)
+
+At this distance \(R\) the transmitted signal reflects off a remote
+object. The total reflected power is given by
+
+\(\begin{aligned}
+P_R &= p \sigma\\
+&= \frac{P_TG_T\sigma}{4\pi R^2}\\
+\end{aligned}\)
+
+where \(\sigma\) is the cross-sectional area of the remote
+object. Note that this is a bit of a simplification, since the total
+reflected power will be dependent on several other factors such as the
+material properties of the remote object and its shape. We lump all
+these additional factors into the cross-sectional area, which is
+therefore not generally exactly equal to the object's actual
+cross-sectional area.
+
+We now imagine the remote object simply as a remote isotropic antenna
+with transmission power given by the reflected power shown
+above. Therefore, we use the same method as the first step to find the
+power density available at the reception antenna.
+
+\(\begin{aligned}
+p_R &= \left(\frac{P_TG_T\sigma}{4\pi R^2}\right)
+  \left(\frac{1}{4\pi R^2}\right)\\
+&= \frac{P_TG_T\sigma}{\left(4\pi R^2\right)^2}\\
+\end{aligned}\)
+
+To find the actual received power, we multiply the power density by
+the reception antenna's effective aperture
+
+\(\begin{aligned}
+P_R &= \frac{P_TG_T\sigma}{\left(4\pi R^2\right)^2} A_e\\
+A_e &= \frac{G_R \lambda^2}{4\pi}\\
+P_R &= \frac{P_TG_TG_R\lambda^2\sigma}{\left(4\pi\right)^3 R^4}\\
+\end{aligned}\)
+
+This is the final result. We could equivalently rearrange our equation
+in terms of the distance,
+
+\(\begin{aligned}
+R &= \sqrt[4]{\frac{P_T G_TG_R \lambda^2 \sigma}
+  {P_R\left(4\pi\right)^3}} \\
+\end{aligned}\)
+
+In our case the transmission and reception antennas are identical, so
+the equation simplifies to
+
+\(\begin{aligned}
+R &= \sqrt[4]{\frac{P_T G^2 \lambda^2 \sigma}
+  {P_R\left(4\pi\right)^3}} \\
+\end{aligned}\)
+
+Therefore, to find the maximum range we need to find the minimum
+detectable received power for a given remote cross-section.
+
+For the wavelength, we use the center frequency of \(\SI{5.6}{GHz}\)
+(\(\lambda = c/f_0\)), which corresponds to a wavelength of roughly
+\(\SI{5.4}{cm}\). For the cross-sectional area we'll somewhat
+arbitrarily take \(\SI{1}{m^2}\). It's worth noting for smaller
+objects that the max distance is proportional to the square root of
+one dimension of the remote object (assuming square objects). So,
+cutting the dimension in half (\(0.5\times \SI{0.5}{m}\)) makes the
+range roughly \(2/3\) of what we could expect previously.
+
+\begin{tabularx}{10cm}{c l c}
+\toprule
+Variable & Description & Value \\
+\midrule
+\(P_T\) & transmitted power & ? dBm \\
+\(G\) & antenna gain & \(\SI{14}{dB}\) \\
+\(\lambda\) & wavelength & \(\SI{5.4}{cm}\) \\
+\(\sigma\) & cross-sectional area & \(\SI{1}{m^2}\) \\
+\(P_{R_{min}}\) & minimum-detectable received power & ? dBm \\
+\bottomrule
+\end{tabularx}
+
+See the [[id:75195f2c-0743-4694-bd4a-a6e3d34b42aa][transmitter]] and [[id:5b91918a-80ec-4cff-af24-e620558c087a][receiver]] sections for how the transmitted
+power, antenna gain, and minimum-detectable received power were
+determined.
 
 TODO the transmitted power (antenna efficiency) and antenna gain need
 to be simulated, and are in general not in accordance with the values
 presented in the original PDF.
 
-For the wavelength, we use the center frequency of \(5.6\si{GHz}\)
-(\(\lambda = c/f_0\)), which corresponds to a wavelength of roughly
-\(5.4\si{cm}\). For the cross-sectional area we'll somewhat
-arbitrarily take \(1\si{m^2}\). It's worth noting for smaller objects
-that the max distance is proportional to the square root of one
-dimension of the remote object (assuming square objects). So, cutting
-the dimension in half (\(0.5\times 0.5\si{m}\)) makes the range
-roughly \(2/3\) of what we could expect previously.
-
 TODO minimum detectable power. See the PDF.
 
 ** TODO Minimum Range
-See the PDF. Also, I'm not sure if this should be its own
-section. Maybe they should be subsections under a "Range" section.
+The ADC supports a maximum voltage difference of
+\(\pm\SI{1}{V}\). Outside of this, we get waveform clipping and
+therefore distortion. We can work back from this value to determine
+the maximum received power.
 
 ** TODO Angle Calculation
 ** TODO Additional Considerations
