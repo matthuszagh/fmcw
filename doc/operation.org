@@ -336,11 +336,29 @@ TODO the transmitted power (antenna efficiency) and antenna gain need
 to be simulated, and are in general not in accordance with the values
 presented in the original PDF.
 
-** TODO Minimum Range
+** Minimum Range
 The ADC supports a maximum voltage difference of
 \(\pm\SI{1}{V}\). Outside of this, we get waveform clipping and
-therefore distortion. We can work back from this value to determine
-the maximum received power.
+therefore distortion. We can work back from this value, using the
+[[id:ee12236d-727c-468d-b165-a1b6a7ab3450][receiver gain]] to determine the maximum received power that avoids
+distortion.
+
+The IF amplifier has a gain of about \(\SI{23.5}{dB}\), which sets an
+upper limit on the acceptable mixer output voltage of
+\(\SI{67}{mV}\). We can convert this into an output power level using
+the equation
+
+\(\begin{aligned}
+P &= \frac{V^2}{Z_{load}}\\
+\end{aligned}\)
+
+The mixer uses a differential output impedance of
+\(Z_{load}=\SI{200}{\Omega}\), so the max output power is
+\(P=\SI{2.23e-5}{W}=-\SI{16.5}{dBm}\). It's power conversion gain at
+\(\SI{5.5}{GHz}\) is \(-\SI{3}{dB}\) and the collective LNA and RF
+amplifier gain is \(\SI{25}{dB}\), so the max reception power that
+avoids distortion is \(-\SI{44.5}{dBm}\). This corresponds to a
+minimum distance of \(\SI{7.5}{m}\).
 
 ** TODO Angle Calculation
 ** TODO Additional Considerations
