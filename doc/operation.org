@@ -179,6 +179,9 @@ So, using a Fourier transform on the mixer output will tell us the
 frequency difference and thus the distance.
 
 ** TODO Maximum Range
+:PROPERTIES:
+:ID:       92c3042a-54ed-4ada-a099-bf8e2d27a729
+:END:
 The maximum range of a radar can be determined using the radar
 equation, presented below.
 
@@ -190,9 +193,9 @@ R_{max} &= \sqrt[4]{\frac{P_t G^2 \lambda^2 \sigma}
 where \(P_t\) is the transmitted power, \(G\) is the antenna gain,
 \(\lambda\) is the wavelength of our signal frequency, \(\sigma\) is
 the target cross-sectional area, and \(P_{min}\) is the minimum
-detectable signal power. I'll present the values here, but I will
-additionally explain how I got to them in the [[id:2892ed74-7258-4776-ae3d-a5a417dda02c][transmitter]] and [[id:5b91918a-80ec-4cff-af24-e620558c087a][receiver]]
-sections.
+detectable signal power. I'll present the values here, but the
+transmitted power and minimum detectable power will be explained in
+the [[id:75195f2c-0743-4694-bd4a-a6e3d34b42aa][transmitter]] and [[id:5b91918a-80ec-4cff-af24-e620558c087a][receiver]] sections, respectively.
 
 TODO the transmitted power (antenna efficiency) and antenna gain need
 to be simulated, and are in general not in accordance with the values
@@ -246,7 +249,7 @@ See PDF.
 \draw (3, -4) node[mixer](mix){};
 \draw (n1) to[short] (mix.3);
 \draw (cpl.2) --++(1,0) --++(0,-2) -| (mix.4);
-\draw (mix.1) --++(-0.5,0) to[bandpass] ++(-2,0)
+\draw (mix.1) --++(-0.5,0) to[lowpass] ++(-2,0)
   to[amp,t={\scalebox{-1}[-1]{\footnotesize IF}}]
   ++(-2,0) to[adc] ++(-2,0) --++(0,-2) coordinate (fpga) --++(0,-2)
   to[twoport,t=\footnotesize FIR] ++(2,0) to[twoport,t=$20\downarrow$] ++(2,0)
@@ -261,20 +264,21 @@ See PDF.
 #+caption: identical.
 
 A frequency synthesizer generates a sinusoidal signal that ramps in
-frequency from \(5.3\) to \(5.9\si{GHz}\) over a duration of
-\(1\si{ms}\). The signal is then amplified and most of the power is
+frequency from \(5.3\) to \(\SI{5.9}{GHz}\) over a duration of
+\(\SI{1}{ms}\). The signal is then amplified and most of the power is
 sent to the transmission antenna. The remaining power is redirected to
 a mixer for multiplication with the received signal. The light echo of
 the transmitted signal is picked up by a reception antenna and
 amplified with a low-noise amplifier followed by a high-frequency
 amplifier. This amplified signal is mixed with the coupled portion of
 the transmitted signal and output as a differential signal. The mixer
-output is passed through a bandpass filter, which has a flat frequency
-response between about \(10\si{kHz}\) and \(1\si{MHz}\). The signal is
-then amplified again, digitized at a sampling rate of \(40\si{MHz}\),
-and passed to the FPGA. The FPGA first uses a polyphase FIR filter to
-simultaneously filter signals of frequency greater than \(1\si{MHz}\)
-and downsample the signal by a factor of 20 which reduces the
+output is passed through a lowpass filter, which, together an
+intermediate frequency amplifier passes and amplifies signals between
+about \(\SI{10}{kHz}\) and \(\SI{1}{MHz}\). The signal is then
+digitized at a sampling rate of \(\SI{40}{MHz}\), and passed to the
+FPGA. The FPGA first uses a polyphase FIR filter to simultaneously
+filter signals of frequency greater than \(\SI{1}{MHz}\) and
+downsample the signal by a factor of 20 which reduces the
 computational load for subsequent processing/transmission stages. The
 signal is then multiplied by a kaiser window and finally transformed
 into its frequency composition with a 1024-point FFT. The frequency
@@ -373,9 +377,7 @@ diminishes. The opposite occurs when \(f_{\mathit{REF}}\) lags behind
 phase, not frequency. However, any differences in frequency will lead
 to phase differences and thus the phase detector will cause the
 frequency and phase of \(f_{\mathit{VCO}}\) to converge to that of
-\(f_{\mathit{REF}}\). It's worth noting that we're talking about
-signal edges even though \(f_{\mathit{VCO}}\) is a sinusoidal
-signal. We can use a Schmitt trigger to turn this into a fast edge.
+\(f_{\mathit{REF}}\).
 
 All we've done so far is take \(f_{\mathit{REF}}\) and generate
 another signal \(f_{\mathit{VCO}}\) with identical frequency and
@@ -394,10 +396,12 @@ frequency that is much higher than the reference frequency. The
 diagram above isn't completely accurate. What we've shown is an
 integer-N frequency synthesizer, whereas the device we're using is a
 fractional-N frequency synthesizer. The practical difference is that
-our value of \(n\) can be non-integral and thus allows more precise
+our value of \(n\) can be non-integral and thus allows finer-grained
 control of the output voltage.
 
-*** Phase Detector
+*** TODO Phase Detector
+TODO diagram below is deficient. Use the one from the wiki.
+
 I've ommitted some important details about how the phase-detector
 controls the voltage input to the VCO, which I'll discuss now.
 
@@ -477,7 +481,9 @@ amplify it without introducing too much noise, mix it with the
 transmitted signal down to an intermediate frequency, filter out
 non-signal frequencies and then amplify it again for digitization by
 the ADC. A simplified block diagram of the receiver hardware is shown
-below.
+below. Note that this is just one of two receivers. The mixer and
+differential amplifier support two separate differential signal pairs,
+so that circuitry is shared between both receivers.
 
 \begin{circuitikz}[color=fgcolor]
 \ctikzset{inductors/scale=0.5}
@@ -501,7 +507,7 @@ below.
   coupled tx signal};
 \draw ($(mix.3)+(3,0)$) node[fd op amp](if){};
 \draw ($(if.center)-(0.3,0)$) node[]{\footnotesize IF};
-\draw ($(mix.3)+(1,0)$) node[bandpassshape](bp){};
+\draw ($(mix.3)+(1,0)$) node[lowpassshape](bp){};
 \draw ($(mix.3)+(0,0.1)$) -- ($(bp.west)+(0,0.1)$);
 \draw ($(mix.3)-(0,0.1)$) -- ($(bp.west)-(0,0.1)$);
 \draw ($(bp.east)+(0,0.1)$) --++(0.5,0) |- (if.-);
@@ -511,6 +517,222 @@ below.
 \draw (if.out -) node[ocirc,fill=bgcolor,anchor=0]
   node[right=2pt]{\footnotesize ADC -};
 \end{circuitikz}
+
+** Noise Figure
+We use two amplifiers chained together immediately after the antenna
+because it's critical that the first amplifier has low noise and high
+gain. This decreases the [[id:92c3042a-54ed-4ada-a099-bf8e2d27a729][minimum detectable power]] and thus increases
+the radar's range capability. The reason for this is a result of the
+equation for the equivalent noise factors of two devices chained
+together:
+
+\(\begin{aligned}
+F_{\mathit{NET}} &= F_1 + \frac{F_2-1}{G_1}\\
+\end{aligned}\)
+
+where \(F_1\) and \(F_2\) are the noise factors of the first and
+second components, and \(G_1\) is the gain of the first component (as
+an actual power ratio, not in dB). Therefore, we see that the greater
+the gain of the first component, the more the total noise factor is
+reduced. Here's a table of the relevant parameters for calculating the
+total noise figure of the receiver. See the corresponding sections for
+how these values were attained.
+
+| Device | NF (dB) | G (dB) |
+|--------+---------+--------|
+| LNA    |       1 |     13 |
+| RF Amp |     4.5 |     12 |
+| Mixer  |      14 |     -3 |
+| IF Amp |   10-20 |   23.5 |
+|--------+---------+--------|
+| Total  | 3.5-6.5 |   45.5 |
+
+The IF amplifier noise figure was not given and has simply been
+estimated. Additionally, I've included the filter gain as part of the
+IF amplifier gain.
+
+** Mixer
+** Differential Amplifier
+The differential amplifier's input circuitry is worth discussing
+because it affects the amplifier's frequency response. There are 3
+logical parts to this, shown in the schematic below. The pullup
+resistors at the mixer output set the DC bias point of the output to
+\(\SI{5}{V}\). This is followed by an LC lowpass filter, and then the
+differential amplifier acts as a 2nd order active bandpass filter,
+with roughly \(\SI{23}{dB}\) of gain. The DC blocking capacitors in
+the active filter serve an additional purpose, which is to allow the
+differential amplifier's input voltages to float down to the
+acceptable input range. This is critical because the the \(\SI{5}{V}\)
+bias point would be too high for the amplifier which has a supply
+voltage of \(\SI{3.3}{V}\).
+
+\begin{circuitikz}[color=fgcolor]
+\ctikzset{tripoles/fd op amp/font=\footnotesize}
+\draw (0,0) node[fd op amp](opamp){};
+\gettikzxy{(opamp.+)}{\ampnix}{\ampniy}
+\gettikzxy{(opamp.-)}{\ampix}{\ampiy}
+\gettikzxy{(opamp.out +)}{\ampopx}{\ampopy}
+\gettikzxy{(opamp.out -)}{\amponx}{\ampony}
+\draw (opamp.-) --++(0,0.5) coordinate(ampi) to[R,l_=$\SI{549}{\Omega}$] ++(-2,0)
+  to[C,l_=$\SI{10}{nF}$] ++(-2,0) to[short,-*] ++(-2,0) coordinate(cp)
+  to[L,l_=$\SI{2.2}{\mu H}$,mirror] ++(-2,0) to[short,-*] ++(-2,0) coordinate(vbp)
+  --++(-2,0) coordinate(vinp);
+\gettikzxy{(vinp)}{\vinpx}{\vinpy}
+\draw (vinp) to[sV,l_={\footnotesize mixer output}]
+  ++($(0,\ampniy-\vinpy)-(0,0.5)$) coordinate(vinn);
+\draw (opamp.+) --++(0,-0.5) coordinate(ampni) to[R=$\SI{549}{\Omega}$] ++(-2,0)
+  to[C=$\SI{10}{nF}$] ++(-2,0) to[short,-*] ++(-2,0) coordinate(cn)
+  to[L=$\SI{2.2}{\mu H}$,mirror] ++(-2,0) to[short,-*] ++(-2,0) coordinate(vbn) -- (vinn);
+\draw[dashed] ($(vbp)+(1,3)$) -- ($(vbn)+(1,-3)$);
+\draw ($($(vbp)!0.5!(vbn)$)+(1,0)$) node[left,align=center]{\footnotesize \vphantom{p} DC bias};
+\draw ($($(vbp)!0.5!(vbn)$)+(1,0)$) node[right,align=center]{\footnotesize LC lowpass};
+\draw[dashed] ($(cp)+(2,3)$) -- ($(cn)+(2,-3)$);
+\draw ($($(cp)!0.5!(cn)$)+(2,0)$) node[right,align=center]{\footnotesize active bandpass};
+\draw (vbp) to[R=$\SI{50}{\Omega}$,-*] ++(0,2) node[vcc](vcc1){$\SI{5}{V}$};
+\draw (vcc1) to[C,l_=$\SI{100}{nF}$] ++(-2,0) node[ground]{};
+\draw (vbn) to[R,l_=$\SI{50}{\Omega}$,-*] ++(0,-2) node[vee](vcc2){$\SI{5}{V}$};
+\draw (vcc2) to[C=$\SI{100}{nF}$] ++(-2,0) node[ground]{};
+\draw (cp) to[C=$\SI{2.2}{nF}$,*-*] (cn);
+\draw (opamp.out +) --++(1,0) coordinate(voutp) to[short,*-o] ++(1,0)
+  node[right]{$V_{out+}$};
+\draw (opamp.out -) --++(1,0) coordinate(voutn) to[short,*-o] ++(1,0)
+  node[right]{$V_{out-}$};
+\gettikzxy{(voutp)}{\voutpx}{\voutpy}
+\gettikzxy{(voutn)}{\voutnx}{\voutny}
+\draw (voutp) --++(0,1) coordinate (a) to[R=$\SI{8.2}{k\Omega}$,*-*]
+  ++(\ampix-\voutpx,0) coordinate(b) to[short,-*] (ampi);
+\draw (a) --++(0,1) to[C=$\SI{10}{pF}$] ++(\ampix-\voutpx,0) -- (b);
+\draw (voutn) --++(0,-1) coordinate (c) to[R=$\SI{8.2}{k\Omega}$,*-*]
+  ++(\ampix-\voutpx,0) coordinate(d) to[short,-*] (ampni);
+\draw (c) --++(0,-1) to[C=$\SI{10}{pF}$] ++(\ampix-\voutpx,0) -- (d);
+\end{circuitikz}
+
+The frequency response of this circuit is shown in the plots below.
+
+#+begin_src python :results output silent :hidden
+from skidl.pyspice import *
+from libcircuit.spice import capacitor_equiv
+import numpy as np
+
+fname = "data/diff-amp-bp-filter.dat"
+lib_search_paths[SPICE].append("/home/matt/src/spicelib")
+
+rcm_val = 50e6
+v5 = V(value=5)
+v33 = V(value=3.3)
+v15 = V(value=1.5)
+vs = SINEV(amplitude=1)
+# component declaration
+rout = Part("pyspice", "R", value=1e9)
+rload = Part("pyspice", "R", value=1e3)
+lt = Part("pyspice", "L", value=2.2e-6)
+lb = Part("pyspice", "L", value=2.2e-6)
+cm = capacitor_equiv(value=2.2e-9)
+ct = capacitor_equiv(value=10e-9)
+cb = capacitor_equiv(value=10e-9)
+rfbt = Part("pyspice", "R", value=8.2e3)
+cfbt = Part("pyspice", "C", value=10e-12)
+rfbb = Part("pyspice", "R", value=8.2e3)
+cfbb = Part("pyspice", "C", value=10e-12)
+ada4940 = Part("ADA4940", "ada4940")
+rgt = Part("pyspice", "R", value=549)
+rgb = Part("pyspice", "R", value=549)
+
+shunt_top = Part("pyspice", "R", value=50)
+shunt_bot = Part("pyspice", "R", value=50)
+cbp_top = capacitor_equiv(value=100e-9)
+cbp_bot = capacitor_equiv(value=100e-9)
+
+# component connections
+gnd += v33[2], v5[2], cbp_top[2], cbp_bot[2], v15[2]
+vs[1] += shunt_top[2], lt[1], rout[1]
+vs[2] += shunt_bot[2], lb[1], rout[2]
+v5[1] += shunt_top[1], shunt_bot[1], cbp_top[1], cbp_bot[1]
+v15[1] += ada4940["110"]
+lt[2] += cm[1], ct[1]
+lb[2] += cm[2], cb[1]
+ct[2] += rgt[1]
+cb[2] += rgb[1]
+rgt[2] += rfbt[1], cfbt[1], ada4940["3A"]
+rgb[2] += rfbb[1], cfbb[1], ada4940["9"]
+ada4940["3B"] += rfbt[2], cfbt[2]
+ada4940["9B"] += rfbb[2], cfbb[2]
+ada4940["71B"] += rload[1]
+ada4940["71"] += rload[2]
+ada4940["99"] += v33[1]
+ada4940["50"] += v33[2]
+
+# generate netlist and waveforms
+circ = generate_netlist(libs="/home/matt/src/spicelib")
+sim = circ.simulator()
+waveforms = sim.ac(
+    variation="dec",
+    number_of_points=100,
+    start_frequency=1,
+    stop_frequency=10e6,
+)
+
+freq = waveforms.frequency
+vinp = waveforms[node(vs[1])]
+vinn = waveforms[node(vs[2])]
+voutp = waveforms[node(rload[1])]
+voutn = waveforms[node(rload[2])]
+
+with open(fname, "w") as f:
+    f.write("{:10} {:10} {:10}\n".format("freq", "vratio", "phase"))
+    for fr, vin, vout in zip(
+        freq.as_ndarray(),
+        vinp.as_ndarray() - vinn.as_ndarray(),
+        voutp.as_ndarray() - voutn.as_ndarray(),
+    ):
+        arg = np.imag(vout / vin) / np.real(vout / vin)
+        db = 20 * np.log10(abs(vout) / abs(vin))
+        f.write("{:9.2f} {:9.5f} {:9.5f}\n".format(fr, db, np.arctan(arg),))
+#+end_src
+
+\begin{tikzpicture}
+%
+\begin{semilogxaxis}[
+  title=IF Amplifier Input Filter,
+  ylabel={G (dB)},
+  xlabel={$f$},
+  axis y line*=left,
+]
+  \addplot [] table[x=freq, y=vratio] {data/diff-amp-bp-filter.dat};
+\end{semilogxaxis}
+\begin{semilogxaxis}[
+  ylabel={\textcolor{blue!20}{$\phi$}},
+  axis y line*=right,
+  ytick={-pi/4, 0, pi/4, pi/2},
+  yticklabels={$-\pi/4$, $0$, $\pi/4$, $\pi/2$},
+]
+  \addplot [blue!20] table[x=freq, y=phase] {data/diff-amp-bp-filter.dat};
+\end{semilogxaxis}
+\end{tikzpicture}
+
+\begin{tikzpicture}
+\begin{semilogxaxis}[
+  title=IF Amplifier Input Filter (Passband),
+  ylabel={G (dB)},
+  xlabel={$f$},
+  axis y line*=left,
+  grid=both,
+  xmin=30e3, xmax=1e6,
+]
+  \addplot [] table[x=freq, y=vratio] {data/diff-amp-bp-filter.dat};
+\end{semilogxaxis}
+\begin{semilogxaxis}[
+  ylabel={\textcolor{blue!20}{$\phi$}},
+  axis y line*=right,
+  xmin=30e3, xmax=1e6,
+  xticklabels=\empty,
+  xtick=\empty,
+  ytick={-pi/8, 0, pi/8, pi/4},
+  yticklabels={$-\pi/8$, $0$, $\pi/8$, $\pi/4$},
+]
+  \addplot [blue!20] table[x=freq, y=phase] {data/diff-amp-bp-filter.dat};
+\end{semilogxaxis}
+\end{tikzpicture}
 
 * Digitization and Data Processing
 * USB Interface
