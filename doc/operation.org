@@ -662,7 +662,10 @@ so that circuitry is shared between both receivers.
   node[right=2pt]{\footnotesize ADC -};
 \end{circuitikz}
 
-** Noise Figure
+** Noise Figure and Gain
+:PROPERTIES:
+:ID:       ee12236d-727c-468d-b165-a1b6a7ab3450
+:END:
 We use two amplifiers chained together immediately after the antenna
 because it's critical that the first amplifier has low noise and high
 gain. This decreases the [[id:92c3042a-54ed-4ada-a099-bf8e2d27a729][minimum detectable power]] and thus increases
