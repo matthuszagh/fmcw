@@ -272,27 +272,69 @@ one dimension of the remote object (assuming square objects). So,
 cutting the dimension in half (\(0.5\times \SI{0.5}{m}\)) makes the
 range roughly \(2/3\) of what we could expect previously.
 
-\begin{tabularx}{10cm}{c l c}
+\begin{tabularx}{13cm}{l l l l}
 \toprule
-Variable & Description & Value \\
+Variable & Description & Value & Equation Units \\
 \midrule
-\(P_T\) & transmitted power & ? dBm \\
-\(G\) & antenna gain & \(\SI{14}{dB}\) \\
-\(\lambda\) & wavelength & \(\SI{5.4}{cm}\) \\
-\(\sigma\) & cross-sectional area & \(\SI{1}{m^2}\) \\
-\(P_{R_{min}}\) & minimum-detectable received power & ? dBm \\
+\(P_T\) & transmitted power & \(\SI{19.5}{dBm}\) & \(\SI{0.089}{W}\) \\
+\(G\) & antenna gain & \(\SI{14}{dB}\) & \(28.9\) \\
+\(\lambda\) & wavelength & \(\SI{5.4}{cm}\) & \(\SI{5.4e-2}{m}\) \\
+\(\sigma\) & cross-sectional area & \(\SI{1}{m^2}\) & same \\
+\(P_{R_{min}}\) & minimum-detectable received power &
+  \(-\SI{115}{dBm}\) & \(\SI{3.16e-15}{W}\) \\
 \bottomrule
 \end{tabularx}
 
-See the [[id:75195f2c-0743-4694-bd4a-a6e3d34b42aa][transmitter]] and [[id:5b91918a-80ec-4cff-af24-e620558c087a][receiver]] sections for how the transmitted
-power, antenna gain, and minimum-detectable received power were
-determined.
+See [[id:4b5d444b-d558-4bf5-814d-b7e40facb4b0][the horn antenna section]] for how we found the transmission power
+and antenna gain values.
+
+The minimum-detectable power can be calculated by determining the
+receiver noise and then setting some minimal signal-to-noise ratio
+(SNR) above that value. We'll use an SNR of \(\SI{20}{dB}\). To find
+the receiver noise, we start with the thermal noise and then add in
+the noise contributed by all the receiver devices. The thermal noise
+is given by
+
+\(\begin{aligned}
+P &= k_BTB\\
+\end{aligned}\)
+
+where \(k_B=\SI{1.38e-23}{m^2.kg.s^{-2}.K^{-1}}\) is Boltzmann's
+constant, \(T=\SI{300}{K}\) is roughly room temperature and \(B\) is
+the bandwidth. The bandwidth is the same as our frequency bin
+resolution, which is given by
+
+\(\begin{aligned}
+B &= \frac{f_s}{N}\\
+\end{aligned}\)
+
+where \(f_s=\SI{2}{MHz}\) is the sampling frequency and \(N=1024\) is
+the number of FFT samples. This gives a thermal noise power of
+
+\(\begin{aligned}
+P &= \SI{8.09e-18}{W}\\
+&= -\SI{141}{dBm}\\
+\end{aligned}\)
+
+The [[id:ee12236d-727c-468d-b165-a1b6a7ab3450][receiver noise figure]] is \(\SI{6}{dB}\), which means the total
+receiver noise power is
+
+\(\begin{aligned}
+P &= -\SI{135}{dBm}\\
+\end{aligned}\)
+
+The minimum-detectable power is the SNR above that value or
+
+\(\begin{aligned}
+P_{R_{min}} &= -\SI{115}{dBm}\\
+\end{aligned}\)
+
+Using these values in the radar range equation gives a maximum range
+of about \(\SI{431}{m}\).
 
 TODO the transmitted power (antenna efficiency) and antenna gain need
 to be simulated, and are in general not in accordance with the values
 presented in the original PDF.
-
-TODO minimum detectable power. See the PDF.
 
 ** TODO Minimum Range
 The ADC supports a maximum voltage difference of
