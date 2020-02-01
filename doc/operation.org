@@ -539,22 +539,23 @@ our value of \(n\) can be non-integral and thus allows finer-grained
 control of the output voltage.
 
 *** TODO Phase Detector
-TODO diagram below is deficient. Use the one from the wiki.
-
 I've ommitted some important details about how the phase-detector
 controls the voltage input to the VCO, which I'll discuss now.
 
 Here's a possible implementation of a phase detector, taken from AoE.
 
 \begin{circuitikz}[color=fgcolor]
+\tikzset{flipflop ff/.style={flipflop,
+  flipflop def={t1=D, c3=1, t6=Q, td={RST}}}
+}
 \ctikzset{flipflops/scale=0.8}
-\draw (0,0) node[flipflop D, add async SR](ff1){};
-\draw (0,-3) node[flipflop D, add async SR](ff2){};
+\draw (0,0) node[flipflop ff](ff1){};
+\draw (0,-3) node[flipflop ff](ff2){};
 \draw ($(ff1.pin 1)+(-1,1)$) node[above]{$V_+$} to[short,o-*] ++(0,-1) coordinate(c1)
   --++(1,0);
 \draw (c1) |- (ff2.pin 1);
-\draw (ff1.pin 3) to[short,-o] ++(-2,0) node[left]{$f_{\mathit{REF}}$};
-\draw (ff2.pin 3) to[short,-o] ++(-2,0) node[left]{$f_{\mathit{VCO}}$};
+\draw (ff1.pin 3) to[short,-o] ++(-2,0) node[left]{$f_1$};
+\draw (ff2.pin 3) to[short,-o] ++(-2,0) node[left]{$f_2$};
 \draw (ff1.pin 6) to[short,-*] ++(2,0) coordinate(c2);
 \draw[->] (c2) --++(4,0) coordinate(c3);
 \draw (c3) node[isourceAMshape,anchor=s,rotate=-90](i1){};
