@@ -361,10 +361,6 @@ avoids distortion is \(-\SI{44.5}{dBm}\). This corresponds to a
 minimum distance of \(\SI{7.5}{m}\).
 
 ** TODO Angle Calculation
-** TODO Additional Considerations
-*** TODO Doppler Shift
-See PDF.
-
 * Block Diagram
 :PROPERTIES:
 :ID:       012a28eb-d2bd-4cf4-8eed-832482c535cf
