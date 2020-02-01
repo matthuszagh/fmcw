@@ -360,7 +360,6 @@ amplifier gain is \(\SI{25}{dB}\), so the max reception power that
 avoids distortion is \(-\SI{44.5}{dBm}\). This corresponds to a
 minimum distance of \(\SI{7.5}{m}\).
 
-** TODO Angle Calculation
 * Block Diagram
 :PROPERTIES:
 :ID:       012a28eb-d2bd-4cf4-8eed-832482c535cf
