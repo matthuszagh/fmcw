@@ -928,7 +928,7 @@ block diagram of this is shown below.
 \end{circuitikz}
 
 * Power
-* FPGA
+* FPGA Gateware
 :PROPERTIES:
 :ID:       6d0ccb21-c85b-417a-961e-5bbfb78717d9
 :END:
