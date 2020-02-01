@@ -877,11 +877,57 @@ with open(fname, "w") as f:
 \end{semilogxaxis}
 \end{tikzpicture}
 
-* Digitization and Data Processing
-* USB Interface
+* Digitization, Data Processing and USB Interface
 :PROPERTIES:
 :ID:       cecb79d6-db88-42bb-90b1-c61545fa00fc
 :END:
+An ADC converts differential analog signals from the [[id:5b91918a-80ec-4cff-af24-e620558c087a][receiver]] into
+12-bit digital signals that are then sent to the FPGA for
+processing. The FPGA supports a two-way communication interface with
+the FT2232H USB interface chip that allows it to send processed data
+to the host PC for further processing and receive information from the
+PC. This interface is also used to configure the FPGA at startup. A
+block diagram of this is shown below.
+
+\begin{circuitikz}[color=fgcolor]
+\ctikzset{multipoles/dipchip/width=2}
+\ctikzset{bipole label style/.style={font=\footnotesize}}
+\def\block#1{node[dipchip, num pins=10, hide numbers, no topmark, external
+  pins width=0,anchor=#1]}
+\def\smallBlock#1{node[dipchip, num pins=6, hide numbers, no topmark, external
+  pins width=0, anchor=#1]}
+\def\rect#1#2#3{%
+  #1 -|++(#2/2,-#3) -|++(-#2,#3) -- cycle
+}
+\def\clkDim{0.2}
+\draw (0,0) \block{bpin 2}(adc){ADC} (adc.bpin 2)
+  node[right]{\footnotesize Ain+} to[short,-*] ++(-2,0) coordinate(cp)
+  to[R,l_=$\SI{49.9}{\Omega}$,-o] ++(-2,0) node[left]{\footnotesize IF
+  out -}
+(adc.bpin 4) node[right]{\footnotesize Ain-} to[short,-*] ++(-2,0)
+  coordinate(cn) to[R=$\SI{49.9}{\Omega}$,-o] ++(-2,0)
+  node[left]{\footnotesize IF out +}
+(cn) to[C,l_=$\SI{100}{pF}$] (cp)
+(cn) to[C=$\SI{100}{pF}$] ++(0,-1) node[tlground]{}
+(cp) to[C,l_=$\SI{100}{pF}$] ++(0,1) node[tlground,yscale=-1]{}
+(adc.bpin 8) to[bmultiwire=12] ++(2,0) \block{bpin 3}(fpga){FPGA}
+  (fpga.bpin 3)
+(fpga.bpin 9) to[bmultiwire=8] ++(2,0) \block{bpin 2}(ft){FT2232H}
+(fpga.bpin 7) to[short] ++(2,0) (ft.bpin 4)
+($(fpga.bpin 7)+(1,0)$) node[above]{\footnotesize JTAG}
+(ft.bpin 8) to[short,-o] ++(1,0) node[right]{\footnotesize USB}
+($(adc.s)+(\clkDim/2,0)$) --++(-\clkDim/2,\clkDim)
+  --++(-\clkDim/2,-\clkDim)
+(adc.s) to[short,-*] ++(0,-1) coordinate(ck) --++(-2,0)
+  node[left]{\footnotesize $\SI{40}{MHz}$}
+(ck) -| (fpga.s)
+($(fpga.s)+(\clkDim/2,0)$) --++(-\clkDim/2,\clkDim)
+  --++(-\clkDim/2,-\clkDim) (ft.s) --++(0,-1);
+\draw[thick] \rect{($(ft.s)-(0,1)$)}{2}{1}
+($(ft.s)-(0,1.5)$) node[]{\footnotesize EEPROM}
+\end{circuitikz}
+
+* Power
 * FPGA
 :PROPERTIES:
 :ID:       6d0ccb21-c85b-417a-961e-5bbfb78717d9
