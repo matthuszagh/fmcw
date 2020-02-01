@@ -2378,7 +2378,6 @@ statistics) that can be determined by running ~fmcw -h~.
 ** Antennas
 *** Horn
 *** Patch Array
-* Spice Simulations
 * OLD
 ** modules
 *** USB interface
