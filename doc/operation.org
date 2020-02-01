@@ -915,7 +915,7 @@ block diagram of this is shown below.
 (fpga.bpin 9) to[bmultiwire=8] ++(2,0) \block{bpin 2}(ft){FT2232H}
 (fpga.bpin 7) to[short] ++(2,0) (ft.bpin 4)
 ($(fpga.bpin 7)+(1,0)$) node[above]{\footnotesize JTAG}
-(ft.bpin 8) to[short,-o] ++(1,0) node[right]{\footnotesize USB}
+(ft.bpin 8) to[short,-o] ++(1,0) node[right]{\footnotesize USB ($\SI{480}{Mbps}$)}
 ($(adc.s)+(\clkDim/2,0)$) --++(-\clkDim/2,\clkDim)
   --++(-\clkDim/2,-\clkDim)
 (adc.s) to[short,-*] ++(0,-1) coordinate(ck) --++(-2,0)
