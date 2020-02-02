@@ -39,3 +39,15 @@ receiver channels for better angular resolution. The PCB has already
 been built (though is untested), but I haven't yet had the time to
 write the FPGA code and software to support it.
 
+* Issues and To-Do
+:PROPERTIES:
+:ID:       0246fbe1-ba4a-4bf6-b551-a896264dea3a
+:END:
+The power circuitry that was added to accommodate a new power
+amplifier (the original was deprecated) adds noise that shows up in
+the final output. Because of this problem, if you're able to track
+down the old power amplifier I'd recommend using Henrik's design
+instead. My FPGA code and software (at least for now) should be fully
+compatible with the original hardware. I intend to fix this problem in
+a future version.
+
