@@ -887,7 +887,9 @@ processing. The FPGA supports a two-way communication interface with
 the FT2232H USB interface chip that allows it to send processed data
 to the host PC for further processing and receive information from the
 PC. This interface is also used to configure the FPGA at startup. A
-block diagram of this is shown below.
+block diagram of this is shown below. I've omitted the ADC's second
+input channel since it's identical to the first. Both channels are
+time-multiplexed across the same 12-bit data bus to the FPGA.
 
 \begin{circuitikz}[color=fgcolor]
 \ctikzset{multipoles/dipchip/width=2}
