@@ -927,6 +927,24 @@ block diagram of this is shown below.
 ($(ft.s)-(0,1.5)$) node[]{\footnotesize EEPROM}
 \end{circuitikz}
 
+** TODO ADC
+TODO
+1. differential filtering
+2. in-depth look at ADC operation (ch. 13.1, 13.5+)
+
+The ADC employs common-mode and differential-mode lowpass filters at
+its analog inputs. The series resistors and outer capacitors serve as
+a lowpass filter for common-mode signals with a cutoff frequency of
+\(\SI{32}{MHz}\) (\(f_c=1/2\pi RC\)). The combination of series
+resistors and inner capacitor serve as a differential-mode lowpass
+filter with a cutoff frequency of \(\SI{16}{MHz}\) (\(f_c=1/2\pi
+2RC\)). As described in the ADC datasheet, the filters prevent the
+sample-and-hold charging glitches of the ADC from affecting the IF
+amplifier (remember the IF amplifier outputs are used for
+feedback). Additionally, they limit wideband noise which could alias
+into our signal. It's important to keep the resistor values low to
+limit thermal noise.
+
 * Power
 * FPGA Gateware
 :PROPERTIES:
