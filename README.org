@@ -1,3 +1,41 @@
 * About
 An in-depth explanation of the radar is available in the ~doc~
 directory.
+* Modifications from the original
+:PROPERTIES:
+:ID:       8f78da8c-ec0c-40f3-9b8b-6c1af11f4bb2
+:END:
+The FPGA code has been completely rewritten and expanded so that
+nearly all data processing is now done on the FPGA. This was done
+without changing the original FPGA. This allows the fully processed
+output to be plotted in realtime and simplifies the data processing
+requirements of the host PC code. The FPGA code also includes
+automated tests and, in some cases, formal verification.
+
+Because the FPGA responsibilities were expanded, the PC software had
+new requirements and had to be rewritten as well. The software is
+multithreaded and separates out the task of acquiring data from
+plotting it. Additionally, the software and FPGA gateware have been
+designed to make the radar easier to debug. For instance, data
+processing can be shared in any way between the software and FPGA,
+which makes gateware bugs easier to isolate. It's also possible to
+request data from the FPGA in any intermediate form.
+
+I completely redid the PCB layout because of the need for a new power
+amplifier (note that this introduced at least [[id:0246fbe1-ba4a-4bf6-b551-a896264dea3a][one significant issue]]).
+
+I've added horn antennas that can be built by anyone with access to a
+3D printer. There's also a 3D-printable mount to hold the entire
+structure.
+
+I've greatly expanded the documentation, which should be useful to
+anyone who wants to understand how the radar works in detail.
+
+I've added a number of RF simulations (using [[https://openems.de/start/][OpenEMS]]) and spice
+simulations (using [[http://ngspice.sourceforge.net/][Ngspice]]).
+
+Finally, I have plans to multiplex 8 receiver antennas across the 2
+receiver channels for better angular resolution. The PCB has already
+been built (though is untested), but I haven't yet had the time to
+write the FPGA code and software to support it.
+
