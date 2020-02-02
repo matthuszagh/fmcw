@@ -965,6 +965,14 @@ resource count variants. So, if our data processing needs expand in
 the future, we can use those variants as a drop-in replacement without
 otherwise altering the PCB.
 
+** FT2232H
+The FT2232H is a USB interface chip that permits 2-way communication
+with the FPGA and enables us to load a bitstream onto the FPGA. The
+attached EEPROM chip is required to use the FT2232H in its FT245
+synchronous FIFO mode, which allows the full \(\SI{480}{Mbps}\) data
+transfer speed.
+
+** Clock
 * Power
 * FPGA Gateware
 :PROPERTIES:
