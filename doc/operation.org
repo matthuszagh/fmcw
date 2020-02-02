@@ -945,6 +945,26 @@ feedback). Additionally, they limit wideband noise which could alias
 into our signal. It's important to keep the resistor values low to
 limit thermal noise.
 
+** FPGA
+The FPGA serves two purporses: it performs data processing and acts as
+an interface to configure other IC's on the PCB. The benefit of using
+the FPGA for data processing rather than software on the host PC is
+that it can run these algorithms faster than traditional software and
+it allows us to ease the burden on the USB data link between radar and
+host PC. In regard to the second point, the bandwidth between radar
+and host PC is limited by the USB 2.0 High Speed data transfer speeds
+(specifically \(\SI{480}{Mbps}\), which as an upper bound). The [[id:feb22339-7b6b-495b-9432-3999c179b164][FIR
+decimation filter]] throws out most of the raw data. This is critical
+because it isn't possible to transfer data fast enough to get decent
+frequency resolution without filtering on the FPGA.
+
+This design uses an XC7A15T FPGA from Xilinx. This is a low-cost FPGA
+but is nonetheless sufficient for our needs. One additional benefit of
+using this FPGA is that it is pin-compatible with a number of higher
+resource count variants. So, if our data processing needs expand in
+the future, we can use those variants as a drop-in replacement without
+otherwise altering the PCB.
+
 * Power
 * FPGA Gateware
 :PROPERTIES:
