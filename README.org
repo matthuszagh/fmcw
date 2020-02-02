@@ -51,3 +51,8 @@ instead. My FPGA code and software (at least for now) should be fully
 compatible with the original hardware. I intend to fix this problem in
 a future version.
 
+* Contributing
+Pull requests and issues welcome. I'm open to suggestions for hardware
+modification, although may or may not be able to merge those commits
+depending on whether I can test the change.
+
