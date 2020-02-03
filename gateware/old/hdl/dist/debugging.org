@@ -1,6 +1,0 @@
-Currently, the FFT is outputting almost exclusively 0's with a few -1s
-thrown in.
-
-Steps to debug:
-1. Determine the exact nature of the current output. Convert it to
-   decimal and then plot it.
