@@ -15,19 +15,19 @@ SCRIPT_DIR	:= $(realpath scripts)
 # Testing
 TEST_DIR	:= $(realpath test)
 
-fft_roms	= gateware/roms/fft/s*.hex
-fir_roms	= gateware/roms/fir/s*.hex
-window_roms	= gateware/roms/window/s*.hex
+fft_roms	= roms/fft/s*.hex
+fir_roms	= roms/fir/s*.hex
+window_roms	= roms/window/s*.hex
 
 
-$(fft_roms): gateware/scripts/fft.py
-	cd gateware/scripts && ./fft.py
+$(fft_roms): scripts/fft.py
+	cd scripts && ./fft.py
 
-$(fir_roms): gateware/scripts/fir.py
-	cd gateware/scripts && ./fir.py
+$(fir_roms): scripts/fir.py
+	cd scripts && ./fir.py
 
-$(window_roms): gateware/scripts/window.py
-	cd gateware/scripts && ./window.py
+$(window_roms): scripts/window.py
+	cd scripts && ./window.py
 
 .PHONY: test
 test: test_cocotb
@@ -37,7 +37,7 @@ test_cocotb:
 	$(MAKE) -C $(TEST_DIR) cocotb
 
 .PHONY: prog
-prog:
+prog: pnr
 	$(MAKE) -C $(SCRIPT_DIR) prog
 
 .PHONY: synth
@@ -45,7 +45,7 @@ synth: $(fft_roms) $(fir_roms) $(window_roms)
 	$(MAKE) -C $(SCRIPT_DIR) synth
 
 .PHONY: pnr
-pnr:
+pnr: synth
 	$(MAKE) -C $(SCRIPT_DIR) pnr
 
 .PHONY: lint

@@ -6,7 +6,7 @@ SOFTWARE_DIR	= software
 DEBUG		= 0
 
 .PHONY: run
-run: bitstream prog
+run: prog
 	$(MAKE) -C $(SOFTWARE_DIR) acquire
 
 .PHONY: prog

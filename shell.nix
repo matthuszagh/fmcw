@@ -6,8 +6,8 @@ let
   pkgs = (nixpkgs // custompkgs);
   libdigital = pkgs.libdigital;
   python-with-pkgs = pkgs.python3.withPackages (ps: with ps; [
-    libdigital
     matplotlib
+    bitstring
     numpy
     pyqtgraph
   ] ++ (with custompkgs; [

@@ -5,7 +5,7 @@ right number of coefficients is generated and that you use the desired
 window function.
 """
 
-from libdigital.tools.bit import sub_integral_to_uint
+from bit import sub_integral_to_uint
 import numpy as np
 
 N = 1024
