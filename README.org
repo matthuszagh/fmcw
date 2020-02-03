@@ -51,6 +51,18 @@ instead. My FPGA code and software (at least for now) should be fully
 compatible with the original hardware. I intend to fix this problem in
 a future version.
 
+I'm currently working on a number of RF simulations that will
+eventually lead to a replacement of some of the RF PCB
+layout. Currently, I have very limited information on whether these
+parts of the PCB actually work the way they should. Areas of focus
+include transmission line characteristic impedance, transmission line
+to SMA transitions, and replacement of discrete components such as
+couplers, attenuators, etc. with the equivalent components etched
+directly onto the PCB. Once the RF simulations are complete, I'd like
+to prototype these before actually building them into the
+radar. Unfortunately, I don't yet have the proper testing equipment
+for this (building a VNA is the next project...).
+
 * Contributing
 Pull requests and issues welcome. I'm open to suggestions for hardware
 modification, although may or may not be able to merge those commits
