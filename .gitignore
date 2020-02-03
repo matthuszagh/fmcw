@@ -54,7 +54,6 @@ openems/octave-workspace
 /fpga/fir/np
 **/tmp*
 *.edif
-**/sim*
 *.stl
 /fpga/hdl/dist/scripts/read_bytes
 /fpga/hdl/dist/read
@@ -68,3 +67,4 @@ software/data
 **/*.xml
 /software/fmcw
 /gateware/roms/
+simulations/ngspice/data

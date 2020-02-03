@@ -1,0 +1,5 @@
+Many of the spice simulations in this directory use vendor-distributed
+models. I've set up the simulations to look for these models in the
+SPICELIB environment variable. In order to run these simulations,
+you'll need to track down the models from vendor websites and place
+them in some subdirectory of the directory pointed to by SPICELIB.

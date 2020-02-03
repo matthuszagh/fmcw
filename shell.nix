@@ -4,7 +4,6 @@
 let
   custompkgs = import <custompkgs> {};
   pkgs = (nixpkgs // custompkgs);
-  libdigital = pkgs.libdigital;
   python-with-pkgs = pkgs.python3.withPackages (ps: with ps; [
     matplotlib
     bitstring
@@ -48,12 +47,8 @@ pkgs.mkShell {
 
     # 3d printing
     openscad
-    freecad
     (cura.override { plugins = [ pkgs.curaPlugins.octoprint ]; })
     curaengine
-
-    # video
-    ffmpeg
   ];
 
   KICAD_SYMBOL_DIR="${kicad.out}/share/kicad/library";
