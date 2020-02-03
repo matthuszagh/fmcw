@@ -2,18 +2,6 @@ export
 
 # source files
 VERILOG_DIRS	:= $(shell pwd)
-VERILOG_DIRS	+= $(LIBDIGITAL_PATH)/memory/fifo
-VERILOG_DIRS	+= $(LIBDIGITAL_PATH)/memory/ram
-VERILOG_DIRS	+= $(LIBDIGITAL_PATH)/memory/shift_reg
-VERILOG_DIRS	+= $(LIBDIGITAL_PATH)/memory/dual_ff
-VERILOG_DIRS	+= $(LIBDIGITAL_PATH)/devices/ltc2292
-VERILOG_DIRS	+= $(LIBDIGITAL_PATH)/devices/adf4158
-VERILOG_DIRS	+= $(LIBDIGITAL_PATH)/devices/ft2232h/ft245
-VERILOG_DIRS	+= $(LIBDIGITAL_PATH)/filters/fir_poly
-VERILOG_DIRS	+= $(LIBDIGITAL_PATH)/window
-VERILOG_DIRS	+= $(LIBDIGITAL_PATH)/fft/r22sdf
-VERILOG_DIRS	+= $(LIBDIGITAL_PATH)/error_detection
-VERILOG_DIRS	+= $(LIBDIGITAL_PATH)/misc/pll_sync_ctr
 
 VERILOG_INCS	= $(addprefix -I,$(VERILOG_DIRS))
 VERILOG_SRCS	:= $(shell find $(VERILOG_DIRS) -maxdepth 1 -name '*.v')
@@ -27,6 +15,19 @@ SCRIPT_DIR	:= $(realpath scripts)
 # Testing
 TEST_DIR	:= $(realpath test)
 
+fft_roms	= gateware/roms/fft/s*.hex
+fir_roms	= gateware/roms/fir/s*.hex
+window_roms	= gateware/roms/window/s*.hex
+
+
+$(fft_roms): gateware/scripts/fft.py
+	cd gateware/scripts && ./fft.py
+
+$(fir_roms): gateware/scripts/fir.py
+	cd gateware/scripts && ./fir.py
+
+$(window_roms): gateware/scripts/window.py
+	cd gateware/scripts && ./window.py
 
 .PHONY: test
 test: test_cocotb
@@ -40,7 +41,7 @@ prog:
 	$(MAKE) -C $(SCRIPT_DIR) prog
 
 .PHONY: synth
-synth:
+synth: $(fft_roms) $(fir_roms) $(window_roms)
 	$(MAKE) -C $(SCRIPT_DIR) synth
 
 .PHONY: pnr

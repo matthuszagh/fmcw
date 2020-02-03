@@ -67,3 +67,4 @@ software/data
 **/build
 **/*.xml
 /software/fmcw
+/gateware/roms/

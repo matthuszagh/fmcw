@@ -4,9 +4,9 @@
 `include "ltc2292.v"
 `include "adf4158.v"
 `include "ft245.v"
-`include "fir_poly.v"
+`include "fir.v"
 `include "window.v"
-`include "fft_r22sdf.v"
+`include "fft.v"
 
 module top #(
    parameter GPIO_WIDTH       = 6,
@@ -243,7 +243,7 @@ module top #(
    wire                               fir_dvalid;
    // TODO setting parameters like this is very error-prone since they
    // are determined based on the output of a script.
-   fir_poly #(
+   fir #(
       .N_TAPS         (120 ),
       .M              (20  ),
       .BANK_LEN       (6   ),
@@ -306,7 +306,7 @@ module top #(
    wire signed [FFT_OUTPUT_WIDTH-1:0] fft_re_o;
    wire signed [FFT_OUTPUT_WIDTH-1:0] fft_im_o;
 
-   fft_r22sdf #(
+   fft #(
       .N             (FFT_N             ),
       .INPUT_WIDTH   (FIR_OUTPUT_WIDTH  ),
       .TWIDDLE_WIDTH (FFT_TWIDDLE_WIDTH ),
@@ -515,6 +515,7 @@ module top #(
 
 endmodule
 
+// TODO remove
 `ifdef TOP_SIMULATE
 
 `include "PLLE2_BASE.v"

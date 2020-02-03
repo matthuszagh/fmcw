@@ -1,31 +1,31 @@
 { nixpkgs ? (import <nixpkgs> {})
-, useMusl ? false
 }:
 
 let
-  pkgs = ((if useMusl then nixpkgs.pkgsMusl else nixpkgs) // import <custompkgs> {});
+  custompkgs = import <custompkgs> {};
+  pkgs = (nixpkgs // custompkgs);
   libdigital = pkgs.libdigital;
-  mh-python = pkgs.python3.withPackages (ps: with ps; [
+  python-with-pkgs = pkgs.python3.withPackages (ps: with ps; [
     libdigital
-    matplotlib # TODO replace fully with pyqtgraph
+    matplotlib
     numpy
-    # pylibftdi
     pyqtgraph
-  ]);
-
+  ] ++ (with custompkgs; [
+    skidl
+  ]));
+  kicad = pkgs.kicad;
 in
 pkgs.mkShell {
   buildInputs = with pkgs; [
     # python3Full
-    mh-python
-    bitmanip
+    python-with-pkgs
 
     # fpga
     yosys
     symbiyosys
     verilator
     verilog
-    nextpnr
+    # nextpnr
     gtkwave
     python3Packages.xdot # TODO is this necessary?
     graphviz # TODO should this be a yosys dep?
@@ -48,9 +48,13 @@ pkgs.mkShell {
 
     # 3d printing
     openscad
+    freecad
     (cura.override { plugins = [ pkgs.curaPlugins.octoprint ]; })
+    curaengine
 
     # video
     ffmpeg
   ];
+
+  KICAD_SYMBOL_DIR="${kicad.out}/share/kicad/library";
 }
