@@ -10,13 +10,13 @@ as well as CAD designs for the horn antennas and PCB cases.
 The project is a fork of [[https://github.com/Ttl/fmcw3][Henrik's excellent design]] (accompanied by his
 blog post [[https://hforsten.com/third-version-of-homemade-6-ghz-fmcw-radar.html][here]]). Although I've made a number of [[id:8f78da8c-ec0c-40f3-9b8b-6c1af11f4bb2][significant changes]],
 most of the main PCB (as of this writing) is still identical to
-Henrik's. Additionally, there are a few parts of my writeup that
-address similar topics to those discussed by Henrik. I've made
-attribution where necessary. Despite the fact that Henrik deserves
-most of the credit for this project, he is in no way affiliated with
-this fork.
+Henrik's. Despite the fact that Henrik deserves a large share of the
+credit for this project, he is in no way affiliated with this fork.
 
-This project is still in its early stages. Expect bugs.
+This project is still in its early stages. In particular, there are a
+number of hardware issues that make this version inferior to
+Henrik's. These will be fixed in a future version, but I would hold
+off building this until these issues are fixed.
 
 * TODO Capabilites
 Briefly mention the radar's capabilities.
