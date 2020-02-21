@@ -69,3 +69,5 @@ software/data
 /gateware/roms/
 simulations/ngspice/data
 /gateware/scripts/yosys/formal/
+simulations/openems/.data
+simulations/openems/sim

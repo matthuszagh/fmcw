@@ -1,0 +1,3 @@
+* Prerequisites
+In order to run these simulations yourself, you need a copy [[https://github.com/matthuszagh/pyems][pyems]] in
+addition to [[https://github.com/thliebig/openEMS-Project][OpenEMS]].
