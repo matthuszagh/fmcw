@@ -1,13 +1,35 @@
 * About
-An in-depth explanation of the radar is available in the ~doc~
-directory.
+:PROPERTIES:
+:ID:       20ff1c28-cfc6-4280-8501-83314fee390d
+:END:
+This repo includes the custom PCBs and PC control software necessary
+to build and operate a 6GHz FMCW radar. It also includes a number of
+other useful additions, such as RF and SPICE simulations (in progress)
+as well as CAD designs for the horn antennas and PCB cases.
+
+The project is a fork of [[https://github.com/Ttl/fmcw3][Henrik's excellent design]] (accompanied by his
+blog post [[https://hforsten.com/third-version-of-homemade-6-ghz-fmcw-radar.html][here]]). Although I've made a number of [[id:8f78da8c-ec0c-40f3-9b8b-6c1af11f4bb2][significant changes]],
+most of the main PCB (as of this writing) is still identical to
+Henrik's. Additionally, there are a few parts of my writeup that
+address similar topics to those discussed by Henrik. I've made
+attribution where necessary. Despite the fact that Henrik deserves
+most of the credit for this project, he is in no way affiliated with
+this fork.
+
+This project is still in its early stages. Expect bugs.
+
+* TODO Capabilites
+Briefly mention the radar's capabilities.
+
+* TODO Installation
+* TODO Additional hardware
 * Modifications from the original
 :PROPERTIES:
 :ID:       8f78da8c-ec0c-40f3-9b8b-6c1af11f4bb2
 :END:
 The FPGA code has been completely rewritten and expanded so that
 nearly all data processing is now done on the FPGA. This was done
-without changing the original FPGA. This allows the fully processed
+while keeping the same FPGA chip. This allows the fully processed
 output to be plotted in realtime and simplifies the data processing
 requirements of the host PC code. The FPGA code also includes
 automated tests and, in some cases, formal verification.
@@ -68,3 +90,10 @@ Pull requests and issues welcome. I'm open to suggestions for hardware
 modification, although may or may not be able to merge those commits
 depending on whether I can test the change.
 
+* TODO Operation
+Link blog post.
+
+* TODO Attribution
++ Henrik, of course (see [[id:20ff1c28-cfc6-4280-8501-83314fee390d][About]]).
++ An additional thanks to AlexBdx for finding a way to 3D print horn
+  antennas.
