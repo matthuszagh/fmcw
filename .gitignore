@@ -68,3 +68,4 @@ software/data
 /software/fmcw
 /gateware/roms/
 simulations/ngspice/data
+/gateware/scripts/yosys/formal/

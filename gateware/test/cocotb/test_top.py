@@ -6,8 +6,8 @@ Automated tests for top-level module.
 
 import numpy as np
 
-from libdigital.tools.cocotb_helpers import Clock, MultiClock, random_samples
-from libdigital.tools import bit
+from cocotb_helpers import Clock, MultiClock, random_samples
+import bit
 
 import cocotb
 from cocotb.triggers import RisingEdge, FallingEdge, ReadOnly, Combine, Timer

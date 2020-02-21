@@ -153,14 +153,16 @@ module async_fifo #(
 `endif
 
 `ifdef COCOTB_SIM
-   // integer i;
-   initial begin
-      $dumpfile ("cocotb/build/async_fifo.vcd");
-      $dumpvars (0, async_fifo);
-      // for (i=0; i<100; i=i+1)
-      //   $dumpvars (0, ram.mem[i]);
-      #1;
-   end
+   `ifdef ASYNC_FIFO
+      // integer i;
+      initial begin
+         $dumpfile ("cocotb/build/async_fifo.vcd");
+         $dumpvars (0, async_fifo);
+         // for (i=0; i<100; i=i+1)
+         //   $dumpvars (0, ram.mem[i]);
+         #1;
+      end
+   `endif
 `endif
 
 endmodule

@@ -16,3 +16,13 @@ prog: bitstream
 .PHONY: bitstream
 bitstream:
 	$(MAKE) -C $(GATEWARE_DIR) pnr
+
+
+# tests and formal verification
+.PHONY: test
+test:
+	$(MAKE) -C $(GATEWARE_DIR) test
+
+.PHONY: formal
+formal:
+	$(MAKE) -C $(GATEWARE_DIR) formal

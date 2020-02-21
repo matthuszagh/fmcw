@@ -503,123 +503,16 @@ module top #(
    );
 
 `ifdef COCOTB_SIM
-   // integer i;
-   initial begin
-      $dumpfile ("cocotb/build/top.vcd");
-      $dumpvars (0, top);
-      // for (i=0; i<100; i=i+1)
-      //   $dumpvars (0, ram.mem[i]);
-      #1;
-   end
-`endif
-
-endmodule
-
-// TODO remove
-`ifdef TOP_SIMULATE
-
-`include "PLLE2_BASE.v"
-`include "PLLE2_ADV.v"
-`include "glbl.v"
-
-`timescale 1ns/1ps
-module top_tb;
-
-   localparam SAMPLE_LEN = 10000;
-   localparam ADC_DATA_WIDTH = 12;
-   localparam USB_DATA_WIDTH = 8;
-
-   reg signed [ADC_DATA_WIDTH-1:0] samples [0:SAMPLE_LEN-1];
-
-   initial begin
-      $dumpfile("tb/top_tb.vcd");
-      $dumpvars(2, top_tb);
-      $readmemh("tb/sample_in.hex", samples);
-
-      #20000 $finish;
-   end
-
-   reg clk_40mhz = 0;
-   reg clk_60mhz = 0;
-
-   always #12.5 clk_40mhz = !clk_40mhz;
-   always #8 clk_60mhz = !clk_60mhz;
-
-   wire led;
-   wire [USB_DATA_WIDTH-1:0] ft_data_io;
-   wire                      ft_rd_n;
-   wire                      ft_wr_n;
-   wire                      ft_siwua_n;
-   wire                      ft_oe_n;
-
-   wire signed [ADC_DATA_WIDTH-1:0] sample_in = samples[ctr];
-   integer                      ctr = 0;
-   always @(posedge clk_40mhz) begin
-      if (!dut.rst_n) begin
-         ctr <= 0;
-      end else begin
-         if (ctr == 9999)
-           ctr <= 0;
-         else
-           ctr <= ctr + 1;
+   `ifdef TOP
+      // integer i;
+      initial begin
+         $dumpfile ("cocotb/build/top.vcd");
+         $dumpvars (0, top);
+         // for (i=0; i<100; i=i+1)
+         //   $dumpvars (0, ram.mem[i]);
+         #1;
       end
-   end
-
-   wire [1:0] adc_oe;
-   wire [1:0] adc_shdn;
-
-   wire       mix_enbl_n;
-   wire       pa_en_n;
-
-   wire       adf_ce;
-   wire       adf_le;
-   wire       adf_clk;
-   wire       adf_txdata;
-   wire       adf_data;
-   wire [5:0] ext1;
-
-   top dut (
-      .clk_i          (clk_40mhz  ),
-      .led_o          (led        ),
-      .ext1_io        (ext1       ),
-
-      .ft_data_io     (ft_data_io ),
-      // .ft_rxf_n_i,
-      .ft_txe_n_i     (1'b0       ),
-      .ft_rd_n_o      (ft_rd_n    ),
-      .ft_wr_n_o      (ft_wr_n    ),
-      .ft_siwua_n_o   (ft_siwua_n ),
-      .ft_clkout_i    (clk_60mhz  ),
-      .ft_oe_n_o      (ft_oe_n    ),
-      .ft_suspend_n_i (1'b1       ),
-
-      .adc_d_i        (sample_in  ),
-      // .adc_of_i,
-      .adc_oe_o       (adc_oe     ),
-      .adc_shdn_o     (adc_shdn   ),
-
-      // .sd_data_i,
-      // .sd_cmd_i,
-      // .sd_clk_o,
-      // .sd_detect_i,
-
-      .mix_enbl_n_o   (mix_enbl_n ),
-
-      .pa_en_n_o      (pa_en_n    ),
-
-      .adf_ce_o       (adf_ce     ),
-      .adf_le_o       (adf_le     ),
-      .adf_clk_o      (adf_clk    ),
-      // .adf_muxout_i,
-      .adf_txdata_o   (adf_txdata ),
-      .adf_data_o     (adf_data   )
-      // .adf_done_i
-
-      // .flash_cs_n_o,
-      // .flash_miso_i,
-      // .flash_mosi_o
-   );
+   `endif
+`endif
 
 endmodule
-
-`endif

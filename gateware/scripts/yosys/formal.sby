@@ -1,0 +1,20 @@
+[options]
+mode prove
+depth 100
+multiclock on
+
+[engines]
+smtbmc
+
+[script]
+--pycode-begin--
+import os
+output("read -formal %s.v" % os.environ['TOP_MODULE'])
+output("prep -top %s" % os.environ['TOP_MODULE'])
+--pycode-end--
+
+[files]
+--pycode-begin--
+import os
+output("%s" % os.environ['VERILOG_SRCS'].replace(" ", "\n"))
+--pycode-end--

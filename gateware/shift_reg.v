@@ -62,59 +62,14 @@ module shift_reg #(
    );
 
 `ifdef COCOTB_SIM
+   `ifdef SHIFT_REG
    initial begin
       $dumpfile ("cocotb/build/shift_reg.vcd");
       $dumpvars (0, shift_reg);
       #1;
    end
+   `endif
 `endif
 
 endmodule
-
-// TODO remove
-`ifdef SHIFT_REG_SIMULATE
-`include "BRAM_SDP_MACRO.v"
-`include "RAMB18E1.v"
-`include "glbl.v"
-`timescale 1ns/1ps
-module shift_reg_tb;
-
-   localparam DATA_WIDTH = 25;
-   localparam LEN = 10;
-
-   reg clk = 0;
-   reg rst_n = 0;
-   always #1 clk = !clk;
-   reg [DATA_WIDTH-1:0] sample = 0;
-   wire [DATA_WIDTH-1:0] data;
-
-   always @(posedge clk) begin
-      if (!dut.BRAM_SDP.bram18_sdp_bl_3.bram18_sdp_bl_3.GSR)
-        rst_n <= 1;
-
-      if (!rst_n)
-        sample <= 0;
-      else
-        sample <= sample + 1;
-   end
-
-   initial begin
-      $dumpfile("tb/shift_reg_tb.vcd");
-      $dumpvars(0, shift_reg_tb);
-
-      #10000 $finish;
-   end
-
-   shift_reg #(
-      .DATA_WIDTH (DATA_WIDTH),
-      .LEN        (LEN)
-   ) dut (
-      .clk      (clk),
-      .rst_n    (rst_n),
-      .di       (sample),
-      .data_o   (data)
-   );
-
-endmodule
-`endif
 `endif

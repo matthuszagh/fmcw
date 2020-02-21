@@ -825,125 +825,17 @@ module fir #(
    end
 
 `ifdef COCOTB_SIM
+   `ifdef FIR
    // integer i;
    initial begin
-      $dumpfile ("cocotb/build/fir_poly.vcd");
-      $dumpvars (0, fir_poly);
+      $dumpfile ("cocotb/build/fir.vcd");
+      $dumpvars (0, fir);
       // for (i=0; i<100; i=i+1)
       //   $dumpvars (0, ram.mem[i]);
       #1;
    end
+   `endif
 `endif
 
 endmodule
-
-// TODO remove
-`ifdef ICARUS
-`timescale 1ns/1ps
-module fir_poly_tb;
-
-   localparam M              = 20; /* downsampling factor */
-   localparam M_LOG2         = 5;
-   localparam INPUT_WIDTH    = 12;
-   localparam INTERNAL_WIDTH = 35;
-   localparam NORM_SHIFT     = 4;
-   localparam OUTPUT_WIDTH   = 14;
-   localparam TAP_WIDTH      = 16;
-   localparam BANK_LEN       = 6; /* number of taps in each polyphase decomposition filter bank */
-   localparam BANK_LEN_LOG2  = 3;
-   localparam ADC_DATA_WIDTH = 12;
-   localparam SAMPLE_LEN     = 10000;
-
-   reg  clk = 0;
-   reg  rst_n = 0;
-
-   always #12.5 clk = !clk;
-
-   initial begin
-      #50 rst_n = 1;
-   end
-
-   // base clock 2mhz clock enable
-   reg                  clk_2mhz_pos_en = 1'b1;
-   reg [4:0]            clk_2mhz_ctr    = 5'd0;
-
-   always @(posedge clk) begin
-      if (!rst_n) begin
-         clk_2mhz_pos_en <= 1'b0;
-         clk_2mhz_ctr    <= 5'd0;
-      end else begin
-         if (clk_2mhz_ctr == 5'd19) begin
-            clk_2mhz_pos_en <= 1'b1;
-            clk_2mhz_ctr    <= 5'd0;
-         end else begin
-            clk_2mhz_pos_en <= 1'b0;
-            clk_2mhz_ctr    <= clk_2mhz_ctr + 1'b1;
-         end
-      end
-   end
-
-   reg signed [INPUT_WIDTH-1:0] samples [0:SAMPLE_LEN-1];
-   wire signed [INPUT_WIDTH-1:0] sample_in = samples[ctr];
-   wire signed [OUTPUT_WIDTH-1:0] dout;
-   wire                           dvalid;
-
-   integer                      ctr = 0;
-   reg                          ctr_delay = 1'b0;
-   always @(posedge clk) begin
-      if (!rst_n) begin
-         ctr <= 0;
-      end else begin
-         if (ctr == 0) begin
-            if (ctr_delay)
-              ctr <= 1;
-            if (clk_2mhz_pos_en)
-              ctr_delay <= 1;
-         end else begin
-            if (ctr == SAMPLE_LEN-1)
-              ctr <= 0;
-            else
-              ctr <= ctr + 1;
-         end
-      end
-   end
-
-   integer i, f;
-   initial begin
-      $dumpfile("icarus/build/fir_poly_tb.vcd");
-      $dumpvars(0, fir_poly_tb);
-      $dumpvars(0, dut.bank0.shift_reg[0]);
-
-      f = $fopen("../old/tb/sample_out_real_verilog.txt", "w");
-
-      $readmemh("../old/tb/sample_in_real.hex", samples);
-
-      #10000000 $finish;
-   end
-
-   always @(posedge clk) begin
-      if (dvalid && clk_2mhz_pos_en) begin
-         $fwrite(f, "%d\n", $signed(dout));
-      end
-   end
-
-   fir_poly #(
-      .M              (M),
-      .INPUT_WIDTH    (ADC_DATA_WIDTH),
-      .INTERNAL_WIDTH (INTERNAL_WIDTH),
-      .NORM_SHIFT     (NORM_SHIFT),
-      .OUTPUT_WIDTH   (OUTPUT_WIDTH),
-      .TAP_WIDTH      (TAP_WIDTH),
-      .BANK_LEN       (BANK_LEN)
-   ) dut (
-      .clk             (clk),
-      .rst_n           (rst_n),
-      .clk_2mhz_pos_en (clk_2mhz_pos_en),
-      .din             (sample_in),
-      .dout            (dout),
-      .dvalid          (dvalid)
-   );
-
-endmodule
-
-`endif
 `endif

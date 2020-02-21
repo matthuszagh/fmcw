@@ -4,19 +4,20 @@
 let
   custompkgs = import <custompkgs> {};
   pkgs = (nixpkgs // custompkgs);
-  python-with-pkgs = pkgs.python3.withPackages (ps: with ps; [
+  python-with-pkgs = pkgs.python3Full.withPackages (ps: with ps; [
     matplotlib
     bitstring
     numpy
     pyqtgraph
+    pkgs.cocotb
   ] ++ (with custompkgs; [
-    skidl
+    # skidl
+    pyems
   ]));
   kicad = pkgs.kicad;
 in
 pkgs.mkShell {
   buildInputs = with pkgs; [
-    # python3Full
     python-with-pkgs
 
     # fpga
@@ -41,7 +42,9 @@ pkgs.mkShell {
     kicad
 
     # ems
-    openems
+    python-openems
+    python-csxcad
+    (openems.override {withMPI = false; })
     appcsxcad
     hyp2mat
 

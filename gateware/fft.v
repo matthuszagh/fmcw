@@ -464,115 +464,17 @@ module fft #(
    end
 
 `ifdef COCOTB_SIM
-   // integer i;
-   initial begin
-      $dumpfile ("cocotb/build/fft_tb.vcd");
-      $dumpvars (0, fft);
-      // for (i=0; i<100; i=i+1)
-      //   $dumpvars (0, ram.mem[i]);
-      #1;
-   end
-`endif
-
-endmodule
-
-`ifdef ICARUS
-
-`include "PLLE2_BASE.v"
-`include "PLLE2_ADV.v"
-`include "BRAM_SINGLE_MACRO.v"
-// `include "BRAM_SDP_MACRO.v"
-`include "RAMB18E1.v"
-`include "DSP48E1.v"
-`include "glbl.v"
-
-`timescale 1ns/1ps
-module fft_tb #(
-   parameter N              = 1024,
-   parameter N_LOG2         = 10,
-   parameter N_STAGES       = 5,
-   parameter INPUT_WIDTH    = 14,
-   parameter TWIDDLE_WIDTH  = 10,
-   parameter INTERNAL_WIDTH = 25,
-   parameter OUTPUT_WIDTH   = 25
- );
-
-   localparam SAMPLE_LEN = N;
-
-   reg                             clk = 0;
-   reg [INPUT_WIDTH-1:0]           samples [0:SAMPLE_LEN-1];
-   wire [INPUT_WIDTH-1:0]          data_i;
-   wire                            sync;
-   wire [N_LOG2-1:0]               data_cnt;
-   wire [OUTPUT_WIDTH-1:0]         data_re_o;
-   wire [OUTPUT_WIDTH-1:0]         data_im_o;
-   reg [N_LOG2-1:0]                cnt;
-
-   assign data_i = samples[cnt];
-
-   integer                         idx;
-   initial begin
-      $dumpfile("icarus/build/fft_tb.vcd");
-      $dumpvars(0, fft_tb);
-
-      $readmemh("icarus/fft_samples_1024.hex", samples);
-      cnt = 0;
-
-      #120000 $finish;
-   end
-
-   always #12.5 clk = !clk;
-
-   always @(posedge clk) begin
-      if (pll_lock) begin
-         if (cnt == N) begin
-            cnt <= cnt;
-         end
-         else begin
-            cnt <= cnt + 1;
-         end
-      end else begin
-         cnt <= 0;
+   `ifdef FFT
+      // integer i;
+      initial begin
+         $dumpfile ("cocotb/build/fft_tb.vcd");
+         $dumpvars (0, fft);
+         // for (i=0; i<100; i=i+1)
+         //   $dumpvars (0, ram.mem[i]);
+         #1;
       end
-   end
-
-   wire clk_120mhz;
-   wire pll_lock;
-   wire clk_fb;
-
-   PLLE2_BASE #(
-      .CLKFBOUT_MULT  (24),
-      .DIVCLK_DIVIDE  (1),
-      .CLKOUT0_DIVIDE (8),
-      .CLKIN1_PERIOD  (25)
-   ) PLLE2_BASE_120mhz (
-      .CLKOUT0  (clk_120mhz),
-      .LOCKED   (pll_lock),
-      .CLKIN1   (clk),
-      .RST      (1'b0),
-      .CLKFBOUT (clk_fb),
-      .CLKFBIN  (clk_fb)
-   );
-
-
-   fft #(
-      .N              (N),
-      .INPUT_WIDTH    (INPUT_WIDTH),
-      .TWIDDLE_WIDTH  (TWIDDLE_WIDTH),
-      .OUTPUT_WIDTH   (OUTPUT_WIDTH)
-   ) dut (
-      .clk_i      (clk),
-      .clk_3x_i   (clk_120mhz),
-      .rst_n      (pll_lock),
-      .sync_o     (sync),
-      .data_ctr_o (data_cnt),
-      .data_re_i  ($signed(data_i)),
-      .data_im_i  ({INPUT_WIDTH{1'b0}}),
-      .data_re_o  (data_re_o),
-      .data_im_o  (data_im_o)
-   );
+   `endif
+`endif
 
 endmodule
-
-`endif
 `endif

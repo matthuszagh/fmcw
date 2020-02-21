@@ -45,11 +45,13 @@ module pll_sync_ctr #(
    end
 
 `ifdef COCOTB_SIM
+   `ifdef PLL_SYNC_CTR
    initial begin
       $dumpfile ("cocotb/build/pll_sync_ctr.vcd");
       $dumpvars (0, pll_sync_ctr);
       #1;
    end
+   `endif
 `endif
 
 endmodule

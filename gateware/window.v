@@ -66,6 +66,7 @@ module window #(
    end
 
 `ifdef COCOTB_SIM
+   `ifdef WINDOW
    integer i;
    initial begin
       $dumpfile ("cocotb/build/window.vcd");
@@ -74,6 +75,7 @@ module window #(
         $dumpvars (0, coeffs[i]);
       #1;
    end
+   `endif
 `endif
 
 endmodule

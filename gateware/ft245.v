@@ -232,11 +232,13 @@ module ft245 #(
    endgenerate
 
 `ifdef COCOTB_SIM
+   `ifdef FT245
    initial begin
       $dumpfile ("cocotb/build/ft245.vcd");
       $dumpvars (0, ft245);
       #1;
    end
+   `endif
 `endif
 
 endmodule

@@ -1,5 +1,6 @@
 export
 YOSYS_DIR	= yosys
+# TOP_MODULE_SRC	:= $(realpath ../$(TOP_MODULE).v)
 TOP_MODULE_DIR	= $(abspath $(dir $(TOP_MODULE_SRC)))
 # yosys doesn't like when the top module directory is also specified
 # as an include directory.
@@ -36,6 +37,11 @@ $(TOP_MODULE).edif: $(VERILOG_SRCS) $(TOP_MODULE_SRC)
 
 $(TOP_MODULE).ilang: $(YOSYS_DIR)/synth.tcl $(VERILOG_SRCS) $(TOP_MODULE_SRC)
 	yosys $(YOSYS_DIR)/synth.tcl
+
+# formal
+.PHONY: formal
+formal:
+	sby -f $(YOSYS_DIR)/formal.sby
 
 .PHONY: clean
 clean::

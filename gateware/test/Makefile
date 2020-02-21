@@ -24,6 +24,8 @@ COMPILE_ARGS		= $(addprefix -I,$(VERILOG_DIRS))
 
 ICARUS_BUILD_DIR	:= icarus/build
 
+# TODO make clean is inefficient. should be better way to make this work
 .PHONY: cocotb
 cocotb:
+	$(MAKE) clean
 	$(MAKE) sim
