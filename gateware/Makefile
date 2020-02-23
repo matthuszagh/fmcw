@@ -103,7 +103,7 @@ test_window:
 	$(MAKE) -C $(TEST_DIR) cocotb
 
 .PHONY: formal
-formal: formal_async_fifo
+formal: formal_async_fifo formal_dual_ff formal_pll_sync_ctr
 
 .PHONY: formal_async_fifo
 formal_async_fifo:
@@ -113,4 +113,9 @@ formal_async_fifo:
 .PHONY: formal_dual_ff
 formal_dual_ff:
 	$(eval TOP_MODULE = dual_ff)
+	$(MAKE) -C $(SCRIPT_DIR) formal
+
+.PHONY: formal_pll_sync_ctr
+formal_pll_sync_ctr:
+	$(eval TOP_MODULE = pll_sync_ctr)
 	$(MAKE) -C $(SCRIPT_DIR) formal
