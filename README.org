@@ -16,7 +16,7 @@ affiliated with this fork.
 This project is still in its early stages. In particular, there are a
 number of hardware issues that make this version inferior to
 Henrik's. These will be fixed in a future version, but I would hold
-off building this until these issues are fixed.
+off building this version until these issues are fixed.
 
 * TODO Capabilites
 Briefly mention the radar's capabilities.

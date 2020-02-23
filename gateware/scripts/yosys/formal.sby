@@ -9,7 +9,7 @@ smtbmc
 [script]
 --pycode-begin--
 import os
-output("read -formal %s.v" % os.environ['TOP_MODULE'])
+output("read -formal -D{}={} {}.v".format(os.environ['TOP_MODULE'].upper(), 1, os.environ['TOP_MODULE']))
 output("prep -top %s" % os.environ['TOP_MODULE'])
 --pycode-end--
 

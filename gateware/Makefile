@@ -109,3 +109,8 @@ formal: formal_async_fifo
 formal_async_fifo:
 	$(eval TOP_MODULE = async_fifo)
 	$(MAKE) -C $(SCRIPT_DIR) formal
+
+.PHONY: formal_dual_ff
+formal_dual_ff:
+	$(eval TOP_MODULE = dual_ff)
+	$(MAKE) -C $(SCRIPT_DIR) formal
