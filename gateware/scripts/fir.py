@@ -243,6 +243,17 @@ class FIR:
 
         return max_ripple
 
+    def print_response(self, savefile, taps=None):
+        """Utility function to print response functions."""
+        if taps is None:
+            taps = self.taps
+
+        w, h = signal.freqz(taps, [1], worN=1024)
+        resp = 0.5 * self.fs * w / np.pi, 20 * np.log10(np.abs(h))
+        print("freq val")
+        for freq, val in zip(resp[0], resp[1]):
+            print("{:.2f} {:.2f}".format(freq, val))
+
     def plot_response(self, savefile, taps=None):
         """Utility function to plot response functions."""
         if taps is None:
@@ -277,6 +288,6 @@ downsample_factor = 20
 fir.write_poly_taps_files(
     ["../roms/fir/"], tap_bits, downsample_factor, True, False
 )
-# fir.plot_response("freq_response.png")
+# fir.print_response("freq_response.dat")
 print("normalization shift: {}".format(fir.tap_normalization_shift()))
 print("output bits: {}".format(fir.output_bit_width(input_bits)))

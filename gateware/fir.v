@@ -16,8 +16,8 @@ module fir #(
    parameter INTERNAL_WIDTH = 35,
    // these values should be set according to the output of
    // gen_taps.py
-   parameter NORM_SHIFT     = 3,
-   parameter OUTPUT_WIDTH   = 14
+   parameter NORM_SHIFT     = 4,
+   parameter OUTPUT_WIDTH   = 13
 ) (
    input wire                           clk,
    input wire                           rst_n,

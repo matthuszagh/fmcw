@@ -16,6 +16,7 @@
 #define PAYLOAD_SIZE 510
 #define FFT_LEN 1024
 #define RAW_LEN 8000
+#define FIR_WIDTH 13
 #define BUFSIZE 2048
 #define BACKG_DEFAULT 100
 /* Indicates a command to Python subprocess. */
@@ -701,9 +702,8 @@ void proc_window(uint64_t rdval, struct data *data)
 	int32_t chan_b;
 	unsigned int ctr;
 
-	/* TODO magic numbers, use macros instead */
-	chan_a = (int32_t)subw_val(rdval, 4, 14, 1);
-	chan_b = (int32_t)subw_val(rdval, 18, 14, 1);
+	chan_a = (int32_t)subw_val(rdval, 4, FIR_WIDTH, 1);
+	chan_b = (int32_t)subw_val(rdval, 4 + FIR_WIDTH, FIR_WIDTH, 1);
 	ctr = (unsigned int)subw_val(rdval, 32, 10, 0);
 
 	/* TODO most data is being written twice for some reason. >=
@@ -756,8 +756,8 @@ void proc_fir(uint64_t rdval, struct data *data)
 	unsigned int ctr;
 
 	/* TODO magic numbers, use macros instead */
-	chan_a = (int32_t)subw_val(rdval, 4, 14, 1);
-	chan_b = (int32_t)subw_val(rdval, 18, 14, 1);
+	chan_a = (int32_t)subw_val(rdval, 4, FIR_WIDTH, 1);
+	chan_b = (int32_t)subw_val(rdval, 4 + FIR_WIDTH, FIR_WIDTH, 1);
 	ctr = (unsigned int)subw_val(rdval, 32, 10, 0);
 
 	/* printf("%5d %5d %5d\n", ctr, last_ctr, chan_a); */

@@ -13,7 +13,7 @@ module top #(
    parameter USB_DATA_WIDTH   = 8,
    parameter ADC_DATA_WIDTH   = 12,
    parameter SD_DATA_WIDTH    = 4,
-   parameter FIR_OUTPUT_WIDTH = 14
+   parameter FIR_OUTPUT_WIDTH = 13
 ) (
    // =============== clocks, resets, LEDs, connectors ===============
    // 40MHz
@@ -244,14 +244,14 @@ module top #(
    // TODO setting parameters like this is very error-prone since they
    // are determined based on the output of a script.
    fir #(
-      .N_TAPS         (120 ),
-      .M              (20  ),
-      .BANK_LEN       (6   ),
-      .INPUT_WIDTH    (12  ),
-      .TAP_WIDTH      (16  ),
-      .INTERNAL_WIDTH (35  ),
-      .NORM_SHIFT     (3   ),
-      .OUTPUT_WIDTH   (14  )
+      .N_TAPS         (120              ),
+      .M              (20               ),
+      .BANK_LEN       (6                ),
+      .INPUT_WIDTH    (12               ),
+      .TAP_WIDTH      (16               ),
+      .INTERNAL_WIDTH (35               ),
+      .NORM_SHIFT     (4                ),
+      .OUTPUT_WIDTH   (FIR_OUTPUT_WIDTH )
    ) fir (
       .clk             (clk_i           ),
       .rst_n           (fir_en          ),
@@ -453,12 +453,12 @@ module top #(
         end
       WINDOW:
         begin
-           ft245_wrdata = {{0{1'b0}}, window_ctr, 14'd0, kaiser_out};
+           ft245_wrdata = {{0{1'b0}}, window_ctr, {28-FIR_OUTPUT_WIDTH{1'b0}}, kaiser_out};
            ft245_en = kaiser_dvalid && clk_2mhz_pos_en;
         end
       FIR:
         begin
-           ft245_wrdata = {{0{1'b0}}, fir_ctr, 14'd0, chan_a_filtered};
+           ft245_wrdata = {{0{1'b0}}, fir_ctr, {28-FIR_OUTPUT_WIDTH{1'b0}}, chan_a_filtered};
            ft245_en = fir_dvalid && clk_2mhz_pos_en;
         end
       RAW:

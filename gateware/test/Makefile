@@ -17,8 +17,8 @@ include $(shell cocotb-config --makefiles)/Makefile.inc
 include $(shell cocotb-config --makefiles)/Makefile.sim
 VERILOG_SOURCES		= $(VERILOG_SRCS)
 # Cocotb has trouble finding verilog files. Pass them directly to
-# the simulator instead.
-COMPILE_ARGS		= $(addprefix -I,$(VERILOG_DIRS))
+# the simulator instead. Also set the top module name for ifdef guards
+COMPILE_ARGS		= $(addprefix -I,$(VERILOG_DIRS)) $(addprefix -D,$(shell echo $(TOP_MODULE) | tr a-z A-Z))=1
 # Parameters must be set through the simulator.
 # EXTRA_ARGS		= "-PWIDTH=64 -PSIZE=1024"
 
@@ -27,5 +27,4 @@ ICARUS_BUILD_DIR	:= icarus/build
 # TODO make clean is inefficient. should be better way to make this work
 .PHONY: cocotb
 cocotb:
-	$(MAKE) clean
 	$(MAKE) sim

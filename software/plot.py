@@ -99,13 +99,13 @@ class Plot:
     def update_plot(self, data):
         if self.win is None:
             self._initialize_plot(data)
-        # TODO this is a temporary fix to remove the 500KHz tone. The
-        # proper solution is to fix the hardware.
-        llim = 256
-        ulim = 268
-        for i in range(llim, ulim):
-            if i < len(data.data[0]):
-                data.data[0][i] = data.data[0][i - (ulim - llim)]
+        # # TODO this is a temporary fix to remove the 500KHz tone. The
+        # # proper solution is to fix the hardware.
+        # llim = 256
+        # ulim = 268
+        # for i in range(llim, ulim):
+        #     if i < len(data.data[0]):
+        #         data.data[0][i] = data.data[0][i - (ulim - llim)]
         if self.plot_type == PType.HIST:
             val = data.data[0]
             if self.xval == PLOT_DOMAIN - 1:

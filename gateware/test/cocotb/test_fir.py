@@ -28,12 +28,13 @@ class FIRTB:
         self.downsample_factor = 20
         self.fir = FIR(
             numtaps=120,
-            bands=[0, 0.95e6, 1e6, 20e6],
+            bands=[0, 1e6, 1.5e6, 20e6],
             band_gain=[1, 0],
             fs=40e6,
             pass_db=0.5,
             stop_db=-40,
         )
+        self.norm_shift = self.fir.tap_normalization_shift()
         self.taps = self.fir.taps
         self.outputs = self.gen_outputs()
 
@@ -150,14 +151,13 @@ async def check_sequence(dut):
 @cocotb.test()
 async def bank_output_vals(dut):
     """
-    Ensure the bank output values are correct at all points time.
+    Ensure the bank output values are correct at all points in time.
     """
     num_samples = 10000
     input_width = 12
     tap_width = 16
     tb = FIRTB(dut, num_samples, input_width, tap_width)
     await tb.setup()
-    norm_shift = 3
 
     cocotb.fork(tb.write_continuous())
 
@@ -180,7 +180,7 @@ async def bank_output_vals(dut):
             bank_outs[(20 - (input_index % 20)) % 20] += tb.inputs[
                 input_index
             ] * bit.sub_integral_to_sint(
-                tb.fir.taps[j] * (2 ** norm_shift), tap_width
+                tb.fir.taps[j] * (2 ** tb.norm_shift), tap_width
             )
 
         await RisingEdge(tb.dut.clk_2mhz_pos_en)
