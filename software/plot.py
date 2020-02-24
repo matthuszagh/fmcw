@@ -11,6 +11,7 @@ from scipy import signal
 from pyqtgraph.Qt import QtGui
 import pyqtgraph as pg
 import pyqtgraph.exporters
+from matplotlib import cm
 
 FFT_LEN = 1024
 RAW_LEN = 8000
@@ -57,6 +58,10 @@ class Plot:
         self.data = None
         self.time = None
         self.xval = 0
+        # matplotlib colors
+        colormap = cm.get_cmap("CMRmap")
+        colormap._init()
+        self.colors = (colormap._lut * 255).view(np.ndarray)
 
     def _initialize_plot(self, data):
         # initialize data arrays
@@ -84,9 +89,11 @@ class Plot:
             self.win.setWindowTitle("Range Plot")
             self.view = self.win.addViewBox()
             self.view.setAspectLocked(False)
+            self.yaxis = pg.AxisItem("left", linkView=self.view)
             # Set initial view bounds
             self.view.enableAutoRange()
             self.img = pg.ImageItem(border="w")
+            self.img.setLookupTable(self.colors)
             self.view.addItem(self.img)
         else:
             self.win.setWindowTitle("Time Plot")
