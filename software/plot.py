@@ -90,6 +90,8 @@ class Plot:
             self.view = self.win.addViewBox()
             self.view.setAspectLocked(False)
             self.yaxis = pg.AxisItem("left", linkView=self.view)
+            self.yaxis.setScale(0.5)
+            self.win.addItem(self.yaxis)
             # Set initial view bounds
             self.view.enableAutoRange()
             self.img = pg.ImageItem(border="w")
