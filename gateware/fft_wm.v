@@ -2,6 +2,8 @@
 `define _FFT_WM_V_
 `default_nettype none
 
+`include "pll_sync_ctr.v"
+
 module fft_wm #(
    parameter DATA_WIDTH    = 25,
    parameter TWIDDLE_WIDTH = 10,
@@ -42,7 +44,6 @@ module fft_wm #(
     * I = a(c+d)-f
     */
    // compute multiplies in stages to share DSP.
-   reg [1:0]                             mul_state;
    reg signed [DATA_WIDTH+TWIDDLE_WIDTH:0] kar_f;
    reg signed [DATA_WIDTH+TWIDDLE_WIDTH:0] kar_r;
    reg signed [DATA_WIDTH+TWIDDLE_WIDTH:0] kar_i;
@@ -61,59 +62,47 @@ module fft_wm #(
    reg signed [DATA_WIDTH-1:0] a2_reg;
    reg signed [TWIDDLE_WIDTH:0] b2_reg;
 
-   // `mul_state_start' ensures that `mul_state' is not dependent on
-   // when `rst_n' is released.
-   reg                            mul_state_start;
-   always @(posedge clk_i) begin
-      if (!rst_n)
-        mul_state_start <= 1'b0;
-      else
-        mul_state_start <= 1'b1;
-   end
+   wire [1:0]                   mul_state;
+   pll_sync_ctr #(
+      .RATIO (3)
+   ) sync_ctr (
+      .fst_clk (clk_3x_i  ),
+      .slw_clk (clk_i     ),
+      .rst_n   (rst_n     ),
+      .ctr     (mul_state )
+   );
 
    always @(posedge clk_3x_i) begin
-      if (!mul_state_start) begin
-         mul_state <= 2'd0;
-      end else begin
-         case (mul_state)
-         2'd0:
-           begin
-              kar_r     <= p_dsp;
-              mul_state <= 2'd1;
+      case (mul_state)
+      2'd0:
+        begin
+           kar_r     <= p_dsp;
+           a0_reg <= x_im_reg2;
+           b0_reg <= w_re_reg - w_im_reg;
+        end
+      2'd1:
+        begin
+           kar_i     <= p_dsp;
+           // updating the regs on `mul_state==2'd1' ensures that
+           // `kar_i' is not set before `kar_f'.
+           x_re_reg  <= x_re_i;
+           x_re_reg2 <= x_re_reg;
+           x_im_reg  <= x_im_i;
+           x_im_reg2 <= x_im_reg;
+           w_re_reg  <= w_re_i;
+           w_im_reg  <= w_im_i;
 
-              a0_reg <= x_im_reg2;
-              b0_reg <= w_re_reg - w_im_reg;
-           end
-         2'd1:
-           begin
-              kar_i     <= p_dsp;
-              mul_state <= 2'd2;
-              // updating the regs on `mul_state==2'd1' ensures that
-              // `kar_i' is not set before `kar_f'.
-              x_re_reg  <= x_re_i;
-              x_re_reg2 <= x_re_reg;
-              x_im_reg  <= x_im_i;
-              x_im_reg2 <= x_im_reg;
-              w_re_reg  <= w_re_i;
-              w_im_reg  <= w_im_i;
-
-              a1_reg <= x_re_reg2;
-              b1_reg <= w_re_reg + w_im_reg;
-           end
-         2'd2:
-           begin
-              kar_f     <= p_dsp;
-              mul_state <= 2'd0;
-
-              a2_reg <= x_re_reg2 - x_im_reg2;
-              b2_reg <= sign_extend_b(w_re_reg);
-           end
-         default:
-           begin
-              mul_state <= 2'd0;
-           end
-         endcase
-      end
+           a1_reg <= x_re_reg2;
+           b1_reg <= w_re_reg + w_im_reg;
+        end
+      2'd2:
+        begin
+           kar_f     <= p_dsp;
+           a2_reg <= x_re_reg2 - x_im_reg2;
+           b2_reg <= sign_extend_b(w_re_reg);
+        end
+      // d'd3 is unreachable, as long as pll_sync_ctr works
+      endcase
    end
 
    reg signed [DATA_WIDTH-1:0] a_dsp;
@@ -183,8 +172,6 @@ module fft_wm #(
          ctr_reg2 <= ctr_reg;
          ctr_reg3 <= ctr_reg2;
          ctr_o    <= ctr_reg3;
-
-         // TODO verify that dropping msb is ok
 
          // safe to ignore the msb since the greatest possible
          // absolute twiddle value is 2^(TWIDDLE_WIDTH-1)
