@@ -303,7 +303,9 @@ class Monitor:
 
     def read_packet(self):
         indic = self._read_n_bytes(1)
-        if indic == 1:
+        if indic == 2:
+            sys.exit(0)
+        elif indic == 1:
             self._read_cmd()
             # Call recursively until we get data. There should only be
             # 1 command before data is sent.

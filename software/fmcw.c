@@ -20,8 +20,9 @@
 #define BUFSIZE 2048
 #define BACKG_DEFAULT 100
 /* Indicates a command to Python subprocess. */
-#define CMD 1
 #define DATA 0
+#define CMD 1
+#define TERM 2
 
 /* TODO needed? */
 static int exit_requested = 0;
@@ -108,6 +109,10 @@ static unsigned char algo_bit_flags(struct cmd_flags *flags);
  */
 
 static void send_cmd(struct data *data);
+/**
+ * Terminate python subprocess.
+ */
+static void send_term(struct data *data);
 /**
  * Send data to the python subprocess. The first byte must be a
  * prepare byte. The second is a 4-byte timestamp associated with the
@@ -440,9 +445,10 @@ int main(int argc, char **argv)
 
 		fputs("Type 'q' to terminate data capture.\n> ", stdout);
 		pthread_join(input_monitor_thread, NULL);
+		send_term(&data);
 		/* TODO get return value. */
 		/* pthread_join(producer_thread, NULL); */
-		pthread_cancel(consumer_thread);
+		pthread_cancel(producer_thread);
 		pthread_cancel(consumer_thread);
 		/* ftdi_err = *(int *)prod_ret; */
 		/* if (ftdi_err < 0 && !exit_requested) { */
@@ -463,8 +469,8 @@ cleanup:
 	free(data.a_arr);
 	free(data.b_arr);
 	free(data.ctr_arr);
-	ftdi_usb_close(ftdi);
-	ftdi_free(ftdi);
+	/* ftdi_usb_close(ftdi); */
+	/* ftdi_free(ftdi); */
 }
 
 uint64_t get_value(uint8_t *buf)
@@ -569,6 +575,13 @@ void send_data(struct data *data)
 	if (num_chans == 2) {
 		fwrite(data->b_arr, sizeof(wrval), packet_len, data->pipe);
 	}
+}
+
+void send_term(struct data *data)
+{
+	unsigned char wrval[1];
+	wrval[0] = TERM;
+	fwrite(wrval, 1, 1, data->pipe);
 }
 
 void interp_lin(int *data, unsigned int *valid, int len)
