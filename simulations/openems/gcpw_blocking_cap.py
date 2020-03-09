@@ -1,370 +1,124 @@
 #!/usr/bin/env python
 
 import numpy as np
-import CSXCAD as csxcad
-import openEMS as openems
 from pyems.pcb import common_pcbs
-from pyems.port import MicrostripPort
-from pyems.simulation import Simulation
+from pyems.simulation_beta import Simulation
 from pyems.field_dump import FieldDump
-from pyems.network import Network
-from pyems.utilities import pretty_print, wavelength
+from pyems.utilities import pretty_print, mil_to_mm
+from pyems.structure import (
+    PCB,
+    Microstrip,
+    common_smd_passives,
+    SMDPassive,
+    Taper,
+)
+from pyems.coordinate import Box2, Box3, Coordinate2, Coordinate3
+from pyems.automesh import Mesh
 
 
-pcb = common_pcbs["oshpark4"]
-z0_target = 50
-center_freq = 5.6e9
-delta_freq = 2e9
-unit = 1e-3  # all units in mm
-gap_width = 0.1524
-via_width = 1.27
-width = 0.34
+unit = 1e-3
+freq = np.linspace(4e9, 8e9, 501)
+sim = Simulation(freq=freq, unit=unit)
+pcb_prop = common_pcbs["oshpark4"]
+pcb_len = 30
+pcb_width = 10
+trace_width = 0.34
+gap = mil_to_mm(6)
+via_gap = 0.4
+z0_ref = 50
 
-cap_len = 1
-cap_width = 0.5
-cap_height = 0.5
-cap_gap = gap_width
-cap_via_gap = via_width / 2 - (width / 2) - gap_width
-pad_dim = cap_width
-gnd_cutout_width = 1.2 * pad_dim
+cap_dim = common_smd_passives["0402C"]
+cap_dim.set_unit(unit)
+pad_length = 0.6
+pad_width = cap_dim.width
 
-fdtd = openems.openEMS(EndCriteria=1e-5)
-csx = csxcad.ContinuousStructure()
+pcb = PCB(
+    sim=sim,
+    pcb_prop=pcb_prop,
+    length=pcb_len,
+    width=pcb_width,
+    layers=range(3),
+)
 
-csx.GetGrid().SetDeltaUnit(unit)
-
-trace_len = 30
-sub_width = 10
-
-port1 = MicrostripPort(
-    csx=csx,
-    bounding_box=[
-        [-trace_len / 2, -width / 2, -pcb.layer_separation(unit)[0]],
-        [-cap_len / 2 - (pad_dim / 2), width / 2, 0],
-    ],
-    thickness=unit * pcb.layer_thickness(unit)[0],
-    conductivity=pcb.metal_conductivity(),
+microstrip1 = Microstrip(
+    pcb=pcb,
+    box=Box2(
+        Coordinate2(-pcb_len / 2, -trace_width / 2),
+        Coordinate2(-(cap_dim.length / 2) - (pad_length / 2), trace_width / 2),
+    ),
+    trace_layer=0,
+    gnd_layer=1,
+    gnd_gap=gap,
+    via_gap=via_gap,
+    via=None,
+    port_number=1,
     excite=True,
-    ref_resistance=50,
 )
-port2 = MicrostripPort(
-    csx=csx,
-    bounding_box=[
-        [trace_len / 2, width / 2, -pcb.layer_separation(unit)[0]],
-        [cap_len / 2 + (pad_dim / 2), -width / 2, 0],
-    ],
-    thickness=unit * pcb.layer_thickness(unit)[0],
-    conductivity=pcb.metal_conductivity(),
+
+taper = Taper(
+    pcb=pcb,
+    position=None,
+    pcb_layer=0,
+    width1=trace_width,
+    width2=pad_width,
+    length=pad_width,
+    gap=gap,
+)
+
+# values based on Murata GJM1555C1H100FB01 (ESR at 6GHz)
+cap = SMDPassive(
+    pcb=pcb,
+    position=Coordinate2(0, 0),
+    dimensions=cap_dim,
+    pad_width=pad_width,
+    pad_length=pad_length,
+    gap=gap,
+    c=10e-12,
+    r=0.7,
+    l=4.4e-10,
+    pcb_layer=0,
+    gnd_cutout_width=1.2,
+    gnd_cutout_length=1,
+    taper=taper,
+)
+
+microstrip2 = Microstrip(
+    pcb=pcb,
+    box=Box2(
+        Coordinate2(pcb_len / 2, trace_width / 2),
+        Coordinate2((cap_dim.length / 2) + (pad_length / 2), -trace_width / 2),
+    ),
+    trace_layer=0,
+    gnd_layer=1,
+    gnd_gap=gap,
+    via_gap=via_gap,
+    via=None,
+    port_number=2,
     excite=False,
-    ref_resistance=50,
 )
 
-substrate = csx.AddMaterial(
-    "substrate",
-    epsilon=pcb.epsr_at_freq(center_freq),
-    kappa=pcb.substrate_conductivity(),
-)
-substrate.AddBox(
-    priority=0,
-    start=[-trace_len / 2, -sub_width / 2, -pcb.layer_separation(unit)[0]],
-    stop=[trace_len / 2, sub_width / 2, 0],
+dump = FieldDump(
+    sim=sim,
+    box=Box3(
+        Coordinate3(-pcb_len / 2, -pcb_width / 2, 0),
+        Coordinate3(pcb_len / 2, pcb_width / 2, 0),
+    ),
 )
 
-ground = csx.AddConductingSheet(
-    "ground",
-    conductivity=pcb.metal_conductivity(),
-    thickness=unit * pcb.layer_thickness(unit)[0],
-)
-# layer 1 (-x, -y)
-ground.AddBox(
-    priority=999,
-    start=[-trace_len / 2, -sub_width / 2, 0],
-    stop=[-cap_len / 2 - (pad_dim), -width / 2 - gap_width, 0],
-)
-# vias (-x, -y)
-ground.AddBox(
-    priority=999,
-    start=[-trace_len / 2, -via_width / 2, -pcb.layer_separation(unit)[0]],
-    stop=[-cap_len / 2 - (pad_dim), -via_width / 2, 0],
-)
-# layer 1 (+x, -y)
-ground.AddBox(
-    priority=999,
-    start=[cap_len / 2 + (pad_dim), -sub_width / 2, 0],
-    stop=[trace_len / 2, -width / 2 - gap_width, 0],
-)
-# layer 1 (, -y)
-ground.AddBox(
-    priority=999,
-    start=[-cap_len / 2 - (pad_dim), -sub_width / 2, 0],
-    stop=[cap_len / 2 + (pad_dim), -pad_dim / 2 - cap_gap, 0],
-)
-# vias (, -y)
-ground.AddBox(
-    priority=999,
-    start=[
-        -cap_len / 2 - (pad_dim),
-        -pad_dim / 2 - cap_gap - cap_via_gap,
-        -pcb.layer_separation(unit)[0],
-    ],
-    stop=[cap_len / 2 + (pad_dim), -pad_dim / 2 - cap_gap - cap_via_gap, 0],
-)
-# vias (+x, -y)
-ground.AddBox(
-    priority=999,
-    start=[
-        cap_len / 2 + (pad_dim),
-        -via_width / 2,
-        -pcb.layer_separation(unit)[0],
-    ],
-    stop=[trace_len / 2, -via_width / 2, 0],
-)
-# layer 1 (-x, +y)
-ground.AddBox(
-    priority=999,
-    start=[-trace_len / 2, width / 2 + gap_width, 0],
-    stop=[-cap_len / 2 - (pad_dim), sub_width / 2, 0],
-)
-# vias (-x, +y)
-ground.AddBox(
-    priority=999,
-    start=[-trace_len / 2, via_width / 2, -pcb.layer_separation(unit)[0]],
-    stop=[-cap_len / 2 - (pad_dim), via_width / 2, 0],
-)
-# layer 1 (+x, +y)
-ground.AddBox(
-    priority=999,
-    start=[cap_len / 2 + (pad_dim), width / 2 + gap_width, 0],
-    stop=[trace_len / 2, sub_width / 2, 0],
-)
-# vias (+x, -y)
-ground.AddBox(
-    priority=999,
-    start=[
-        cap_len / 2 + (pad_dim),
-        via_width / 2,
-        -pcb.layer_separation(unit)[0],
-    ],
-    stop=[trace_len / 2, via_width / 2, 0],
-)
-# vias (, +y)
-ground.AddBox(
-    priority=999,
-    start=[
-        -cap_len / 2 - (pad_dim),
-        pad_dim / 2 + cap_gap + cap_via_gap,
-        -pcb.layer_separation(unit)[0],
-    ],
-    stop=[cap_len / 2 + (pad_dim), pad_dim / 2 + cap_gap + cap_via_gap, 0],
-)
-# layer 1 (, +y)
-ground.AddBox(
-    priority=999,
-    start=[-cap_len / 2 - (pad_dim), pad_dim / 2 + cap_gap, 0],
-    stop=[cap_len / 2 + (pad_dim), sub_width / 2, 0],
-)
-
-ground.AddPolygon(
-    [
-        [
-            -cap_len / 2 - pad_dim,
-            -cap_len / 2 - pad_dim,
-            -cap_len / 2 - (pad_dim / 2),
-        ],
-        [
-            -width / 2 - gap_width,
-            -pad_dim / 2 - cap_gap,
-            -pad_dim / 2 - cap_gap,
-        ],
-    ],
-    "z",
-    0,
-    priority=999,
-)
-ground.AddPolygon(
-    [
-        [
-            -cap_len / 2 - pad_dim,
-            -cap_len / 2 - pad_dim,
-            -cap_len / 2 - (pad_dim / 2),
-        ],
-        [width / 2 + gap_width, pad_dim / 2 + cap_gap, pad_dim / 2 + cap_gap],
-    ],
-    "z",
-    0,
-    priority=999,
-)
-ground.AddPolygon(
-    [
-        [
-            cap_len / 2 + pad_dim,
-            cap_len / 2 + pad_dim,
-            cap_len / 2 + (pad_dim / 2),
-        ],
-        [
-            -width / 2 - gap_width,
-            -pad_dim / 2 - cap_gap,
-            -pad_dim / 2 - cap_gap,
-        ],
-    ],
-    "z",
-    0,
-    priority=999,
-)
-ground.AddPolygon(
-    [
-        [
-            cap_len / 2 + pad_dim,
-            cap_len / 2 + pad_dim,
-            cap_len / 2 + (pad_dim / 2),
-        ],
-        [width / 2 + gap_width, pad_dim / 2 + cap_gap, pad_dim / 2 + cap_gap],
-    ],
-    "z",
-    0,
-    priority=999,
-)
-# bottom layer ground plane
-inner_ground = csx.AddConductingSheet(
-    "inner_ground",
-    conductivity=pcb.metal_conductivity(),
-    thickness=unit * pcb.layer_thickness(unit)[1],
-)
-inner_ground.AddBox(
-    priority=10,
-    start=[-trace_len / 2, -sub_width / 2, -pcb.layer_separation(unit)[0]],
-    stop=[trace_len / 2, sub_width / 2, -pcb.layer_separation(unit)[0]],
-)
-# ground cutout
-air = csx.AddMaterial("air", epsilon=1)
-air.AddBox(
-    priority=999,
-    start=[
-        -cap_len / 2 - (pad_dim / 2),
-        -gnd_cutout_width / 2,
-        -pcb.layer_separation(unit)[0],
-    ],
-    stop=[
-        cap_len / 2 + (pad_dim / 2),
-        gnd_cutout_width / 2,
-        -pcb.layer_separation(unit)[0],
-    ],
-)
-
-# capacitor
-pad = csx.AddConductingSheet(
-    "pad",
-    conductivity=pcb.metal_conductivity(),
-    thickness=unit * pcb.layer_thickness(unit)[0],
-)
-pad.AddBox(
-    priority=999,
-    start=[-cap_len / 2 - (pad_dim / 2), -pad_dim / 2, 0],
-    stop=[-cap_len / 2 + (pad_dim / 2), pad_dim / 2, 0],
-)
-pad.AddPolygon(
-    [
-        [
-            -cap_len / 2 - pad_dim,
-            -cap_len / 2 - (pad_dim / 2),
-            -cap_len / 2 - (pad_dim / 2),
-        ],
-        [-width / 2, -width / 2, -pad_dim / 2],
-    ],
-    "z",
-    0,
-    priority=999,
-)
-pad.AddPolygon(
-    [
-        [
-            -cap_len / 2 - pad_dim,
-            -cap_len / 2 - (pad_dim / 2),
-            -cap_len / 2 - (pad_dim / 2),
-        ],
-        [width / 2, width / 2, pad_dim / 2],
-    ],
-    "z",
-    0,
-    priority=999,
-)
-pad.AddPolygon(
-    [
-        [
-            cap_len / 2 + pad_dim,
-            cap_len / 2 + (pad_dim / 2),
-            cap_len / 2 + (pad_dim / 2),
-        ],
-        [-width / 2, -width / 2, -pad_dim / 2],
-    ],
-    "z",
-    0,
-    priority=999,
-)
-pad.AddPolygon(
-    [
-        [
-            cap_len / 2 + (pad_dim / 2),
-            cap_len / 2 + (pad_dim / 2),
-            cap_len / 2 + pad_dim,
-        ],
-        [pad_dim / 2, width / 2, width / 2],
-    ],
-    "z",
-    0,
-    priority=999,
-)
-pad.AddBox(
-    priority=999,
-    start=[cap_len / 2 - (pad_dim / 2), -pad_dim / 2, 0],
-    stop=[cap_len / 2 + (pad_dim / 2), pad_dim / 2, 0],
-)
-# based on Murata GJM1555C1H100FB01 (ESR at 6GHz)
-cap = csx.AddLumpedElement("cap", ny=0, caps=True, R=0.7, C=10e-12, L=4.4e-10)
-cap.AddBox(
-    priority=999,
-    start=[-cap_len / 2, -cap_width / 2, 0],
-    stop=[cap_len / 2, cap_width / 2, cap_height],
-)
-
-network = Network(csx=csx, ports=[port1, port2])
-network.generate_mesh(
-    min_wavelength=wavelength(center_freq + delta_freq, unit),
+mesh = Mesh(
+    sim=sim,
     metal_res=1 / 160,
-    nonmetal_res=1 / 80,
-    smooth=[1.1, 1.3, 1.3],
+    nonmetal_res=1 / 40,
+    smooth=(1.5, 1.5, 1.5),
     min_lines=5,
-    expand_bounds=[[0, 0], [8, 8], [8, 8]],
+    expand_bounds=((0, 0), (8, 8), (8, 8)),
 )
-network.view()
-
-field_dump = FieldDump(
-    csx=csx,
-    box=[
-        [-trace_len / 2, -sub_width / 2, 0],
-        [trace_len / 2, sub_width / 2, 0],
-    ],
-)
-sim = Simulation(
-    fdtd=fdtd,
-    csx=csx,
-    center_freq=center_freq,
-    half_bandwidth=delta_freq,
-    boundary_conditions=["PML_8", "PML_8", "PML_8", "PML_8", "PML_8", "PML_8"],
-    network=network,
-    field_dumps=[field_dump],
-)
-sim.simulate()
+mesh.generate_mesh()
+sim.run()
 sim.view_field()
 
-freq = sim.get_freq()
-
-s21 = network.s_param(2, 1)
-s11 = network.s_param(1, 1)
-ports = network.get_ports()
-
 pretty_print(
-    np.concatenate(([freq / 1e9], [s11], [s21])),
+    data=[sim.freq / 1e9, sim.s_param(1, 1), sim.s_param(2, 1)],
     col_names=["freq", "s11", "s21"],
     prec=[4, 4, 4],
 )
