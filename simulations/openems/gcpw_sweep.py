@@ -19,8 +19,8 @@ width_dev_factor = 0.1
 center_width = 0.34
 gap = mil_to_mm(6)
 via_gap = 0.4
-num_points = 11
-# num_points = 31
+# num_points = 11
+num_points = 31
 
 
 def gen_sim(width: float) -> Simulation:
@@ -58,10 +58,9 @@ def gen_sim(width: float) -> Simulation:
         metal_res=1 / 80,
         nonmetal_res=1 / 40,
         smooth=(1.1, 1.5, 1.5),
-        min_lines=21,
+        min_lines=25,
         expand_bounds=((0, 0), (8, 8), (8, 8)),
     )
-    mesh.generate_mesh()
     return sim
 
 

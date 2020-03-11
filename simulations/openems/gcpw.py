@@ -46,12 +46,12 @@ dump = FieldDump(
 mesh = Mesh(
     sim=sim,
     metal_res=1 / 80,
-    nonmetal_res=1 / 80,
-    smooth=(1.1, 1.1, 1.1),
-    min_lines=31,
+    nonmetal_res=1 / 40,
+    smooth=(1.1, 1.5, 1.5),
+    min_lines=25,
     expand_bounds=((0, 0), (8, 8), (8, 8)),
 )
-mesh.generate_mesh()
+
 sim.run()
 sim.view_field()
 

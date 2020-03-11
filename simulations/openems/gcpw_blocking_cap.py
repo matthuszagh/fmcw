@@ -113,7 +113,7 @@ mesh = Mesh(
     min_lines=5,
     expand_bounds=((0, 0), (8, 8), (8, 8)),
 )
-mesh.generate_mesh()
+
 sim.run()
 sim.view_field()
 
