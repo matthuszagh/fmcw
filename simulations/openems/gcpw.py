@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import numpy as np
-from pyems.simulation_beta import Simulation
+from pyems.simulation import Simulation
 from pyems.structure import PCB, Microstrip
 from pyems.coordinate import Coordinate2, Coordinate3, Box2, Box3
 from pyems.pcb import common_pcbs

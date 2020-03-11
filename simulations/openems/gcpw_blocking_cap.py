@@ -2,7 +2,7 @@
 
 import numpy as np
 from pyems.pcb import common_pcbs
-from pyems.simulation_beta import Simulation
+from pyems.simulation import Simulation
 from pyems.field_dump import FieldDump
 from pyems.utilities import pretty_print, mil_to_mm
 from pyems.structure import (
