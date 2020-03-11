@@ -4,7 +4,7 @@ import numpy as np
 from pyems.pcb import common_pcbs
 from pyems.structure import PCB, Microstrip
 from pyems.coordinate import Box2, Coordinate2
-from pyems.automesh import Mesh
+from pyems.mesh import Mesh
 from pyems.simulation import Simulation, sweep
 from pyems.utilities import mil_to_mm, array_index, pretty_print
 

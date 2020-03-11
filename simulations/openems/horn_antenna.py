@@ -8,7 +8,7 @@ from pyems.simulation import Simulation
 from pyems.field_dump import FieldDump
 from pyems.structure import standard_waveguides
 from pyems.coordinate import Coordinate3, Box3
-from pyems.automesh import Mesh
+from pyems.mesh import Mesh
 from pyems.nf2ff import NF2FF
 
 unit = 1e-3

@@ -13,7 +13,7 @@ from pyems.structure import (
     Taper,
 )
 from pyems.coordinate import Box2, Box3, Coordinate2, Coordinate3
-from pyems.automesh import Mesh
+from pyems.mesh import Mesh
 
 
 unit = 1e-3

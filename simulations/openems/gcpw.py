@@ -5,7 +5,7 @@ from pyems.simulation import Simulation
 from pyems.structure import PCB, Microstrip
 from pyems.coordinate import Coordinate2, Coordinate3, Box2, Box3
 from pyems.pcb import common_pcbs
-from pyems.automesh import Mesh
+from pyems.mesh import Mesh
 from pyems.utilities import pretty_print, mil_to_mm
 from pyems.field_dump import FieldDump
 

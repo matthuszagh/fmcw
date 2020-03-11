@@ -7,7 +7,7 @@ from pyems.field_dump import FieldDump
 from pyems.utilities import pretty_print, mil_to_mm
 from pyems.structure import PCB, Microstrip, Via
 from pyems.coordinate import Box2, Coordinate2
-from pyems.automesh import Mesh
+from pyems.mesh import Mesh
 
 
 unit = 1e-3
