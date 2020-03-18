@@ -12,7 +12,7 @@ from pyems.structure import (
     SMDPassive,
     Taper,
 )
-from pyems.coordinate import Box2, Box3, Coordinate2, Coordinate3
+from pyems.coordinate import Box2, Box3, Coordinate2, Coordinate3, Axis
 from pyems.mesh import Mesh
 
 
@@ -40,12 +40,16 @@ pcb = PCB(
     layers=range(3),
 )
 
+box = Box2(
+    Coordinate2(-pcb_len / 2, -trace_width / 2),
+    Coordinate2(-(cap_dim.length / 2) - (pad_length / 2), trace_width / 2),
+)
 microstrip1 = Microstrip(
     pcb=pcb,
-    box=Box2(
-        Coordinate2(-pcb_len / 2, -trace_width / 2),
-        Coordinate2(-(cap_dim.length / 2) - (pad_length / 2), trace_width / 2),
-    ),
+    position=box.center(),
+    length=box.length(),
+    width=box.width(),
+    propagation_axis=Axis("x"),
     trace_layer=0,
     gnd_layer=1,
     gnd_gap=gap,
@@ -81,13 +85,16 @@ cap = SMDPassive(
     gnd_cutout_length=1,
     taper=taper,
 )
-
+box = Box2(
+    Coordinate2(pcb_len / 2, trace_width / 2),
+    Coordinate2((cap_dim.length / 2) + (pad_length / 2), -trace_width / 2),
+)
 microstrip2 = Microstrip(
     pcb=pcb,
-    box=Box2(
-        Coordinate2(pcb_len / 2, trace_width / 2),
-        Coordinate2((cap_dim.length / 2) + (pad_length / 2), -trace_width / 2),
-    ),
+    position=box.center(),
+    length=box.length(),
+    width=box.width(),
+    propagation_axis=Axis("x", direction=-1),
     trace_layer=0,
     gnd_layer=1,
     gnd_gap=gap,

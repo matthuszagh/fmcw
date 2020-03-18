@@ -3,7 +3,7 @@
 import numpy as np
 from pyems.pcb import common_pcbs
 from pyems.structure import PCB, Microstrip
-from pyems.coordinate import Box2, Coordinate2
+from pyems.coordinate import Box2, Coordinate2, Axis
 from pyems.mesh import Mesh
 from pyems.simulation import Simulation, sweep
 from pyems.utilities import mil_to_mm, array_index, pretty_print
@@ -38,12 +38,16 @@ def gen_sim(width: float) -> Simulation:
         width=pcb_width,
         layers=range(3),
     )
+    box = Box2(
+        Coordinate2(-pcb_len / 2, -width / 2),
+        Coordinate2(pcb_len / 2, width / 2),
+    )
     Microstrip(
         pcb=pcb,
-        box=Box2(
-            Coordinate2(-pcb_len / 2, -width / 2),
-            Coordinate2(pcb_len / 2, width / 2),
-        ),
+        position=box.center(),
+        length=box.length(),
+        width=box.width(),
+        propagation_axis=Axis("x"),
         trace_layer=0,
         gnd_layer=1,
         gnd_gap=gap,
@@ -53,7 +57,7 @@ def gen_sim(width: float) -> Simulation:
         port_number=1,
         excite=True,
     )
-    mesh = Mesh(
+    Mesh(
         sim=sim,
         metal_res=1 / 80,
         nonmetal_res=1 / 40,

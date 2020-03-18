@@ -3,7 +3,7 @@
 import numpy as np
 from pyems.simulation import Simulation
 from pyems.structure import PCB, Microstrip
-from pyems.coordinate import Coordinate2, Coordinate3, Box2, Box3
+from pyems.coordinate import Coordinate2, Coordinate3, Box2, Box3, Axis
 from pyems.pcb import common_pcbs
 from pyems.mesh import Mesh
 from pyems.utilities import pretty_print, mil_to_mm
@@ -19,12 +19,16 @@ gap = mil_to_mm(6)
 via_gap = 0.4
 
 pcb = PCB(sim=sim, pcb_prop=pcb_prop, length=30, width=10, layers=range(3))
-micro = Microstrip(
+box = Box2(
+    Coordinate2(-pcb_len / 2, -trace_width / 2),
+    Coordinate2(pcb_len / 2, trace_width / 2),
+)
+Microstrip(
     pcb=pcb,
-    box=Box2(
-        Coordinate2(-pcb_len / 2, -trace_width / 2),
-        Coordinate2(pcb_len / 2, trace_width / 2),
-    ),
+    position=box.center(),
+    length=box.length(),
+    width=box.width(),
+    propagation_axis=Axis("x"),
     trace_layer=0,
     gnd_layer=1,
     gnd_gap=gap,

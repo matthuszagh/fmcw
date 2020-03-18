@@ -6,7 +6,7 @@ from pyems.simulation import Simulation
 from pyems.field_dump import FieldDump
 from pyems.utilities import pretty_print, mil_to_mm
 from pyems.structure import PCB, Microstrip, Via
-from pyems.coordinate import Box2, Coordinate2
+from pyems.coordinate import Box2, Coordinate2, Axis
 from pyems.mesh import Mesh
 
 
@@ -30,13 +30,16 @@ via_fence_sep = via_sep * 2
 
 sim = Simulation(freq=freq, unit=unit)
 pcb = PCB(sim=sim, pcb_prop=pcb_prop, length=pcb_len, width=pcb_width)
-
+box = Box2(
+    Coordinate2(-pcb_len / 2, -gcpw_width / 2),
+    Coordinate2(pcb_len / 4, gcpw_width / 2),
+)
 Microstrip(
     pcb=pcb,
-    box=Box2(
-        Coordinate2(-pcb_len / 2, -gcpw_width / 2),
-        Coordinate2(pcb_len / 4, gcpw_width / 2),
-    ),
+    position=box.center(),
+    length=box.length(),
+    width=box.width(),
+    propagation_axis=Axis("x"),
     trace_layer=0,
     gnd_layer=1,
     gnd_gap=gcpw_gap,
@@ -71,13 +74,16 @@ Via(
     annular_ring=annular_width,
     antipad=antipad,
 )
-
+box = Box2(
+    Coordinate2(-pcb_len / 2, -gcpw_width / 2),
+    Coordinate2(pcb_len / 4, gcpw_width / 2),
+)
 Microstrip(
     pcb=pcb,
-    box=Box2(
-        Coordinate2(-pcb_len / 2, -gcpw_width / 2),
-        Coordinate2(pcb_len / 4, gcpw_width / 2),
-    ),
+    position=box.center(),
+    length=box.length(),
+    width=box.width(),
+    propagation_axis=Axis("x"),
     trace_layer=3,
     gnd_layer=2,
     gnd_gap=gcpw_gap,
