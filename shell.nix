@@ -11,7 +11,7 @@ let
     pyqtgraph
     pkgs.cocotb
   ] ++ (with custompkgs; [
-    # skidl
+    skidl
     pyems
   ]));
   kicad = pkgs.kicad;
@@ -19,6 +19,7 @@ in
 pkgs.mkShell {
   buildInputs = with pkgs; [
     python-with-pkgs
+    ebase
 
     # fpga
     yosys
@@ -47,9 +48,11 @@ pkgs.mkShell {
     (openems.override {withMPI = false; })
     appcsxcad
     hyp2mat
+    qucs
 
     # 3d printing
     openscad
+    freecad
     (cura.override { plugins = [ pkgs.curaPlugins.octoprint ]; })
     curaengine
   ];
