@@ -1,2 +1,5 @@
 *.pdf
+*.png
+*.jpg
+*.zip
 *.svf filter=lfs diff=lfs merge=lfs -text
