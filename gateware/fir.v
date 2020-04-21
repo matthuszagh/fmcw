@@ -760,7 +760,7 @@ module fir #(
         bank18_19_dsp_p <= bank18_19_dsp_a * bank18_19_dsp_b;
    end
 
-   // TODO pipeline if this is too slow.
+   // TODO pipeline if latency is too high.
    wire signed [INTERNAL_WIDTH-1:0] out_tmp = bank_dout[0]
         + bank_dout[1]
         + bank_dout[2]

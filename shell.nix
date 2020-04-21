@@ -45,7 +45,7 @@ pkgs.mkShell {
     # ems
     python-openems
     python-csxcad
-    (openems.override {withMPI = false; })
+    openems
     appcsxcad
     hyp2mat
     qucs
@@ -57,5 +57,5 @@ pkgs.mkShell {
     curaengine
   ];
 
-  KICAD_SYMBOL_DIR="${kicad.out}/share/kicad/library";
+  KICAD_SYMBOL_DIR="/home/matt/src/kicad-symbols";
 }
