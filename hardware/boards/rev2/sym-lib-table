@@ -1,3 +1,4 @@
 (sym_lib_table
-  (lib (name fmcw-rescue)(type Legacy)(uri ${KIPRJMOD}/fmcw-rescue.lib)(options "")(descr ""))
+  (lib (name "fmcw-rescue")(type "Legacy")(uri "${KIPRJMOD}/fmcw-rescue.lib")(options "")(descr ""))
+  (lib (name "fmcw")(type "Legacy")(uri "${KIPRJMOD}/libs/fmcw.lib")(options "")(descr ""))
 )
