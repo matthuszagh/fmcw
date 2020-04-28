@@ -1,9 +1,9 @@
-EESchema Schematic File Version 5
-EELAYER 33 0
+EESchema Schematic File Version 4
+EELAYER 30 0
 EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
-Sheet 11 11
+Sheet 3 11
 Title "FMCW"
 Date ""
 Rev "rev2"
@@ -12,11 +12,6 @@ Comment1 ""
 Comment2 ""
 Comment3 ""
 Comment4 ""
-Comment5 ""
-Comment6 ""
-Comment7 ""
-Comment8 ""
-Comment9 ""
 $EndDescr
 Connection ~ 7300 6200
 Connection ~ 6150 3350
@@ -423,7 +418,7 @@ SHDNA
 Text HLabel 8200 5850 2    60   Input ~ 0
 SHDNB
 Text HLabel 8400 1650 2    60   Input ~ 0
-OVDD
+3V3D
 $Comp
 L power:GND #PWR069
 U 1 1 585267C4

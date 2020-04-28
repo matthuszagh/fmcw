@@ -1,9 +1,9 @@
-EESchema Schematic File Version 5
-EELAYER 33 0
+EESchema Schematic File Version 4
+EELAYER 30 0
 EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
-Sheet 10 11
+Sheet 5 11
 Title "FMCW"
 Date ""
 Rev "rev2"
@@ -12,11 +12,6 @@ Comment1 ""
 Comment2 ""
 Comment3 ""
 Comment4 ""
-Comment5 ""
-Comment6 ""
-Comment7 ""
-Comment8 ""
-Comment9 ""
 $EndDescr
 Connection ~ 6250 6550
 Connection ~ 6350 6550
@@ -43,10 +38,11 @@ Connection ~ 5750 6550
 Connection ~ 1250 3400
 Connection ~ 5650 1050
 Connection ~ 5450 1300
-Connection ~ 3200 2300
+Connection ~ 2050 1500
 Connection ~ 8600 5750
 Connection ~ 4950 4950
 Connection ~ 4300 5050
+Connection ~ 6950 1050
 NoConn ~ 7550 3950
 NoConn ~ 7550 4550
 NoConn ~ 7550 4650
@@ -82,13 +78,33 @@ Wire Wire Line
 Wire Wire Line
 	1300 4900 1350 4900
 Wire Wire Line
-	1550 2750 1850 2750
+	1550 2750 1650 2750
 Wire Wire Line
-	1550 2950 1850 2950
+	1550 2950 2150 2950
 Wire Wire Line
-	1550 3050 1850 3050
+	1550 3050 2150 3050
 Wire Wire Line
 	1600 4400 1300 4400
+Wire Wire Line
+	1650 1500 1650 1550
+Wire Wire Line
+	1650 1500 2050 1500
+Wire Wire Line
+	1650 1900 1650 1850
+Wire Wire Line
+	2050 1500 2050 1550
+Wire Wire Line
+	2050 1500 2450 1500
+Wire Wire Line
+	2050 1900 2050 1850
+Wire Wire Line
+	2450 1500 2450 1550
+Wire Wire Line
+	2450 1900 2450 1850
+Wire Wire Line
+	2450 2950 2500 2950
+Wire Wire Line
+	2450 3050 2500 3050
 Wire Wire Line
 	2450 6450 2450 6550
 Wire Wire Line
@@ -96,21 +112,9 @@ Wire Wire Line
 Wire Wire Line
 	2450 6850 2450 6900
 Wire Wire Line
-	2800 2300 2800 2350
-Wire Wire Line
-	2800 2300 3200 2300
-Wire Wire Line
-	2800 2700 2800 2650
-Wire Wire Line
 	2950 7050 3100 7050
 Wire Wire Line
 	3100 1050 3500 1050
-Wire Wire Line
-	3200 2300 3200 2350
-Wire Wire Line
-	3200 2300 3600 2300
-Wire Wire Line
-	3200 2700 3200 2650
 Wire Wire Line
 	3300 5300 3500 5300
 Wire Wire Line
@@ -119,10 +123,6 @@ Wire Wire Line
 	3500 6750 3500 6450
 Wire Wire Line
 	3500 7350 3500 7450
-Wire Wire Line
-	3600 2300 3600 2350
-Wire Wire Line
-	3600 2700 3600 2650
 Wire Wire Line
 	3800 1050 5200 1050
 Wire Wire Line
@@ -146,10 +146,6 @@ Wire Wire Line
 Wire Wire Line
 	4050 1300 4300 1300
 Wire Wire Line
-	4100 3350 4250 3350
-Wire Wire Line
-	4250 3450 4100 3450
-Wire Wire Line
 	4250 3650 4250 3750
 Wire Wire Line
 	4250 4100 4250 4050
@@ -160,13 +156,13 @@ Wire Wire Line
 Wire Wire Line
 	4300 5050 4150 5050
 Wire Wire Line
+	4400 3350 5150 3350
+Wire Wire Line
+	4400 3450 5150 3450
+Wire Wire Line
 	4550 2350 5150 2350
 Wire Wire Line
 	4550 2750 4550 2650
-Wire Wire Line
-	4550 3350 5150 3350
-Wire Wire Line
-	4550 3450 5150 3450
 Wire Wire Line
 	4600 1300 4950 1300
 Wire Wire Line
@@ -270,7 +266,7 @@ Wire Wire Line
 Wire Wire Line
 	6650 1050 6650 1900
 Wire Wire Line
-	6650 1050 7150 1050
+	6650 1050 6950 1050
 Wire Wire Line
 	6650 1900 6650 2050
 Wire Wire Line
@@ -283,6 +279,8 @@ Wire Wire Line
 	6750 1900 6850 1900
 Wire Wire Line
 	6850 1900 6850 2050
+Wire Wire Line
+	6950 1050 7150 1050
 Wire Wire Line
 	7150 1050 7150 1100
 Wire Wire Line
@@ -340,7 +338,7 @@ Wire Wire Line
 Wire Wire Line
 	7900 1050 7900 1100
 Wire Wire Line
-	7900 1050 8050 1050
+	7900 1050 8400 1050
 Wire Wire Line
 	8150 4150 8800 4150
 Wire Wire Line
@@ -353,26 +351,32 @@ Wire Wire Line
 	8600 5700 8600 5750
 Wire Wire Line
 	8600 5750 8600 5800
+Wire Wire Line
+	8700 1050 9050 1050
 Text Notes 2900 1300 0    59   Italic 0
 70 mA
 Text Notes 4100 2350 0    59   Italic 0
 150 mA
-Text Label 1300 4000 0    60   ~ 0
-3V3D
+Text Label 1300 4000 2    50   ~ 0
+3V3_IO
 Text Label 1350 4900 0    60   ~ 0
 EEDATA
+Text Label 1600 3050 0    60   ~ 0
+USBDa_N
 Text Label 1600 4400 0    60   ~ 0
 DO
-Text Label 1850 2750 0    60   ~ 0
+Text Label 1650 2750 0    60   ~ 0
 USB_5V
-Text Label 1850 2950 0    60   ~ 0
-USBDP
-Text Label 1850 3050 0    60   ~ 0
-USBDM
-Text Label 2900 6450 0    60   ~ 0
-3V3D
-Text Label 2950 2300 0    60   ~ 0
+Text Label 1750 2950 0    60   ~ 0
+USBDa_P
+Text Label 1800 1500 0    60   ~ 0
 1V8
+Text Label 2500 2950 0    60   ~ 0
+USBD_P
+Text Label 2500 3050 0    60   ~ 0
+USBD_N
+Text Label 2950 6450 2    50   ~ 0
+3V3_IO
 Text Label 2950 7050 2    60   ~ 0
 EECS
 Text Label 3100 1050 2    60   ~ 0
@@ -385,34 +389,34 @@ Text Label 4000 7150 0    60   ~ 0
 DO
 Text Label 4050 1300 2    60   ~ 0
 3V3D
-Text Label 4100 3350 2    60   ~ 0
-USBDM
-Text Label 4100 3450 2    60   ~ 0
-USBDP
 Text Label 4150 5050 2    60   ~ 0
 EECLK
-Text Label 4300 4650 0    60   ~ 0
-3V3D
-Text Label 4600 2350 0    60   ~ 0
-3V3D
-Text Label 4600 3850 2    60   ~ 0
-3V3D
+Text Label 4300 4650 2    50   ~ 0
+3V3_IO
+Text Label 4400 3350 2    60   ~ 0
+USBD_N
+Text Label 4400 3450 2    60   ~ 0
+USBD_P
+Text Label 4600 3850 2    50   ~ 0
+3V3_IO
 Text Label 4800 4950 2    60   ~ 0
 EECS
 Text Label 4950 2550 0    60   ~ 0
 1V8
-Text Label 4950 4550 0    60   ~ 0
-3V3D
+Text Label 4950 4550 2    50   ~ 0
+3V3_IO
+Text Label 5000 2350 2    50   ~ 0
+3V3_IO
 Text Label 5050 5150 2    60   ~ 0
 EEDATA
 Text Label 6150 1950 0    60   ~ 0
 1V8
+Text Label 6650 1500 2    50   ~ 0
+3V3_IO
 Text Label 8600 5300 0    60   ~ 0
 USB_5V
 Text HLabel 7600 6050 2    60   Output ~ 0
 SUSPEND
-Text HLabel 8050 1050 2    60   Input ~ 0
-3V3D
 Text HLabel 8150 2350 2    60   BiDi ~ 0
 D0
 Text HLabel 8150 2450 2    60   BiDi ~ 0
@@ -451,6 +455,8 @@ Text HLabel 8800 4350 2    60   Input ~ 0
 TDO
 Text HLabel 8800 4450 2    60   Output ~ 0
 TMS
+Text HLabel 9050 1050 2    60   Input ~ 0
+3V3D
 $Comp
 L power:PWR_FLAG #FLG03
 U 1 1 5CF1D076
@@ -474,6 +480,17 @@ F 3 "~" H 5650 1050 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
+L power:PWR_FLAG #FLG0102
+U 1 1 5EA7B967
+P 6950 1050
+F 0 "#FLG0102" H 6950 1125 50  0001 C CNN
+F 1 "PWR_FLAG" H 6950 1224 50  0000 C CNN
+F 2 "" H 6950 1050 50  0001 C CNN
+F 3 "~" H 6950 1050 50  0001 C CNN
+	1    6950 1050
+	1    0    0    -1  
+$EndComp
+$Comp
 L power:GND #PWR048
 U 1 1 632B9897
 P 1250 3450
@@ -485,6 +502,39 @@ F 3 "" H 1250 3450 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
+L power:GND #PWR053
+U 1 1 596C4D43
+P 1650 1900
+F 0 "#PWR053" H 1650 1650 50  0001 C CNN
+F 1 "GND" H 1650 1750 50  0000 C CNN
+F 2 "" H 1650 1900 60  0000 C CNN
+F 3 "" H 1650 1900 60  0000 C CNN
+	1    1650 1900
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR054
+U 1 1 596C4CF6
+P 2050 1900
+F 0 "#PWR054" H 2050 1650 50  0001 C CNN
+F 1 "GND" H 2050 1750 50  0000 C CNN
+F 2 "" H 2050 1900 60  0000 C CNN
+F 3 "" H 2050 1900 60  0000 C CNN
+	1    2050 1900
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR055
+U 1 1 596C4CA2
+P 2450 1900
+F 0 "#PWR055" H 2450 1650 50  0001 C CNN
+F 1 "GND" H 2450 1750 50  0000 C CNN
+F 2 "" H 2450 1900 60  0000 C CNN
+F 3 "" H 2450 1900 60  0000 C CNN
+	1    2450 1900
+	1    0    0    -1  
+$EndComp
+$Comp
 L power:GND #PWR049
 U 1 1 583C8C93
 P 2450 6900
@@ -493,28 +543,6 @@ F 1 "GND" H 2450 6750 50  0000 C CNN
 F 2 "" H 2450 6900 60  0000 C CNN
 F 3 "" H 2450 6900 60  0000 C CNN
 	1    2450 6900
-	1    0    0    -1  
-$EndComp
-$Comp
-L power:GND #PWR053
-U 1 1 596C4D43
-P 2800 2700
-F 0 "#PWR053" H 2800 2450 50  0001 C CNN
-F 1 "GND" H 2800 2550 50  0000 C CNN
-F 2 "" H 2800 2700 60  0000 C CNN
-F 3 "" H 2800 2700 60  0000 C CNN
-	1    2800 2700
-	1    0    0    -1  
-$EndComp
-$Comp
-L power:GND #PWR054
-U 1 1 596C4CF6
-P 3200 2700
-F 0 "#PWR054" H 3200 2450 50  0001 C CNN
-F 1 "GND" H 3200 2550 50  0000 C CNN
-F 2 "" H 3200 2700 60  0000 C CNN
-F 3 "" H 3200 2700 60  0000 C CNN
-	1    3200 2700
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -548,17 +576,6 @@ F 1 "GND" H 3505 7277 50  0000 C CNN
 F 2 "" H 3500 7450 50  0001 C CNN
 F 3 "" H 3500 7450 50  0001 C CNN
 	1    3500 7450
-	1    0    0    -1  
-$EndComp
-$Comp
-L power:GND #PWR055
-U 1 1 596C4CA2
-P 3600 2700
-F 0 "#PWR055" H 3600 2450 50  0001 C CNN
-F 1 "GND" H 3600 2550 50  0000 C CNN
-F 2 "" H 3600 2700 60  0000 C CNN
-F 3 "" H 3600 2700 60  0000 C CNN
-	1    3600 2700
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -729,6 +746,30 @@ F 4 "" H 0   0   50  0001 C CNN "MFN"
 	1    0    0    -1  
 $EndComp
 $Comp
+L Device:R R21
+U 1 1 583B315C
+P 2300 2950
+F 0 "R21" V 2094 2950 50  0000 C CNN
+F 1 "0" V 2185 2950 50  0000 C CNN
+F 2 "Resistor_SMD:R_0402_1005Metric" V 2230 2950 30  0001 C CNN
+F 3 "" H 2300 2950 30  0000 C CNN
+F 4 "" H -2100 -500 50  0001 C CNN "MFN"
+	1    2300 2950
+	0    1    1    0   
+$EndComp
+$Comp
+L Device:R R20
+U 1 1 583B312F
+P 2300 3050
+F 0 "R20" V 2415 3050 50  0000 C CNN
+F 1 "0" V 2506 3050 50  0000 C CNN
+F 2 "Resistor_SMD:R_0402_1005Metric" V 2230 3050 30  0001 C CNN
+F 3 "" H 2300 3050 30  0000 C CNN
+F 4 "" H -2100 -300 50  0001 C CNN "MFN"
+	1    2300 3050
+	0    1    1    0   
+$EndComp
+$Comp
 L Device:R R19
 U 1 1 596C00A3
 P 4250 3900
@@ -751,30 +792,6 @@ F 3 "" H 4300 4850 30  0000 C CNN
 F 4 "" H 3000 650 50  0001 C CNN "MFN"
 	1    4300 4850
 	1    0    0    -1  
-$EndComp
-$Comp
-L Device:R R20
-U 1 1 583B312F
-P 4400 3350
-F 0 "R20" V 4193 3350 50  0000 C CNN
-F 1 "0" V 4284 3350 50  0000 C CNN
-F 2 "Resistor_SMD:R_0402_1005Metric" V 4330 3350 30  0001 C CNN
-F 3 "" H 4400 3350 30  0000 C CNN
-F 4 "" H 0   0   50  0001 C CNN "MFN"
-	1    4400 3350
-	0    1    1    0   
-$EndComp
-$Comp
-L Device:R R21
-U 1 1 583B315C
-P 4400 3450
-F 0 "R21" V 4500 3450 50  0000 C CNN
-F 1 "0" V 4600 3450 50  0000 C CNN
-F 2 "Resistor_SMD:R_0402_1005Metric" V 4330 3450 30  0001 C CNN
-F 3 "" H 4400 3450 30  0000 C CNN
-F 4 "" H 0   0   50  0001 C CNN "MFN"
-	1    4400 3450
-	0    1    1    0   
 $EndComp
 $Comp
 L Device:R R22
@@ -861,6 +878,42 @@ F 4 "" H 0   0   50  0001 C CNN "MFN"
 	1    0    0    -1  
 $EndComp
 $Comp
+L Device:C C62
+U 1 1 596C4A23
+P 1650 1700
+F 0 "C62" H 1765 1746 50  0000 L CNN
+F 1 "100n" H 1765 1655 50  0000 L CNN
+F 2 "Capacitor_SMD:C_0402_1005Metric" H 1688 1550 30  0001 C CNN
+F 3 "" H 1650 1700 60  0000 C CNN
+F 4 "" H -2100 -200 50  0001 C CNN "MFN"
+	1    1650 1700
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:C C63
+U 1 1 596C4AA8
+P 2050 1700
+F 0 "C63" H 2165 1746 50  0000 L CNN
+F 1 "100n" H 2165 1655 50  0000 L CNN
+F 2 "Capacitor_SMD:C_0402_1005Metric" H 2088 1550 30  0001 C CNN
+F 3 "" H 2050 1700 60  0000 C CNN
+F 4 "" H -1900 -200 50  0001 C CNN "MFN"
+	1    2050 1700
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:C C64
+U 1 1 596C4AFE
+P 2450 1700
+F 0 "C64" H 2565 1746 50  0000 L CNN
+F 1 "100n" H 2565 1655 50  0000 L CNN
+F 2 "Capacitor_SMD:C_0402_1005Metric" H 2488 1550 30  0001 C CNN
+F 3 "" H 2450 1700 60  0000 C CNN
+F 4 "" H -1700 -200 50  0001 C CNN "MFN"
+	1    2450 1700
+	1    0    0    -1  
+$EndComp
+$Comp
 L Device:C C59
 U 1 1 583C8C2A
 P 2450 6700
@@ -870,42 +923,6 @@ F 2 "Capacitor_SMD:C_0402_1005Metric" H 2488 6550 30  0001 C CNN
 F 3 "" H 2450 6700 60  0000 C CNN
 F 4 "" H 0   0   50  0001 C CNN "MFN"
 	1    2450 6700
-	1    0    0    -1  
-$EndComp
-$Comp
-L Device:C C62
-U 1 1 596C4A23
-P 2800 2500
-F 0 "C62" H 2915 2546 50  0000 L CNN
-F 1 "100n" H 2915 2455 50  0000 L CNN
-F 2 "Capacitor_SMD:C_0402_1005Metric" H 2838 2350 30  0001 C CNN
-F 3 "" H 2800 2500 60  0000 C CNN
-F 4 "" H -950 600 50  0001 C CNN "MFN"
-	1    2800 2500
-	1    0    0    -1  
-$EndComp
-$Comp
-L Device:C C63
-U 1 1 596C4AA8
-P 3200 2500
-F 0 "C63" H 3315 2546 50  0000 L CNN
-F 1 "100n" H 3315 2455 50  0000 L CNN
-F 2 "Capacitor_SMD:C_0402_1005Metric" H 3238 2350 30  0001 C CNN
-F 3 "" H 3200 2500 60  0000 C CNN
-F 4 "" H -750 600 50  0001 C CNN "MFN"
-	1    3200 2500
-	1    0    0    -1  
-$EndComp
-$Comp
-L Device:C C64
-U 1 1 596C4AFE
-P 3600 2500
-F 0 "C64" H 3715 2546 50  0000 L CNN
-F 1 "100n" H 3715 2455 50  0000 L CNN
-F 2 "Capacitor_SMD:C_0402_1005Metric" H 3638 2350 30  0001 C CNN
-F 3 "" H 3600 2500 60  0000 C CNN
-F 4 "" H -550 600 50  0001 C CNN "MFN"
-	1    3600 2500
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -1077,12 +1094,24 @@ F 4 "BLM18PG181SH1D" H -100 0   50  0001 C CNN "MFN"
 	0    -1   -1   0   
 $EndComp
 $Comp
+L Device:Ferrite_Bead FB5
+U 1 1 5EA749DB
+P 8550 1050
+F 0 "FB5" V 8276 1050 50  0000 C CNN
+F 1 "BLM18PG181SH1D" V 8367 1050 50  0000 C CNN
+F 2 "Inductor_SMD:L_0603_1608Metric" H 8550 1050 60  0001 C CNN
+F 3 "" H 8550 1050 60  0000 C CNN
+F 4 "BLM18PG181SH1D" H 4000 0   50  0001 C CNN "MFN"
+	1    8550 1050
+	0    1    1    0   
+$EndComp
+$Comp
 L Device:Crystal_GND24 Y1
 U 1 1 583C5AF8
 P 3800 5650
 F 0 "Y1" V 3754 5894 50  0000 L CNN
 F 1 "12MHz" V 3845 5894 50  0000 L CNN
-F 2 "fmcw:ABM10" H 3800 5650 60  0001 C CNN
+F 2 "Crystal:Crystal_SMD_Abracon_ABM10-4Pin_2.5x2.0mm" H 3800 5650 60  0001 C CNN
 F 3 "https://abracon.com/Resonators/ABM10-166-12.000MHz.pdf" H 3800 5650 60  0001 C CNN
 F 4 "ABM10-167-12.000MHZ-T3" H 0   0   50  0001 C CNN "MFN"
 	1    3800 5650

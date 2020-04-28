@@ -1,5 +1,5 @@
-EESchema Schematic File Version 5
-EELAYER 33 0
+EESchema Schematic File Version 4
+EELAYER 30 0
 EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
@@ -12,11 +12,6 @@ Comment1 ""
 Comment2 ""
 Comment3 ""
 Comment4 ""
-Comment5 ""
-Comment6 ""
-Comment7 ""
-Comment8 ""
-Comment9 ""
 $EndDescr
 Wire Wire Line
 	1500 4850 1400 4850
@@ -85,45 +80,45 @@ Wire Wire Line
 Wire Wire Line
 	3200 5600 3100 5600
 Wire Wire Line
-	4650 3850 4750 3850
+	4650 3150 4750 3150
 Wire Wire Line
-	4650 4200 4750 4200
+	4650 3500 4750 3500
 Wire Wire Line
-	4750 3600 4650 3600
+	4750 2900 4650 2900
 Wire Wire Line
-	4750 3950 4650 3950
+	4750 3250 4650 3250
 Wire Wire Line
-	4750 4050 4650 4050
+	4750 3350 4650 3350
 Wire Wire Line
 	5350 1350 5350 1250
 Wire Wire Line
 	5350 2250 5350 2150
 Wire Wire Line
-	5850 3600 5950 3600
+	5850 2900 5950 2900
 Wire Wire Line
-	5850 3700 5950 3700
+	5850 3000 5950 3000
 Wire Wire Line
-	5850 3850 5950 3850
+	5850 3150 5950 3150
 Wire Wire Line
-	5850 3950 5950 3950
+	5850 3250 5950 3250
 Wire Wire Line
 	6700 1350 6700 1250
 Wire Wire Line
 	6700 2250 6700 2150
 Wire Wire Line
-	7050 4100 7150 4100
+	7050 3400 7150 3400
 Wire Wire Line
-	7150 3600 7050 3600
+	7150 2900 7050 2900
+Wire Wire Line
+	7150 3000 7050 3000
+Wire Wire Line
+	7150 3150 7050 3150
+Wire Wire Line
+	7150 3250 7050 3250
+Wire Wire Line
+	7150 3500 7050 3500
 Wire Wire Line
 	7150 3700 7050 3700
-Wire Wire Line
-	7150 3850 7050 3850
-Wire Wire Line
-	7150 3950 7050 3950
-Wire Wire Line
-	7150 4200 7050 4200
-Wire Wire Line
-	7150 4400 7050 4400
 Wire Wire Line
 	8400 3800 8550 3800
 Wire Wire Line
@@ -163,13 +158,15 @@ Text Notes 1600 7000 0    59   Italic 0
 Text Notes 1850 4150 0    59   Italic 0
 3V6: 42 (22) mA
 Text Notes 3500 2100 0    59   Italic 0
-1V0: 277 (97) mA\n1V8: 62 (22) mA\n3V0: 187 (157) mA\n3V3D: 444 (224) mA\n3V3A: 170 (35) mA\n3V6: 137 (100) mA\n5VPA: 805 (305) mA\n5VMIX: 300 (220) mA\n10V: 3 mA
+1V0: 277 (97) mA\n1V8: 62 (22) mA\n3V0: 187 (157) mA\n3V3D: 444 (224) mA\n3V3A: 118 (35) mA\n3V6: 137 (100) mA\n5VPA: 805 (305) mA\n5VMIX: 300 (220) mA\n10V: 3 mA
+Text Notes 4150 6600 0    59   Italic 0
+Note on track widths:\nThe OshPark min track width of 0.127mm is sufficient\nfor currents up to 165mA on internal and external\nlayers (internal layers require wider traces for the same \ncurrent capacity). It is therefore used for all signal traces.\nExternal layers do not need to use trace widths larger\nthan 0.3mm for any power rail. This includes ground\nconnections as well. For internal layers, a trace width of\nat least 0.3mm (I<300mA) is used for all power rails\neven when they require less current. Current values\nbetween 300 and 500mA use a trace width of 0.6mm.\nValues between 500 and 1,000mA use a trace width of\n1.5mm and currents up to 1.5A use 2.7mm. Unfortunately,\nKiCAD does not yet support advanced constraints which\nwould make this process simpler. 50ohm characteristic\nimpedance traces are all routed on the top layer and use\na width of 0.38mm. 50ohm differential characteristic\nimpedance traces use a 0.85mm width. The minimum\nOshPark via drill diameter of 0.254mm should be\nsufficient for currents up to 1.7A and is therefore used\nfor all vias. All traces use the minimum trace clearance\nof 0.127mm except microstrips, which use a 0.8mm\nclearance.
 Text Notes 4150 7650 0    59   Italic 0
 Current values are provided for all power supply rails.\nWhen only one number is specified, this is the maximum\ncurrent value. When a 2nd number is provided in\nparentheses, this denotes the minimum current draw.\nWhen a max current draw was not specified, the typical\ncurrent draw was used. The same is true for minimum\ncurrent draw. When a minimum current is not provided\nit is assumed the same as the maximum current. I've\nignored some insignificant current values.
-Text Notes 4800 4600 0    59   Italic 0
+Text Notes 4800 3900 0    59   Italic 0
 5VMIX: 300 (220) mA
-Text Notes 6050 4750 0    59   Italic 0
-3V3A: 128 (2) mA
+Text Notes 6050 4050 0    59   Italic 0
+3V3A: 76 (2) mA
 Text Notes 8650 3150 0    59   Italic 0
 3V0: 27 mA\n3V3A: 42 (33) mA\n5VPA: 805 (305) mA\n10V: 3 mA
 Text Notes 8650 4650 0    59   Italic 0
@@ -242,29 +239,29 @@ Text Label 3200 5600 0    60   ~ 0
 MIX_ENBL
 Text Label 3200 5800 0    60   ~ 0
 PA_OFF
-Text Label 4650 3600 2    60   ~ 0
+Text Label 4650 2900 2    60   ~ 0
 MIX_ENBL
-Text Label 4650 3850 2    60   ~ 0
+Text Label 4650 3150 2    60   ~ 0
 LO
-Text Label 4650 3950 2    60   ~ 0
+Text Label 4650 3250 2    60   ~ 0
 RF1
-Text Label 4650 4050 2    60   ~ 0
+Text Label 4650 3350 2    60   ~ 0
 RF2
-Text Label 4650 4200 2    60   ~ 0
+Text Label 4650 3500 2    60   ~ 0
 5VMIX
-Text Label 7150 3600 0    60   ~ 0
+Text Label 7150 2900 0    60   ~ 0
 ADC1+
-Text Label 7150 3700 0    60   ~ 0
+Text Label 7150 3000 0    60   ~ 0
 ADC1-
-Text Label 7150 3850 0    60   ~ 0
+Text Label 7150 3150 0    60   ~ 0
 ADC2+
-Text Label 7150 3950 0    60   ~ 0
+Text Label 7150 3250 0    60   ~ 0
 ADC2-
-Text Label 7150 4100 0    60   ~ 0
+Text Label 7150 3400 0    60   ~ 0
 ADC_VCM1
-Text Label 7150 4200 0    60   ~ 0
+Text Label 7150 3500 0    60   ~ 0
 ADC_VCM2
-Text Label 7150 4400 0    60   ~ 0
+Text Label 7150 3700 0    60   ~ 0
 3V3A
 Text Label 8400 3800 2    60   ~ 0
 3V0
@@ -425,36 +422,36 @@ F20 "ADC_VCM2" O L 1500 5950 60
 F21 "PA_OFF" O R 3100 5800 60 
 $EndSheet
 $Sheet
-S 5950 3500 1100 1000
+S 5950 2800 1100 1000
 U 59665702
 F0 "if" 60
 F1 "if.sch" 60
-F2 "IF1+" I L 5950 3600 60 
-F3 "IF1-" I L 5950 3700 60 
-F4 "IF2+" I L 5950 3850 60 
-F5 "IF2-" I L 5950 3950 60 
-F6 "3V3" I R 7050 4400 60 
-F7 "OUT1+" O R 7050 3600 60 
-F8 "OUT1-" O R 7050 3700 60 
-F9 "OUT2+" O R 7050 3850 60 
-F10 "OUT2-" O R 7050 3950 60 
-F11 "VOCM1" I R 7050 4100 60 
-F12 "VOCM2" I R 7050 4200 60 
+F2 "IF1+" I L 5950 2900 60 
+F3 "IF1-" I L 5950 3000 60 
+F4 "IF2+" I L 5950 3150 60 
+F5 "IF2-" I L 5950 3250 60 
+F6 "3V3" I R 7050 3700 60 
+F7 "OUT1+" O R 7050 2900 60 
+F8 "OUT1-" O R 7050 3000 60 
+F9 "OUT2+" O R 7050 3150 60 
+F10 "OUT2-" O R 7050 3250 60 
+F11 "VOCM1" I R 7050 3400 60 
+F12 "VOCM2" I R 7050 3500 60 
 $EndSheet
 $Sheet
-S 4750 3500 1100 850 
+S 4750 2800 1100 850 
 U 59434BD2
 F0 "mixer" 60
 F1 "mixer.sch" 60
-F2 "MIX_ENBL" I L 4750 3600 60 
-F3 "LO_IN" I L 4750 3850 60 
-F4 "5V" I L 4750 4200 60 
-F5 "IF1+" O R 5850 3600 60 
-F6 "IF1-" O R 5850 3700 60 
-F7 "RF1" I L 4750 3950 60 
-F8 "RF2" I L 4750 4050 60 
-F9 "IF2+" O R 5850 3850 60 
-F10 "IF2-" O R 5850 3950 60 
+F2 "MIX_ENBL" I L 4750 2900 60 
+F3 "LO_IN" I L 4750 3150 60 
+F4 "5V" I L 4750 3500 60 
+F5 "IF1+" O R 5850 2900 60 
+F6 "IF1-" O R 5850 3000 60 
+F7 "RF1" I L 4750 3250 60 
+F8 "RF2" I L 4750 3350 60 
+F9 "IF2+" O R 5850 3150 60 
+F10 "IF2-" O R 5850 3250 60 
 $EndSheet
 $Sheet
 S 1650 1250 1350 1350

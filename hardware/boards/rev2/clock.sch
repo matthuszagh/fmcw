@@ -1,9 +1,9 @@
-EESchema Schematic File Version 5
-EELAYER 33 0
+EESchema Schematic File Version 4
+EELAYER 30 0
 EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
-Sheet 11 11
+Sheet 2 11
 Title ""
 Date ""
 Rev "rev2"
@@ -12,11 +12,6 @@ Comment1 ""
 Comment2 ""
 Comment3 ""
 Comment4 ""
-Comment5 ""
-Comment6 ""
-Comment7 ""
-Comment8 ""
-Comment9 ""
 $EndDescr
 Connection ~ 5800 2050
 Connection ~ 6050 2050
@@ -203,11 +198,11 @@ Text Label 5700 2050 0    60   ~ 0
 Text HLabel 5600 2050 0    50   Input Italic 0
 3V6
 Text HLabel 9700 4150 2    50   Output Italic 0
-ADF_REF
-Text HLabel 9700 4400 2    50   Output Italic 0
-ADC_REF
-Text HLabel 9700 4650 2    50   Output Italic 0
 FPGA_REF
+Text HLabel 9700 4400 2    50   Output Italic 0
+ADF_REF
+Text HLabel 9700 4650 2    50   Output Italic 0
+ADC_REF
 $Comp
 L power:PWR_FLAG #FLG0101
 U 1 1 5E7DEC03

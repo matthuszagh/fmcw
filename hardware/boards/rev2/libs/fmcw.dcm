@@ -1,5 +1,11 @@
 EESchema-DOCLIB  Version 2.0
 #
+$CMP L7980A
+D 2A step down switching regulator, HSOP-8
+K step down buck regulator
+F https://www.st.com/resource/en/datasheet/l7980.pdf
+$ENDCMP
+#
 $CMP SD_Card_DM3BT
 D SD Card Reader
 K CONN SD

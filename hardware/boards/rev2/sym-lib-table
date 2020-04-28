@@ -1,4 +1,6 @@
 (sym_lib_table
-  (lib (name "fmcw-rescue")(type "Legacy")(uri "${KIPRJMOD}/fmcw-rescue.lib")(options "")(descr ""))
-  (lib (name "fmcw")(type "Legacy")(uri "${KIPRJMOD}/libs/fmcw.lib")(options "")(descr ""))
+  (lib (name fmcw-rescue)(type Legacy)(uri ${KIPRJMOD}/fmcw-rescue.lib)(options "")(descr ""))
+  (lib (name fmcw)(type Legacy)(uri ${KIPRJMOD}/libs/fmcw.lib)(options "")(descr ""))
+  (lib (name Regulator_Switching)(type Legacy)(uri /home/matt/src/kicad-symbols/Regulator_Switching.lib)(options "")(descr ""))
+  (lib (name RF)(type Legacy)(uri /home/matt/src/kicad-symbols/RF.lib)(options "")(descr ""))
 )
