@@ -10,6 +10,8 @@ let
     numpy
     pyqtgraph
     pkgs.cocotb
+    pyclipper
+    simplejson
   ] ++ (with custompkgs; [
     skidl
     pyems

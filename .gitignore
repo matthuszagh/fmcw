@@ -72,3 +72,4 @@ simulations/ngspice/data
 simulations/openems/.data
 simulations/openems/sim
 **/*.data
+/software/plots/
