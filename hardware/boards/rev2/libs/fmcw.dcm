@@ -12,4 +12,10 @@ K CONN SD
 F http://portal.fciconnect.com/Comergent//fci/drawing/10067847.pdf
 $ENDCMP
 #
+$CMP TRF37A73
+D 6GHz, 12dB RF Gain Block, WSON-8
+K gain block RF
+F http://www.ti.com/lit/ds/symlink/trf37a73.pdf
+$ENDCMP
+#
 #End Doc Library

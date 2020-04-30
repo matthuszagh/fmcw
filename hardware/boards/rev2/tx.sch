@@ -1694,7 +1694,7 @@ F 4 "PAT1220-C-6DB-T5" H -400 350 50  0001 C CNN "MFN"
 	0    1    -1   0   
 $EndComp
 $Comp
-L fmcw:HMC431 U?
+L RF:HMC431 U?
 U 1 1 54FAAD5A
 P 8150 6000
 AR Path="/54FAAD5A" Ref="U?"  Part="1" 

@@ -227,10 +227,6 @@ Wire Wire Line
 Wire Wire Line
 	1550 14050 1550 14000
 Wire Wire Line
-	1550 14400 2100 14400
-Wire Wire Line
-	1550 14450 1550 14400
-Wire Wire Line
 	1750 10100 1550 10100
 Wire Wire Line
 	1750 10400 2050 10400
@@ -245,11 +241,11 @@ Wire Wire Line
 Wire Wire Line
 	2100 14300 2000 14300
 Wire Wire Line
+	2100 14400 2000 14400
+Wire Wire Line
 	2100 14500 2000 14500
 Wire Wire Line
 	2100 14600 2000 14600
-Wire Wire Line
-	2100 14700 2000 14700
 Wire Wire Line
 	2200 10300 2200 10500
 Wire Wire Line
@@ -367,13 +363,11 @@ Wire Wire Line
 Wire Wire Line
 	2600 14300 2700 14300
 Wire Wire Line
-	2600 14400 3200 14400
+	2600 14400 2700 14400
 Wire Wire Line
 	2600 14500 2700 14500
 Wire Wire Line
 	2600 14600 2700 14600
-Wire Wire Line
-	2600 14700 2700 14700
 Wire Wire Line
 	2650 1950 2550 1950
 Wire Wire Line
@@ -394,8 +388,6 @@ Wire Wire Line
 	2650 6150 2400 6150
 Wire Wire Line
 	2650 6250 2400 6250
-Wire Wire Line
-	3200 14400 3200 14450
 Wire Wire Line
 	3500 14000 3500 14050
 Wire Wire Line
@@ -557,7 +549,7 @@ Wire Wire Line
 Wire Wire Line
 	5050 14750 5050 14950
 Wire Wire Line
-	6300 13850 6300 13950
+	14150 11550 14150 11650
 Wire Wire Line
 	6950 15100 6900 15100
 Wire Wire Line
@@ -1254,11 +1246,11 @@ Text Label 2000 14200 2    60   ~ 0
 EXT1_2
 Text Label 2000 14300 2    60   ~ 0
 EXT1_3
-Text Label 2000 14500 2    60   ~ 0
+Text Label 2000 14400 2    60   ~ 0
 EXT2_1
-Text Label 2000 14600 2    60   ~ 0
+Text Label 2000 14500 2    60   ~ 0
 EXT2_2
-Text Label 2000 14700 2    60   ~ 0
+Text Label 2000 14600 2    60   ~ 0
 EXT2_3
 Text Label 2050 10200 0    60   ~ 0
 1V8
@@ -1294,14 +1286,12 @@ Text Label 2700 14200 0    60   ~ 0
 EXT1_5
 Text Label 2700 14300 0    60   ~ 0
 EXT1_6
-Text Label 2700 14500 0    60   ~ 0
+Text Label 2700 14400 0    60   ~ 0
 EXT2_4
-Text Label 2700 14600 0    60   ~ 0
+Text Label 2700 14500 0    60   ~ 0
 EXT2_5
-Text Label 2700 14700 0    60   ~ 0
+Text Label 2700 14600 0    60   ~ 0
 EXT2_6
-Text Label 3050 14400 0    60   ~ 0
-3V3D
 Text Label 3250 14000 0    60   ~ 0
 3V3D
 Text Label 3900 1950 0    60   ~ 0
@@ -1370,9 +1360,9 @@ Text Label 5050 13650 0    60   ~ 0
 3V3D
 Text Label 5050 14150 2    60   ~ 0
 PROGRAM_B
-Text Label 6300 13550 0    60   ~ 0
+Text Label 14150 11250 0    60   ~ 0
 3V3D
-Text Label 6300 13950 0    60   ~ 0
+Text Label 14150 11650 0    60   ~ 0
 INIT_B
 Text Label 7200 1000 0    60   ~ 0
 3V3D
@@ -1636,7 +1626,7 @@ U 1 1 5C83527F
 P 7250 2600
 F 0 "TP1" H 7250 2925 50  0000 C CNN
 F 1 "TestPoint" H 7250 2834 50  0000 C CNN
-F 2 "TestPoint:TestPoint_Pad_D1.0mm" H 7450 2600 50  0001 C CNN
+F 2 "TestPoint:TestPoint_Loop_D1.80mm_Drill1.0mm_Beaded" H 7450 2600 50  0001 C CNN
 F 3 "~" H 7450 2600 50  0001 C CNN
 	1    7250 2600
 	1    0    0    -1  
@@ -1647,7 +1637,7 @@ U 1 1 5C7ECD73
 P 7550 2500
 F 0 "TP2" H 7550 2825 50  0000 C CNN
 F 1 "TestPoint" H 7550 2734 50  0000 C CNN
-F 2 "TestPoint:TestPoint_Pad_D1.0mm" H 7750 2500 50  0001 C CNN
+F 2 "TestPoint:TestPoint_Loop_D1.80mm_Drill1.0mm_Beaded" H 7750 2500 50  0001 C CNN
 F 3 "~" H 7750 2500 50  0001 C CNN
 	1    7550 2500
 	1    0    0    -1  
@@ -1658,7 +1648,7 @@ U 1 1 5C51D67F
 P 12300 10250
 F 0 "TP3" H 12300 10575 50  0000 C CNN
 F 1 "TestPoint" H 12300 10484 50  0000 C CNN
-F 2 "TestPoint:TestPoint_Pad_D1.0mm" H 12500 10250 50  0001 C CNN
+F 2 "TestPoint:TestPoint_Loop_D1.80mm_Drill1.0mm_Beaded" H 12500 10250 50  0001 C CNN
 F 3 "~" H 12500 10250 50  0001 C CNN
 	1    12300 10250
 	1    0    0    -1  
@@ -1669,7 +1659,7 @@ U 1 1 5C564728
 P 12600 10350
 F 0 "TP4" H 12600 10675 50  0000 C CNN
 F 1 "TestPoint" H 12600 10584 50  0000 C CNN
-F 2 "TestPoint:TestPoint_Pad_D1.0mm" H 12800 10350 50  0001 C CNN
+F 2 "TestPoint:TestPoint_Loop_D1.80mm_Drill1.0mm_Beaded" H 12800 10350 50  0001 C CNN
 F 3 "~" H 12800 10350 50  0001 C CNN
 	1    12600 10350
 	1    0    0    -1  
@@ -1680,7 +1670,7 @@ U 1 1 5C6C8EF0
 P 12900 10450
 F 0 "TP5" H 12900 10775 50  0000 C CNN
 F 1 "TestPoint" H 12900 10684 50  0000 C CNN
-F 2 "TestPoint:TestPoint_Pad_D1.0mm" H 13100 10450 50  0001 C CNN
+F 2 "TestPoint:TestPoint_Loop_D1.80mm_Drill1.0mm_Beaded" H 13100 10450 50  0001 C CNN
 F 3 "~" H 13100 10450 50  0001 C CNN
 	1    12900 10450
 	1    0    0    -1  
@@ -1691,7 +1681,7 @@ U 1 1 5C7117DE
 P 13200 10550
 F 0 "TP6" H 13200 10875 50  0000 C CNN
 F 1 "TestPoint" H 13200 10784 50  0000 C CNN
-F 2 "TestPoint:TestPoint_Pad_D1.0mm" H 13400 10550 50  0001 C CNN
+F 2 "TestPoint:TestPoint_Loop_D1.80mm_Drill1.0mm_Beaded" H 13400 10550 50  0001 C CNN
 F 3 "~" H 13400 10550 50  0001 C CNN
 	1    13200 10550
 	1    0    0    -1  
@@ -1702,7 +1692,7 @@ U 1 1 5C7A2B44
 P 13250 11250
 F 0 "TP7" H 13250 11575 50  0000 C CNN
 F 1 "TestPoint" H 13250 11484 50  0000 C CNN
-F 2 "TestPoint:TestPoint_Pad_D1.0mm" H 13450 11250 50  0001 C CNN
+F 2 "TestPoint:TestPoint_Loop_D1.80mm_Drill1.0mm_Beaded" H 13450 11250 50  0001 C CNN
 F 3 "~" H 13450 11250 50  0001 C CNN
 	1    13250 11250
 	1    0    0    -1  
@@ -1713,7 +1703,7 @@ U 1 1 5C75943D
 P 13500 10750
 F 0 "TP8" H 13500 11075 50  0000 C CNN
 F 1 "TestPoint" H 13500 10984 50  0000 C CNN
-F 2 "TestPoint:TestPoint_Pad_D1.0mm" H 13700 10750 50  0001 C CNN
+F 2 "TestPoint:TestPoint_Loop_D1.80mm_Drill1.0mm_Beaded" H 13700 10750 50  0001 C CNN
 F 3 "~" H 13700 10750 50  0001 C CNN
 	1    13500 10750
 	1    0    0    -1  
@@ -1724,7 +1714,7 @@ U 1 1 5C447D90
 P 20700 4250
 F 0 "TP9" H 20758 4370 50  0000 L CNN
 F 1 "TestPoint" H 20758 4279 50  0000 L CNN
-F 2 "TestPoint:TestPoint_Pad_D1.0mm" H 20900 4250 50  0001 C CNN
+F 2 "TestPoint:TestPoint_Loop_D1.80mm_Drill1.0mm_Beaded" H 20900 4250 50  0001 C CNN
 F 3 "~" H 20900 4250 50  0001 C CNN
 	1    20700 4250
 	1    0    0    -1  
@@ -1752,17 +1742,6 @@ F 3 "" H 1550 14050 60  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L power:GND #PWR024
-U 1 1 596CB067
-P 1550 14450
-F 0 "#PWR024" H 1550 14200 50  0001 C CNN
-F 1 "GND" H 1550 14300 50  0000 C CNN
-F 2 "" H 1550 14450 60  0000 C CNN
-F 3 "" H 1550 14450 60  0000 C CNN
-	1    1550 14450
-	1    0    0    -1  
-$EndComp
-$Comp
 L power:GND #PWR025
 U 1 1 5FFB0BA7
 P 2200 10500
@@ -1782,17 +1761,6 @@ F 1 "GND" H 2255 12227 50  0000 C CNN
 F 2 "" H 2250 12400 50  0001 C CNN
 F 3 "" H 2250 12400 50  0001 C CNN
 	1    2250 12400
-	1    0    0    -1  
-$EndComp
-$Comp
-L power:GND #PWR027
-U 1 1 59728463
-P 3200 14750
-F 0 "#PWR027" H 3200 14500 50  0001 C CNN
-F 1 "GND" H 3200 14600 50  0000 C CNN
-F 2 "" H 3200 14750 60  0000 C CNN
-F 3 "" H 3200 14750 60  0000 C CNN
-	1    3200 14750
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -2130,13 +2098,13 @@ $EndComp
 $Comp
 L Device:R R10
 U 1 1 58563673
-P 6300 13700
-F 0 "R10" H 6370 13746 50  0000 L CNN
-F 1 "4.7k" H 6370 13655 50  0000 L CNN
-F 2 "Resistor_SMD:R_0402_1005Metric" V 6230 13700 30  0001 C CNN
-F 3 "" H 6300 13700 30  0000 C CNN
-F 4 "" H 2150 3900 50  0001 C CNN "MFN"
-	1    6300 13700
+P 14150 11400
+F 0 "R10" H 14220 11446 50  0000 L CNN
+F 1 "4.7k" H 14220 11355 50  0000 L CNN
+F 2 "Resistor_SMD:R_0402_1005Metric" V 14080 11400 30  0001 C CNN
+F 3 "" H 14150 11400 30  0000 C CNN
+F 4 "" H 10000 1600 50  0001 C CNN "MFN"
+	1    14150 11400
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -2257,18 +2225,6 @@ F 2 "Capacitor_SMD:C_0603_1608Metric" H 1788 10100 30  0001 C CNN
 F 3 "" H 1750 10250 60  0000 C CNN
 F 4 "" H 750 3250 50  0001 C CNN "MFN"
 	1    1750 10250
-	1    0    0    -1  
-$EndComp
-$Comp
-L Device:C C15
-U 1 1 59727E70
-P 3200 14600
-F 0 "C15" H 3225 14700 50  0000 L CNN
-F 1 "470n" H 3225 14500 50  0000 L CNN
-F 2 "Capacitor_SMD:C_0603_1608Metric" H 3238 14450 30  0001 C CNN
-F 3 "" H 3200 14600 60  0000 C CNN
-F 4 "" H 1100 3900 50  0001 C CNN "MFN"
-	1    3200 14600
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -2810,12 +2766,12 @@ F 3 "https://www.rohm.com/datasheet/RE1C002UN/re1c002untcl-e" H 7150 15100 60  0
 	1    0    0    -1  
 $EndComp
 $Comp
-L Connector_Generic:Conn_02x08_Odd_Even J6
+L Connector_Generic:Conn_02x07_Odd_Even J6
 U 1 1 5EAD300D
 P 2300 14300
 F 0 "J6" H 2350 14816 50  0000 C CNN
 F 1 "Conn_02x08_Odd_Even" H 2350 14725 50  0000 C CNN
-F 2 "Connector_PinHeader_1.27mm:PinHeader_2x08_P1.27mm_Vertical" H 2300 14300 50  0001 C CNN
+F 2 "Connector_PinHeader_2.54mm:PinHeader_2x07_P2.54mm_Vertical" H 2300 14300 50  0001 C CNN
 F 3 "~" H 2300 14300 50  0001 C CNN
 	1    2300 14300
 	1    0    0    -1  

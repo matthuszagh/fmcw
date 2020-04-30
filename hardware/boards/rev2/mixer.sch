@@ -69,10 +69,6 @@ Wire Wire Line
 Wire Wire Line
 	3550 2950 3550 2850
 Wire Wire Line
-	3750 4200 4100 4200
-Wire Wire Line
-	3750 4600 4200 4600
-Wire Wire Line
 	3800 7050 3800 6950
 Wire Wire Line
 	3950 900  5700 900 
@@ -85,67 +81,29 @@ Wire Wire Line
 Wire Wire Line
 	4350 2550 4350 2350
 Wire Wire Line
-	4350 2550 5100 2550
+	4350 2550 4850 2550
 Wire Wire Line
 	4350 6650 4350 6450
 Wire Wire Line
-	4350 6650 4900 6650
-Wire Wire Line
-	4400 4150 5050 4150
+	4350 6650 4750 6650
 Wire Wire Line
 	4450 2350 4450 2750
 Wire Wire Line
-	4450 2350 5100 2350
+	4450 2350 4900 2350
 Wire Wire Line
 	4450 6450 4450 6850
 Wire Wire Line
-	4450 6450 4900 6450
-Wire Wire Line
 	4450 6850 4100 6850
-Wire Wire Line
-	4500 4650 5150 4650
-Wire Wire Line
-	4900 6650 4900 6750
 Wire Wire Line
 	5000 1150 5350 1150
 Wire Wire Line
-	5050 4150 5050 4400
-Wire Wire Line
 	5050 4400 5250 4400
 Wire Wire Line
-	5100 2550 5100 2650
-Wire Wire Line
-	5150 4200 5150 4650
-Wire Wire Line
-	5200 6400 5200 6500
-Wire Wire Line
-	5200 6400 5350 6400
-Wire Wire Line
-	5200 6700 5350 6700
+	5150 4200 5150 4600
 Wire Wire Line
 	5250 4200 5150 4200
 Wire Wire Line
 	5350 1150 5700 1150
-Wire Wire Line
-	5350 6400 5350 6450
-Wire Wire Line
-	5350 6450 5750 6450
-Wire Wire Line
-	5350 6650 5750 6650
-Wire Wire Line
-	5350 6700 5350 6650
-Wire Wire Line
-	5400 2400 5550 2400
-Wire Wire Line
-	5400 2600 5550 2600
-Wire Wire Line
-	5550 2350 5800 2350
-Wire Wire Line
-	5550 2400 5550 2350
-Wire Wire Line
-	5550 2550 5800 2550
-Wire Wire Line
-	5550 2600 5550 2550
 Wire Wire Line
 	5700 900  5700 1150
 Wire Wire Line
@@ -284,9 +242,9 @@ Text Label 4200 2350 0    50   ~ 0
 RF1a+
 Text Label 4200 2750 0    50   ~ 0
 RF1a-
-Text Label 4900 4150 0    50   ~ 0
+Text Label 4900 4200 0    50   ~ 0
 LOIa-
-Text Label 4900 4650 0    50   ~ 0
+Text Label 4900 4600 0    50   ~ 0
 LOIa+
 Text Label 6200 4050 0    50   ~ 0
 RF1b+
@@ -620,72 +578,6 @@ F 3 "" H 9950 3900 30  0000 C CNN
 F 4 "" H 1550 200 50  0001 C CNN "MFN"
 	1    9950 3900
 	-1   0    0    1   
-$EndComp
-$Comp
-L fmcw-rescue:balun_exit_inv JP17
-U 1 1 5E845684
-P 4250 4150
-F 0 "JP17" H 4250 4000 50  0001 C CNN
-F 1 "balun_exit_inv" H 4250 4300 50  0001 C CNN
-F 2 "fmcw_v5:balun_exit_inv" H 4250 4150 50  0001 C CNN
-F 3 "" H 4250 4150 50  0001 C CNN
-	1    4250 4150
-	1    0    0    -1  
-$EndComp
-$Comp
-L fmcw-rescue:balun_exit JP18
-U 1 1 5E8444EB
-P 4350 4600
-F 0 "JP18" H 4350 4450 50  0001 C CNN
-F 1 "balun_exit" H 4350 4750 50  0001 C CNN
-F 2 "fmcw_v5:balun_exit" H 4350 4600 50  0001 C CNN
-F 3 "" H 4350 4600 50  0001 C CNN
-	1    4350 4600
-	1    0    0    -1  
-$EndComp
-$Comp
-L fmcw-rescue:balun_exit JP3
-U 1 1 5E9C956A
-P 5050 6450
-F 0 "JP3" H 5050 6300 50  0001 C CNN
-F 1 "balun_exit" H 5050 6600 50  0001 C CNN
-F 2 "fmcw_v5:balun_exit" H 5050 6450 50  0001 C CNN
-F 3 "" H 5050 6450 50  0001 C CNN
-	1    5050 6450
-	1    0    0    -1  
-$EndComp
-$Comp
-L fmcw-rescue:balun_exit_inv JP2
-U 1 1 5E9C9398
-P 5050 6700
-F 0 "JP2" H 5050 6550 50  0001 C CNN
-F 1 "balun_exit_inv" H 5050 6850 50  0001 C CNN
-F 2 "fmcw_v5:balun_exit_inv" H 5050 6700 50  0001 C CNN
-F 3 "" H 5050 6700 50  0001 C CNN
-	1    5050 6700
-	1    0    0    -1  
-$EndComp
-$Comp
-L fmcw-rescue:balun_exit JP5
-U 1 1 5E9C2CE4
-P 5250 2350
-F 0 "JP5" H 5250 2200 50  0001 C CNN
-F 1 "balun_exit" H 5250 2500 50  0001 C CNN
-F 2 "fmcw_v5:balun_exit" H 5250 2350 50  0001 C CNN
-F 3 "" H 5250 2350 50  0001 C CNN
-	1    5250 2350
-	1    0    0    -1  
-$EndComp
-$Comp
-L fmcw-rescue:balun_exit_inv JP4
-U 1 1 5E9BE4F9
-P 5250 2600
-F 0 "JP4" H 5250 2450 50  0001 C CNN
-F 1 "balun_exit_inv" H 5250 2750 50  0001 C CNN
-F 2 "fmcw_v5:balun_exit_inv" H 5250 2600 50  0001 C CNN
-F 3 "" H 5250 2600 50  0001 C CNN
-	1    5250 2600
-	1    0    0    -1  
 $EndComp
 $Comp
 L fmcw:uwave T3
@@ -1052,4 +944,96 @@ F 4 "ADL5802ACPZ-R7" H 2500 300 50  0001 C CNN "MFN"
 	1    7150 4450
 	1    0    0    -1  
 $EndComp
+$Comp
+L fmcw:uwave T9
+U 1 1 5EB3AE17
+P 4300 4750
+F 0 "T9" H 4172 4674 50  0000 R CNN
+F 1 "uwave" H 4172 4764 50  0000 R CNN
+F 2 "fmcw_v5:balun_exit" H 4300 4750 50  0001 C CNN
+F 3 "" H 4300 4750 50  0001 C CNN
+	1    4300 4750
+	-1   0    0    1   
+$EndComp
+Wire Wire Line
+	3750 4600 4300 4600
+Wire Wire Line
+	4300 4600 5150 4600
+Connection ~ 4300 4600
+$Comp
+L fmcw:uwave T10
+U 1 1 5EB4F53D
+P 4250 4050
+F 0 "T10" H 4378 4063 50  0000 L CNN
+F 1 "uwave" H 4378 3972 50  0000 L CNN
+F 2 "fmcw_v5:balun_exit_inv" H 4250 4050 50  0001 C CNN
+F 3 "" H 4250 4050 50  0001 C CNN
+	1    4250 4050
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3750 4200 4250 4200
+Wire Wire Line
+	4250 4200 5050 4200
+Connection ~ 4250 4200
+Wire Wire Line
+	5050 4200 5050 4400
+$Comp
+L fmcw:uwave T11
+U 1 1 5EB59BEA
+P 4850 2700
+F 0 "T11" H 4850 2873 50  0000 C CNN
+F 1 "uwave" H 4850 2964 50  0000 C CNN
+F 2 "fmcw_v5:balun_exit_inv" H 4850 2700 50  0001 C CNN
+F 3 "" H 4850 2700 50  0001 C CNN
+	1    4850 2700
+	-1   0    0    1   
+$EndComp
+Connection ~ 4850 2550
+Wire Wire Line
+	4850 2550 5800 2550
+$Comp
+L fmcw:uwave T13
+U 1 1 5EB63605
+P 4900 2200
+F 0 "T13" H 4772 2124 50  0000 R CNN
+F 1 "uwave" H 4772 2214 50  0000 R CNN
+F 2 "fmcw_v5:balun_exit" H 4900 2200 50  0001 C CNN
+F 3 "" H 4900 2200 50  0001 C CNN
+	1    4900 2200
+	1    0    0    -1  
+$EndComp
+Connection ~ 4900 2350
+Wire Wire Line
+	4900 2350 5800 2350
+$Comp
+L fmcw:uwave T14
+U 1 1 5EB68520
+P 5100 6300
+F 0 "T14" H 4972 6224 50  0000 R CNN
+F 1 "uwave" H 4972 6314 50  0000 R CNN
+F 2 "fmcw_v5:balun_exit" H 5100 6300 50  0001 C CNN
+F 3 "" H 5100 6300 50  0001 C CNN
+	1    5100 6300
+	1    0    0    -1  
+$EndComp
+$Comp
+L fmcw:uwave T12
+U 1 1 5EB6BD86
+P 4750 6800
+F 0 "T12" H 4750 6973 50  0000 C CNN
+F 1 "uwave" H 4750 7064 50  0000 C CNN
+F 2 "fmcw_v5:balun_exit_inv" H 4750 6800 50  0001 C CNN
+F 3 "" H 4750 6800 50  0001 C CNN
+	1    4750 6800
+	-1   0    0    1   
+$EndComp
+Connection ~ 4750 6650
+Wire Wire Line
+	4750 6650 5750 6650
+Connection ~ 5100 6450
+Wire Wire Line
+	5100 6450 5750 6450
+Wire Wire Line
+	4450 6450 5100 6450
 $EndSCHEMATC
