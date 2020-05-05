@@ -57,9 +57,10 @@ module top #(
    input wire signed [ADC_DATA_WIDTH-1:0] adc_d_i,
    // High value indicates overflow or underflow.
    input wire [1:0]                       adc_of_i,
-   // 10 turns on channel A and turns off channel B.
+   // LSB refers to channel A, MSB to channel B. Pulling OE and SHDN
+   // low enables outputs.  E.g. 10 for each turns on channel A and
+   // turns off channel B.
    output reg [1:0]                       adc_oe_o,
-   // Same state as adc_oe.
    output reg [1:0]                       adc_shdn_o,
 
    // ============================ SD card ===========================
