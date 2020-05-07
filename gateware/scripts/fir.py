@@ -8,6 +8,18 @@ import numpy as np
 import bit
 
 
+def fir_response(savefile, taps, fs):
+    """
+    Utility function to print response functions.
+    """
+    w, h = signal.freqz(taps, [1], worN=1000)
+    resp = 0.5 * fs * w / np.pi, 20 * np.log10(np.abs(h))
+    with open(savefile, "w") as f:
+        f.write("freq (kHz) val\n")
+        for freq, val in zip(resp[0], resp[1]):
+            f.write("{:5.0f}     {:5.2f}\n".format(freq / 1e3, val))
+
+
 class FIR:
     """
     Finite-impulse response filter.
@@ -243,16 +255,20 @@ class FIR:
 
         return max_ripple
 
-    def print_response(self, savefile, taps=None):
+    def print_response(self, savefile, taps=None, fs=None):
         """Utility function to print response functions."""
         if taps is None:
             taps = self.taps
 
+        if fs is None:
+            fs = self.fs
+
         w, h = signal.freqz(taps, [1], worN=1024)
-        resp = 0.5 * self.fs * w / np.pi, 20 * np.log10(np.abs(h))
-        print("freq val")
-        for freq, val in zip(resp[0], resp[1]):
-            print("{:.2f} {:.2f}".format(freq, val))
+        resp = 0.5 * fs * w / np.pi, 20 * np.log10(np.abs(h))
+        with open(savefile, "w") as f:
+            f.write("freq val\n")
+            for freq, val in zip(resp[0], resp[1]):
+                f.write("{:.2f} {:.2f}\n".format(freq, val))
 
     def plot_response(self, savefile, taps=None):
         """Utility function to plot response functions."""
@@ -273,21 +289,40 @@ class FIR:
         fig.savefig(savefile)
 
 
-fir = FIR(
-    numtaps=120,
-    bands=[0, 1e6, 1.5e6, 20e6],
-    band_gain=[1, 0],
-    fs=40e6,
-    pass_db=0.5,
-    stop_db=-40,
-)
+# os.remove("env.sh")
+# fir = FIR(
+#     numtaps=120,
+#     bands=[0, 1e6, 1.5e6, 20e6],
+#     band_gain=[1, 0],
+#     fs=40e6,
+#     pass_db=0.5,
+#     stop_db=-40,
+# )
 
-tap_bits = 16
-input_bits = 12
-downsample_factor = 20
-fir.write_poly_taps_files(
-    ["../roms/fir/"], tap_bits, downsample_factor, True, False
-)
+# tap_bits = 16
+# input_bits = 12
+# downsample_factor = 20
+# fir.write_poly_taps_files(
+#     ["../roms/fir/"], tap_bits, downsample_factor, True, False
+# )
+# # fir.plot_response("fir_response.png")
 # fir.print_response("freq_response.dat")
-print("normalization shift: {}".format(fir.tap_normalization_shift()))
-print("output bits: {}".format(fir.output_bit_width(input_bits)))
+# set_env("FIR_TAP_WIDTH", tap_bits)
+# set_env("FIR_NORM_SHIFT", fir.tap_normalization_shift())
+# set_env("FIR_OUTPUT_WIDTH", fir.output_bit_width(input_bits))
+
+# # Henrik's filters
+# with open("coeff40_2.dat") as f:
+#     taps = [float(line.rstrip("\n")) for line in f]
+#     fir.taps = taps
+#     fir.write_poly_taps_files(
+#         ["../roms/fir/"], tap_bits, downsample_factor, True, False
+#     )
+#     fir_response("40_2_response.dat", taps=taps, fs=40e6)
+#     set_env("FIR_TAP_WIDTH", tap_bits)
+#     set_env("FIR_NORM_SHIFT", fir.tap_normalization_shift())
+#     set_env("FIR_OUTPUT_WIDTH", fir.output_bit_width(input_bits))
+
+# with open("coeff2_1.dat") as f:
+#     taps = [float(line.rstrip("\n")) for line in f]
+#     fir_response("2_1_response.dat", taps=taps, fs=2e6)

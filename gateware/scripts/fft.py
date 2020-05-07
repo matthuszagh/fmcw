@@ -83,5 +83,5 @@ class FFT:
                         f.write(twhex + "\n")
 
 
-FFT = FFT(1024, 4)
-FFT.write_twiddle_roms(["../roms/fft/"], 10)
+# FFT = FFT(1024, 4)
+# FFT.write_twiddle_roms(["../roms/fft/"], 10)

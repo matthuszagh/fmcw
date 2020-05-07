@@ -1,4 +1,5 @@
 export
+
 YOSYS_DIR	= yosys
 # TOP_MODULE_SRC	:= $(realpath ../$(TOP_MODULE).v)
 TOP_MODULE_DIR	= $(abspath $(dir $(TOP_MODULE_SRC)))
@@ -11,6 +12,10 @@ VIVADO_DIR	= vivado
 VIVADO_INCS	= $(subst -I,,$(VERILOG_INCS))
 
 OPENOCD_DIR	= openocd
+
+fft_roms	= ../roms/fft/s*.hex
+fir_roms	= ../roms/fir/s*.hex
+window_roms	= ../roms/window/s*.hex
 
 
 .PHONY: prog
@@ -29,7 +34,8 @@ synth: synth_xilinx
 .PHONY: synth_xilinx
 synth_xilinx: $(TOP_MODULE).edif
 
-$(TOP_MODULE).edif: $(VERILOG_SRCS) $(TOP_MODULE_SRC)
+$(TOP_MODULE).edif: $(VERILOG_SRCS) $(TOP_MODULE_SRC) env.sh
+	# $(eval include env.sh)
 	vivado -nolog -nojournal -mode batch -source $(VIVADO_DIR)/synth.tcl
 
 # $(TOP_MODULE).edif: $(TOP_MODULE).ilang $(YOSYS_DIR)/xilinx.tcl
@@ -37,6 +43,9 @@ $(TOP_MODULE).edif: $(VERILOG_SRCS) $(TOP_MODULE_SRC)
 
 $(TOP_MODULE).ilang: $(YOSYS_DIR)/synth.tcl $(VERILOG_SRCS) $(TOP_MODULE_SRC)
 	yosys $(YOSYS_DIR)/synth.tcl
+
+env.sh: roms.py fir.py fft.py window.py
+	python roms.py
 
 # formal
 .PHONY: formal

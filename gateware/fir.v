@@ -4,18 +4,14 @@
 
 `include "fir_bank.v"
 
+`define N_TAPS 120
+`define M 20
+`define BANK_LEN 6
+
 `timescale 1ns/1ps
 module fir #(
-   parameter N_TAPS         = 120, /* total number of taps */
-   parameter M              = 20,  /* decimation factor */
-   parameter BANK_LEN       = 6,   /* N_TAPS/M */
    parameter INPUT_WIDTH    = 12,
    parameter TAP_WIDTH      = 16,
-   // should be set equal to the
-   // INPUT_WIDTH + TAP_WIDTH + ceil(log2(N_TAPS))
-   parameter INTERNAL_WIDTH = 35,
-   // these values should be set according to the output of
-   // gen_taps.py
    parameter NORM_SHIFT     = 4,
    parameter OUTPUT_WIDTH   = 13
 ) (
@@ -27,8 +23,12 @@ module fir #(
    output reg                           dvalid
 );
 
-   localparam M_LOG2        = $clog2(M);
-   localparam BANK_LEN_LOG2 = $clog2(BANK_LEN);
+   localparam N_TAPS         = `N_TAPS;
+   localparam M              = `M;
+   localparam BANK_LEN       = `BANK_LEN;
+   localparam INTERNAL_WIDTH = INPUT_WIDTH + TAP_WIDTH + $clog2(N_TAPS);
+   localparam M_LOG2         = $clog2(M);
+   localparam BANK_LEN_LOG2  = $clog2(BANK_LEN);
 
    // Data is first passed through a shift register at the base clock
    // rate. The first polyphase bank gets its data directly from the

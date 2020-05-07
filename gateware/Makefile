@@ -15,30 +15,17 @@ SCRIPT_DIR	:= $(realpath scripts)
 # Testing
 TEST_DIR	:= $(realpath test)
 
-fft_roms	= roms/fft/s*.hex
-fir_roms	= roms/fir/s*.hex
-window_roms	= roms/window/s*.hex
-
-
-$(fft_roms): scripts/fft.py
-	cd scripts && ./fft.py
-
-$(fir_roms): scripts/fir.py
-	cd scripts && ./fir.py
-
-$(window_roms): scripts/window.py
-	cd scripts && ./window.py
 
 .PHONY: prog
-prog: pnr
+prog:
 	$(MAKE) -C $(SCRIPT_DIR) prog
 
 .PHONY: synth $(VERILOG_SRCS)
-synth: $(fft_roms) $(fir_roms) $(window_roms)
+synth:
 	$(MAKE) -C $(SCRIPT_DIR) synth
 
 .PHONY: pnr
-pnr: synth
+pnr:
 	$(MAKE) -C $(SCRIPT_DIR) pnr
 
 # tests and formal

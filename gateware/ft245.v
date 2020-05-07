@@ -85,10 +85,14 @@ module ft245 #(
    inout wire [7:0]            ft_data
 );
 
+   // TODO really vivado?
+   // assert (DATA_WIDTH <= 52)
+   //   else $error("FT245 DATA_WIDTH must be no greater than 52 bits.");
+
    // number of bits in full transmission, including header/tail/meta
    // data.
-   localparam FULL_WIDTH = 64;
-   localparam NBYTES = FULL_WIDTH/8;
+   localparam FULL_WIDTH     = 64;
+   localparam NBYTES         = FULL_WIDTH/8;
    localparam LEADING_BLANKS = 52 - DATA_WIDTH;
 
    // TODO this should be parameterized to work with different word

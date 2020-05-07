@@ -8,92 +8,102 @@
 `include "window.v"
 `include "fft.v"
 
+`define GPIO_WIDTH 6
+`define USB_DATA_WIDTH 8
+`define ADC_DATA_WIDTH 12
+`define SD_DATA_WIDTH 4
+
 module top #(
-   parameter GPIO_WIDTH       = 6,
-   parameter USB_DATA_WIDTH   = 8,
-   parameter ADC_DATA_WIDTH   = 12,
-   parameter SD_DATA_WIDTH    = 4,
-   parameter FIR_OUTPUT_WIDTH = 13
+   parameter FIR_TAP_WIDTH     = 16,
+   parameter FIR_NORM_SHIFT    = 2,
+   parameter FIR_OUTPUT_WIDTH  = 15,
+   parameter FFT_TWIDDLE_WIDTH = 10
 ) (
    // =============== clocks, resets, LEDs, connectors ===============
    // 40MHz
-   input wire                             clk_i,
-   output wire                            led_o,
+   input wire                              clk_i,
+   output wire                             led_o,
    // General-purpose I/O.
-   inout wire [GPIO_WIDTH-1:0]            ext1_io,
-   inout wire [GPIO_WIDTH-1:0]            ext2_io,
+   inout wire [`GPIO_WIDTH-1:0]            ext1_io,
+   inout wire [`GPIO_WIDTH-1:0]            ext2_io,
 
    // can't simulate the PLL so we provide them from external logic.
 `ifdef COCOTB_SIM
-   input wire                             clk_7_5mhz,
-   input wire                             clk_120mhz,
-   input wire                             clk_80mhz,
-   input wire                             clk_20mhz,
-   input wire                             pll_lock,
+   input wire                              clk_7_5mhz,
+   input wire                              clk_120mhz,
+   input wire                              clk_80mhz,
+   input wire                              clk_20mhz,
+   input wire                              pll_lock,
 `endif
 
    // ==================== FT2232H USB interface. ====================
    // FIFO data
-   inout wire signed [USB_DATA_WIDTH-1:0] ft_data_io,
+   inout wire signed [`USB_DATA_WIDTH-1:0] ft_data_io,
    // Low when there is data in the buffer that can be read.
-   input wire                             ft_rxf_n_i,
+   input wire                              ft_rxf_n_i,
    // Low when there is room for transmission data in the FIFO.
-   input wire                             ft_txe_n_i,
+   input wire                              ft_txe_n_i,
    // Drive low to load read data to ft_data_io each clock cycle.
-   output wire                            ft_rd_n_o,
+   output wire                             ft_rd_n_o,
    // Drive low to write ft_data_io to FIFO for transmission.
-   output wire                            ft_wr_n_o,
+   output wire                             ft_wr_n_o,
    // Flush transmission data to USB immediately.
-   output wire                            ft_siwua_n_o,
+   output wire                             ft_siwua_n_o,
    // 60MHz clock used to synchronize data transfers.
-   input wire                             ft_clkout_i,
+   input wire                              ft_clkout_i,
    // Drive low one period before ft_rd_n_o to signal read.
-   output wire                            ft_oe_n_o,
+   output wire                             ft_oe_n_o,
    // Low when USB in suspend mode.
-   input wire                             ft_suspend_n_i,
+   input wire                              ft_suspend_n_i,
 
    // ============================== ADC =============================
    // Input data from ADC.
-   input wire signed [ADC_DATA_WIDTH-1:0] adc_d_i,
+   input wire signed [`ADC_DATA_WIDTH-1:0] adc_d_i,
    // High value indicates overflow or underflow.
-   input wire [1:0]                       adc_of_i,
+   input wire [1:0]                        adc_of_i,
    // LSB refers to channel A, MSB to channel B. Pulling OE and SHDN
    // low enables outputs.  E.g. 10 for each turns on channel A and
    // turns off channel B.
-   output reg [1:0]                       adc_oe_o,
-   output reg [1:0]                       adc_shdn_o,
+   output reg [1:0]                        adc_oe_o,
+   output reg [1:0]                        adc_shdn_o,
 
    // ============================ SD card ===========================
    // TODO: Setup option to load bitstream from SD card.
-   inout wire [SD_DATA_WIDTH-1:0]         sd_data_i,
-   inout wire                             sd_cmd_i,
-   output reg                             sd_clk_o = 1'b0,
-   input wire                             sd_detect_i,
+   inout wire [`SD_DATA_WIDTH-1:0]         sd_data_i,
+   inout wire                              sd_cmd_i,
+   output reg                              sd_clk_o = 1'b0,
+   input wire                              sd_detect_i,
 
    // ============================= mixer ============================
    // Low voltage enables mixer.
-   output reg                             mix_enbl_n_o,
+   output reg                              mix_enbl_n_o,
 
    // ======================== power amplifier =======================
-   output wire                            pa_en_n_o,
+   output wire                             pa_en_n_o,
 
    // ===================== frequency synthesizer ====================
-   output wire                            adf_ce_o,
-   output wire                            adf_le_o,
-   output wire                            adf_clk_o,
-   input wire                             adf_muxout_i,
-   output wire                            adf_txdata_o,
-   output wire                            adf_data_o,
+   output wire                             adf_ce_o,
+   output wire                             adf_le_o,
+   output wire                             adf_clk_o,
+   input wire                              adf_muxout_i,
+   output wire                             adf_txdata_o,
+   output wire                             adf_data_o,
    // input wire                             adf_done_i,
 
    // ========================= flash storage ========================
    // TODO: Configure flash to save bitstream configuration across boot cycles.
-   output reg                             flash_cs_n_o = 1'b1,
-   input wire                             flash_miso_i,
-   output reg                             flash_mosi_o = 1'b0
+   output reg                              flash_cs_n_o = 1'b1,
+   input wire                              flash_miso_i,
+   output reg                              flash_mosi_o = 1'b0
 );
 
-   localparam FFT_N   = 1024;
+   localparam GPIO_WIDTH     = `GPIO_WIDTH;
+   localparam USB_DATA_WIDTH = `USB_DATA_WIDTH;
+   localparam ADC_DATA_WIDTH = `ADC_DATA_WIDTH;
+   localparam SD_DATA_WIDTH  = `SD_DATA_WIDTH;
+
+   localparam FFT_N                           = 1024;
+   localparam FFT_OUTPUT_WIDTH                = FIR_OUTPUT_WIDTH + 1 + $clog2(FFT_N);
    /* verilator lint_off WIDTH */
    localparam [$clog2(FFT_N-1)-1:0] FFT_N_CMP = FFT_N - 1;
    /* verilator lint_on WIDTH */
@@ -242,16 +252,13 @@ module top #(
 
    wire signed [FIR_OUTPUT_WIDTH-1:0] chan_a_filtered;
    wire                               fir_dvalid;
-   // TODO setting parameters like this is very error-prone since they
-   // are determined based on the output of a script.
    fir #(
       .N_TAPS         (120              ),
       .M              (20               ),
       .BANK_LEN       (6                ),
-      .INPUT_WIDTH    (12               ),
-      .TAP_WIDTH      (16               ),
-      .INTERNAL_WIDTH (35               ),
-      .NORM_SHIFT     (4                ),
+      .INPUT_WIDTH    (ADC_DATA_WIDTH   ),
+      .TAP_WIDTH      (FIR_TAP_WIDTH    ),
+      .NORM_SHIFT     (FIR_NORM_SHIFT   ),
       .OUTPUT_WIDTH   (FIR_OUTPUT_WIDTH )
    ) fir (
       .clk             (clk_i           ),
@@ -262,12 +269,29 @@ module top #(
       .dvalid          (fir_dvalid      )
    );
 
+   wire signed [FIR_OUTPUT_WIDTH-1:0] chan_b_filtered;
+   fir #(
+      .N_TAPS         (120              ),
+      .M              (20               ),
+      .BANK_LEN       (6                ),
+      .INPUT_WIDTH    (ADC_DATA_WIDTH   ),
+      .TAP_WIDTH      (FIR_TAP_WIDTH    ),
+      .NORM_SHIFT     (FIR_NORM_SHIFT   ),
+      .OUTPUT_WIDTH   (FIR_OUTPUT_WIDTH )
+   ) firb (
+      .clk             (clk_i           ),
+      .rst_n           (fir_en          ),
+      .clk_2mhz_pos_en (clk_2mhz_pos_en ),
+      .din             (chan_b          ),
+      .dout            (chan_b_filtered )
+   );
+
    wire                               kaiser_dvalid;
-   wire signed [FIR_OUTPUT_WIDTH-1:0] kaiser_out;
+   wire signed [FIR_OUTPUT_WIDTH-1:0] kaiser_a_out;
    window #(
       .N           (FFT_N            ),
       .DATA_WIDTH  (FIR_OUTPUT_WIDTH ),
-      .COEFF_WIDTH (16               )
+      .COEFF_WIDTH (FIR_TAP_WIDTH    )
    ) kaiser (
       .clk    (clk_i           ),
       .rst_n  (rst_n           ),
@@ -275,8 +299,24 @@ module top #(
       .clk_en (clk_2mhz_pos_en ),
       .di     (chan_a_filtered ),
       .dvalid (kaiser_dvalid   ),
-      .dout   (kaiser_out      )
+      .dout   (kaiser_a_out    )
    );
+
+   wire signed [FIR_OUTPUT_WIDTH-1:0] kaiser_b_out;
+   window #(
+      .N           (FFT_N            ),
+      .DATA_WIDTH  (FIR_OUTPUT_WIDTH ),
+      .COEFF_WIDTH (FIR_TAP_WIDTH    )
+   ) kaiserb (
+      .clk    (clk_i           ),
+      .rst_n  (rst_n           ),
+      .en     (fir_dvalid      ),
+      .clk_en (clk_2mhz_pos_en ),
+      .di     (chan_b_filtered ),
+      .dout   (kaiser_b_out    )
+   );
+
+   // TODO add channel b FFT.
 
    wire signed [FIR_OUTPUT_WIDTH-1:0] fft_in;
    wire                               fir_fft_fifo_full;
@@ -292,7 +332,7 @@ module top #(
       .rddata (fft_in                      ),
       .wrclk  (clk_i                       ),
       .wren   (fifo_wren & clk_2mhz_pos_en ),
-      .wrdata (kaiser_out                  )
+      .wrdata (kaiser_a_out                )
    );
    /* verilator lint_on PINMISSING */
 
@@ -300,8 +340,6 @@ module top #(
    localparam [$clog2(FFT_N)-1:0] FFT_N_LAST = FFT_N - 1;
    /* verilator lint_on WIDTH */
 
-   localparam FFT_OUTPUT_WIDTH = 25;
-   localparam FFT_TWIDDLE_WIDTH = 10;
    wire fft_valid;
    wire [$clog2(FFT_N)-1:0] fft_ctr;
    wire signed [FFT_OUTPUT_WIDTH-1:0] fft_re_o;
@@ -347,12 +385,15 @@ module top #(
       end
    end
 
-   wire [FFT_OUTPUT_WIDTH+$clog2(FFT_N):0] fft_ft245_data;
+   // 1 comes from additional bit indicating whether FFT is real or
+   // imaginary part.
+   localparam FFT_FT245_WIDTH = FFT_OUTPUT_WIDTH + $clog2(FFT_N) + 1;
+   wire [FFT_FT245_WIDTH-1:0] fft_ft245_data;
    // The size is not 2*FFT_N since we read while writing.
    /* verilator lint_off PINMISSING */
    async_fifo #(
-      .WIDTH (FFT_OUTPUT_WIDTH + $clog2(FFT_N) + 1 ),
-      .SIZE  (FFT_N                          )
+      .WIDTH (FFT_FT245_WIDTH ),
+      .SIZE  (FFT_N           )
    ) fft_ft245_fifo (
       .rst_n  (rst_n                           ),
       .full   (fft_ft245_fifo_full             ),
@@ -365,12 +406,12 @@ module top #(
    );
    /* verilator lint_on PINMISSING */
 
-   reg                               fft_fifo_rden_delay;
+   reg                        fft_fifo_rden_delay;
    always @(posedge clk_i) begin
       fft_fifo_rden_delay <= fft_fifo_rden;
    end
 
-   localparam FT245_DATA_WIDTH = 38;
+   localparam FT245_DATA_WIDTH = 52;
    wire                               ft245_wrfifo_full;
    wire                               ft245_rdfifo_full;
    wire                               ft245_rdfifo_empty;
@@ -391,11 +432,11 @@ module top #(
    end
 
    reg [2:0] op_state;
-   localparam [2:0] IDLE = 3'b000;
-   localparam [2:0] FFT = 3'b001;
+   localparam [2:0] IDLE   = 3'b000;
+   localparam [2:0] FFT    = 3'b001;
    localparam [2:0] WINDOW = 3'b010;
-   localparam [2:0] FIR = 3'b011;
-   localparam [2:0] RAW = 3'b100;
+   localparam [2:0] FIR    = 3'b011;
+   localparam [2:0] RAW    = 3'b100;
 
    always @(posedge clk_80mhz) begin
       if (!rst_n) begin
@@ -440,6 +481,16 @@ module top #(
       end
    end
 
+   // TODO apparently vivado does not support assert statements...
+   // // ensure no data transmission packet is greater than 52 bits.
+   // assert (FFT_FT245_WIDTH <= FT245_DATA_WIDTH);
+   localparam WINDOW_FT245_WIDTH = 2 * FIR_OUTPUT_WIDTH + $clog2(FFT_N);
+   // assert (WINDOW_FT245_WIDTH <= FT245_DATA_WIDTH);
+   localparam FIR_FT245_WIDTH = 2 * FIR_OUTPUT_WIDTH + $clog2(FFT_N);
+   // assert (FIR_FT245_WIDTH <= FT245_DATA_WIDTH);
+   localparam RAW_FT245_WIDTH = 2 * ADC_DATA_WIDTH + $clog2(RAW_SEQ_LEN);
+   // assert (RAW_FT245_WIDTH <= FT245_DATA_WIDTH);
+
    always @(*) begin
       case (op_state)
       IDLE:
@@ -449,22 +500,22 @@ module top #(
         end
       FFT:
         begin
-           ft245_wrdata = {{2{1'b0}}, fft_ft245_data};
+           ft245_wrdata = {{FT245_DATA_WIDTH-FFT_FT245_WIDTH{1'b0}}, fft_ft245_data};
            ft245_en = fft_fifo_rden_delay;
         end
       WINDOW:
         begin
-           ft245_wrdata = {{0{1'b0}}, window_ctr, {28-FIR_OUTPUT_WIDTH{1'b0}}, kaiser_out};
+           ft245_wrdata = {{FT245_DATA_WIDTH-WINDOW_FT245_WIDTH{1'b0}}, window_ctr, kaiser_b_out, kaiser_a_out};
            ft245_en = kaiser_dvalid && clk_2mhz_pos_en;
         end
       FIR:
         begin
-           ft245_wrdata = {{0{1'b0}}, fir_ctr, {28-FIR_OUTPUT_WIDTH{1'b0}}, chan_a_filtered};
+           ft245_wrdata = {{FT245_DATA_WIDTH-FIR_FT245_WIDTH{1'b0}}, fir_ctr, chan_b_filtered, chan_a_filtered};
            ft245_en = fir_dvalid && clk_2mhz_pos_en;
         end
       RAW:
         begin
-           ft245_wrdata = {{1{1'b0}}, raw_ctr, chan_b, chan_a};
+           ft245_wrdata = {{FT245_DATA_WIDTH-RAW_FT245_WIDTH{1'b0}}, raw_ctr, chan_b, chan_a};
            ft245_en = fir_en;
         end
       default:

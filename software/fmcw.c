@@ -12,13 +12,23 @@
 #include <unistd.h>
 
 #define PACKET_LEN 8
+#define HEADER 0x80
+#define TAIL_BITS 4
 /* number of bytes in a data payload */
 #define PAYLOAD_SIZE 510
 #define FFT_LEN 1024
+/* ceil(log2(FFT_LEN)) */
+#define FFT_CTR_BITS 10
 #define RAW_LEN 8000
-#define FIR_WIDTH 13
+/* ceil(log2(RAW_LEN)) */
+#define RAW_CTR_BITS 13
 #define BUFSIZE 2048
 #define BACKG_DEFAULT 100
+#define ADC_REF 1
+#define ADC_BITS 12
+#define MAX_RANGE_IDX 512
+#define DB_MIN -80
+#define DB_MAX -45
 /* Indicates a command to Python subprocess. */
 #define DATA 0
 #define CMD 1
@@ -107,7 +117,6 @@ static unsigned char algo_bit_flags(struct cmd_flags *flags);
  * windowing, and the final bit is for the FFT. After the command has
  * been sent the python subprocess expects another "prepare" byte.
  */
-
 static void send_cmd(struct data *data);
 /**
  * Terminate python subprocess.
@@ -152,6 +161,14 @@ unsigned int bitrev(unsigned int v, int num_bits);
  * bit.
  */
 int dvalid(uint64_t val);
+
+/**
+ * Get the integer value of an environment variable. This is used to share parameterizations between
+ * this C program and the verilog code.
+ */
+int env_constant(char *name);
+int fir_output_width() { return env_constant("FIR_OUTPUT_WIDTH"); }
+int fft_output_width() { return FFT_CTR_BITS + 1 + fir_output_width(); }
 
 int main(int argc, char **argv)
 {
@@ -480,8 +497,8 @@ uint64_t get_value(uint8_t *buf)
 
 	i = 0;
 	res = 0;
-	while (i < 8) {
-		add_byte_to_word(&res, 8 * (7 - i), buf[i]);
+	while (i < CHAR_BIT) {
+		add_byte_to_word(&res, CHAR_BIT * (CHAR_BIT - 1 - i), buf[i]);
 		++i;
 	}
 
@@ -502,7 +519,6 @@ unsigned int bitrev(unsigned int v, int num_bits)
 		--s;
 	}
 	r <<= s;
-	/* TODO change char_bit to 8? */
 	r >>= sizeof(v) * CHAR_BIT - num_bits;
 	return r;
 }
@@ -512,10 +528,10 @@ int dvalid(uint64_t val)
 	uint8_t header;
 	uint8_t tail;
 
-	header = val >> (8 * (PACKET_LEN - 1));
+	header = val >> (CHAR_BIT * (PACKET_LEN - 1));
 	tail = (val & '\xf');
 
-	return header == 128 && tail == 0;
+	return header == HEADER && tail == 0;
 }
 
 unsigned char algo_bit_flags(struct cmd_flags *flags)
@@ -665,15 +681,21 @@ void proc_fft(uint64_t rdval, struct data *data)
 	unsigned int rev_ctr;
 	int tx_re;
 	int i;
+	int fft_bits;
 
-	/* TODO magic numbers, use macros instead */
-	fft = (int32_t)subw_val(rdval, 4, 25, 1);
-	ctr = (unsigned int)subw_val(rdval, 29, 10, 0);
-	tx_re = (int)subw_val(rdval, 39, 1, 0);
+	fft_bits = fft_output_width();
+
+	fft = (int32_t)subw_val(rdval, TAIL_BITS, fft_bits, 1);
+	ctr = (unsigned int)subw_val(rdval, TAIL_BITS + fft_bits, FFT_CTR_BITS, 0);
+	tx_re = (int)subw_val(rdval, TAIL_BITS + fft_bits + FFT_CTR_BITS, 1, 0);
 
 	if (data->last_ctr == ctr && data->last_b != tx_re) {
-		fft_res = (int32_t)sqrt(pow(fft, 2) + pow(data->last_a, 2));
-		rev_ctr = bitrev(ctr, 10);
+		fft_res = sqrt(pow(fft, 2) + pow(data->last_a, 2));
+		/* fft_res = 20 * log10(1 / (pow(2, ADC_BITS - 1) * MAX_RANGE_IDX) * fft_res); */
+		/* fft_res = fft_res < DB_MIN ? DB_MIN : fft_res; */
+		/* fft_res = fft_res > DB_MAX ? DB_MAX : fft_res; */
+		/* fft_res = (int32_t)fft_res; */
+		rev_ctr = bitrev(ctr, FFT_CTR_BITS);
 		if (rev_ctr > data->last_rev_ctr) {
 			data->ctr_arr[ctr] = 1;
 			data->a_arr[ctr] = fft_res;
@@ -714,10 +736,13 @@ void proc_window(uint64_t rdval, struct data *data)
 	int32_t chan_a;
 	int32_t chan_b;
 	unsigned int ctr;
+	int fir_bits;
 
-	chan_a = (int32_t)subw_val(rdval, 4, FIR_WIDTH, 1);
-	chan_b = (int32_t)subw_val(rdval, 4 + FIR_WIDTH, FIR_WIDTH, 1);
-	ctr = (unsigned int)subw_val(rdval, 32, 10, 0);
+	fir_bits = fir_output_width();
+
+	chan_a = (int32_t)subw_val(rdval, TAIL_BITS, fir_bits, 1);
+	chan_b = (int32_t)subw_val(rdval, TAIL_BITS + fir_bits, fir_bits, 1);
+	ctr = (unsigned int)subw_val(rdval, TAIL_BITS + 2 * fir_bits, FFT_CTR_BITS, 0);
 
 	/* TODO most data is being written twice for some reason. >=
 	 * is a temporary bandaid */
@@ -741,10 +766,9 @@ void proc_raw(uint64_t rdval, struct data *data)
 	int32_t chan_b;
 	unsigned int ctr;
 
-	/* TODO magic numbers, use macros instead */
-	chan_a = (int32_t)subw_val(rdval, 4, 12, 1);
-	chan_b = (int32_t)subw_val(rdval, 16, 12, 1);
-	ctr = (unsigned int)subw_val(rdval, 28, 13, 0);
+	chan_a = (int32_t)subw_val(rdval, TAIL_BITS, ADC_BITS, 1);
+	chan_b = (int32_t)subw_val(rdval, TAIL_BITS + ADC_BITS, ADC_BITS, 1);
+	ctr = (unsigned int)subw_val(rdval, TAIL_BITS + 2 * ADC_BITS, RAW_CTR_BITS, 0);
 
 	/* TODO most data is being written twice for some reason. >=
 	 * is a temporary bandaid */
@@ -767,11 +791,13 @@ void proc_fir(uint64_t rdval, struct data *data)
 	int32_t chan_a;
 	int32_t chan_b;
 	unsigned int ctr;
+	int fir_bits;
 
-	/* TODO magic numbers, use macros instead */
-	chan_a = (int32_t)subw_val(rdval, 4, FIR_WIDTH, 1);
-	chan_b = (int32_t)subw_val(rdval, 4 + FIR_WIDTH, FIR_WIDTH, 1);
-	ctr = (unsigned int)subw_val(rdval, 32, 10, 0);
+	fir_bits = fir_output_width();
+
+	chan_a = (int32_t)subw_val(rdval, TAIL_BITS, fir_bits, 1);
+	chan_b = (int32_t)subw_val(rdval, TAIL_BITS + fir_bits, fir_bits, 1);
+	ctr = (unsigned int)subw_val(rdval, TAIL_BITS + 2 * fir_bits, FFT_CTR_BITS, 0);
 
 	/* printf("%5d %5d %5d\n", ctr, last_ctr, chan_a); */
 	/* TODO most data is being written twice for some reason. >=
@@ -938,4 +964,14 @@ void *monitor_input(void *arg)
 		}
 	}
 	return NULL;
+}
+
+int env_constant(char *name)
+{
+	char *envp = getenv(name);
+	if (!envp) {
+		fprintf(stderr, "%s has not been set. Exiting.", name);
+	}
+
+	return atoi(envp);
 }

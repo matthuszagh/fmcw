@@ -5,12 +5,14 @@ SOFTWARE_DIR	= software
 
 DEBUG		= 0
 
+
 .PHONY: run
 run: prog
+	# $(eval include $(GATEWARE_DIR)/scripts/env.sh)
 	$(MAKE) -C $(SOFTWARE_DIR) acquire
 
 .PHONY: prog
-prog: bitstream
+prog:
 	$(MAKE) -C $(GATEWARE_DIR) prog
 
 .PHONY: bitstream

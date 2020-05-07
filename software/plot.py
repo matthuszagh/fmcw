@@ -11,15 +11,17 @@ from scipy import signal
 from pyqtgraph.Qt import QtGui
 import pyqtgraph as pg
 import pyqtgraph.exporters
-from matplotlib import cm
+
+# from matplotlib import cm
 
 FFT_LEN = 1024
 RAW_LEN = 8000
 
 # number of x points in the plot or hist
 PLOT_DOMAIN = 2000
-HIST_LEVELS = [0, 100]
-
+DB_MIN = -100
+DB_MAX = 0
+DECIMATE = 24
 DOWNSAMPLE_FACTOR = 20
 
 # precompute filter for better performance
@@ -49,8 +51,12 @@ class PType(IntEnum):
 
 
 class Plot:
+    """
+    """
+
     def __init__(self):
-        self.plot_type = None
+        """
+        """
         self.fname = 0
         # initialize Qt
         self.app = QtGui.QApplication([])
@@ -58,118 +64,197 @@ class Plot:
         self.data = None
         self.time = None
         self.xval = 0
-        # matplotlib colors
-        colormap = cm.get_cmap("CMRmap")
-        colormap._init()
-        self.colors = (colormap._lut * 255).view(np.ndarray)
 
-    def _initialize_plot(self, data):
-        # initialize data arrays
-        if data.indata_type == DType.FFT or data.fft:
-            if data.indata_type == DType.RAW:
-                self.data = np.zeros(
-                    (PLOT_DOMAIN, int(RAW_LEN / DOWNSAMPLE_FACTOR / 2))
-                )
-            else:
-                self.data = np.zeros((PLOT_DOMAIN, int(FFT_LEN / 2)))
-        else:
-            self.data = np.zeros(PLOT_DOMAIN)
+    # def _initialize_plot(self, data):
+    #     # initialize data arrays
+    #     if data.indata_type == DType.FFT or data.fft:
+    #         if data.indata_type == DType.RAW:
+    #             self.data = np.zeros(
+    #                 (PLOT_DOMAIN, int(RAW_LEN / DOWNSAMPLE_FACTOR / 2))
+    #             )
+    #         else:
+    #             self.data = np.zeros((PLOT_DOMAIN, int(FFT_LEN / 2)))
+    #     else:
+    #         self.data = np.zeros(PLOT_DOMAIN)
 
-        # set start time
-        self.time = data.time
+    #     # set start time
+    #     self.time = data.time
 
-        # setup plot gui
-        if self.plot_type == PType.TIME:
-            self.win = pg.PlotWidget()
-        else:
-            self.win = pg.GraphicsLayoutWidget()
-        self.win.show()
+    #     # setup plot gui
+    #     if self.plot_type == PType.TIME:
+    #         self.win = pg.PlotWidget()
+    #     else:
+    #         self.win = pg.GraphicsLayoutWidget()
+    #     self.win.show()
 
-        if self.plot_type == PType.HIST:
-            self.win.setWindowTitle("Range Plot")
-            self.view = self.win.addViewBox()
-            self.view.setAspectLocked(False)
-            self.yaxis = pg.AxisItem("left", linkView=self.view)
-            self.yaxis.setScale(0.5)
-            self.win.addItem(self.yaxis)
-            # Set initial view bounds
-            self.view.enableAutoRange()
-            self.img = pg.ImageItem(border="w")
-            self.img.setLookupTable(self.colors)
-            self.view.addItem(self.img)
-        else:
-            self.win.setWindowTitle("Time Plot")
-            # explicitly setting limits and disabling the autorange
-            # facility makes plotting faster
-            self.win.setYRange(-100, 100, padding=0)
-            self.win.setXRange(0, PLOT_DOMAIN, padding=0)
-            self.win.disableAutoRange()
+    #     if self.plot_type == PType.HIST:
+    #         self.win.setWindowTitle("Range Plot")
+    #         self.view = self.win.addViewBox()
+    #         self.view.setAspectLocked(False)
+    #         self.yaxis = pg.AxisItem("left", linkView=self.view)
+    #         self.yaxis.setScale(0.5)
+    #         self.win.addItem(self.yaxis)
+    #         # Set initial view bounds
+    #         self.view.enableAutoRange()
+    #         self.img = pg.ImageItem(border="w")
+    #         self.img.setLookupTable(self.colors)
+    #         self.view.addItem(self.img)
+    #         # self.hist_item = pg.HistogramLUTItem(image=self.img)
+    #         # self.view.addItem(self.hist_item)
+    #     else:
+    #         self.win.setWindowTitle("Time Plot")
+    #         # explicitly setting limits and disabling the autorange
+    #         # facility makes plotting faster
+    #         self.win.setYRange(-100, 100, padding=0)
+    #         self.win.setXRange(0, PLOT_DOMAIN, padding=0)
+    #         self.win.disableAutoRange()
+
+    # def update_plot(self, data):
+    #     """
+    #     """
+    #     if self.win is None:
+    #         self._initialize_plot(data)
+    #     if self.plot_type == PType.HIST:
+    #         val = data.data[0]
+    #         if self.xval == PLOT_DOMAIN - 1:
+    #             # save plot to 'plots' dir
+    #             exporter = pg.exporters.ImageExporter(self.img)
+    #             exporter.params.param("width").setValue(
+    #                 1920, blockSignal=exporter.widthChanged
+    #             )
+    #             exporter.params.param("height").setValue(
+    #                 1080, blockSignal=exporter.heightChanged
+    #             )
+    #             exporter.export("plots/" + str(self.fname) + ".png")
+    #             self.fname += 1
+    #             # zero data
+    #             self.data = np.zeros(np.shape(self.data))
+    #             self.xval = 0
+    #         else:
+    #             self.xval += 1
+    #         self.data[self.xval] = val
+    #         self.img.setImage(self.data)
+    #         # self.img.setLevels(HIST_LEVELS)
+    #         self.app.processEvents()
+    #     else:
+    #         for val in data.data[0]:
+    #             if self.xval == PLOT_DOMAIN - 1:
+    #                 # save plot to 'plots' dir
+    #                 exporter = pg.exporters.ImageExporter(
+    #                     self.win.getPlotItem()
+    #                 )
+    #                 exporter.params.param("width").setValue(
+    #                     1080, blockSignal=exporter.widthChanged
+    #                 )
+    #                 exporter.params.param("height").setValue(
+    #                     1080, blockSignal=exporter.heightChanged
+    #                 )
+    #                 exporter.export("plots/" + str(self.fname) + ".png")
+    #                 self.fname += 1
+    #                 # zero data
+    #                 self.data = np.zeros(np.shape(self.data))
+    #                 self.xval = 0
+    #             else:
+    #                 self.xval += 1
+    #             self.data[self.xval] = val
+
+    #             self.win.plot(
+    #                 np.linspace(0, PLOT_DOMAIN - 1, PLOT_DOMAIN),
+    #                 self.data,
+    #                 clear=True,
+    #             )
+    #             self.app.processEvents()
+
+
+class PlotHist(Plot):
+    """
+    """
+
+    def __init__(self):
+        """
+        """
+        super().__init__()
+        self._win = QtGui.QMainWindow()
+        self._imv = pg.ImageView(view=pg.PlotItem())
+        self.img_view = self._imv.getView()
+        self.img_view.invertY(False)
+        self.img_view.setLimits(yMin=0, yMax=512)
+        self.img_view.getAxis("left").setScale(0.5)
+        self._win.setCentralWidget(self._imv)
+        self._win.show()
+
+        # self._layout = pg.GraphicsLayoutWidget()
+        # self._layout.show()
+        self._set_title()
+        # self._set_yaxis()
+        self._set_hist_colors()
+        # self._set_hist_plot()
+        self.data = np.zeros((PLOT_DOMAIN, int(FFT_LEN / 2)))
 
     def update_plot(self, data):
-        if self.win is None:
-            self._initialize_plot(data)
-        # # TODO this is a temporary fix to remove the 500KHz tone. The
-        # # proper solution is to fix the hardware.
-        # llim = 256
-        # ulim = 268
-        # for i in range(llim, ulim):
-        #     if i < len(data.data[0]):
-        #         data.data[0][i] = data.data[0][i - (ulim - llim)]
-        if self.plot_type == PType.HIST:
-            val = data.data[0]
-            if self.xval == PLOT_DOMAIN - 1:
-                # save plot to 'plots' dir
-                exporter = pg.exporters.ImageExporter(self.img)
-                exporter.params.param("width").setValue(
-                    1920, blockSignal=exporter.widthChanged
-                )
-                exporter.params.param("height").setValue(
-                    1080, blockSignal=exporter.heightChanged
-                )
-                exporter.export("plots/" + str(self.fname) + ".png")
-                self.fname += 1
-                # zero data
-                self.data = np.zeros(np.shape(self.data))
-                self.xval = 0
-            else:
-                self.xval += 1
-            self.data[self.xval] = val
-            self.img.setImage(self.data)
-            self.img.setLevels(HIST_LEVELS)
-            self.app.processEvents()
+        """
+        """
+        val = data.data[0]
+        val[val == 0] = 1
+        val = 20 * np.log10(1 / (np.power(2, 11) * 512) * val)
+        val = np.clip(val, DB_MIN, DB_MAX)
+        if self.xval == PLOT_DOMAIN - 1:
+            self._save_plot()
+            self.fname += 1
+            # zero data
+            self.data = np.zeros(np.shape(self.data))
+            self.xval = 0
         else:
-            for val in data.data[0]:
-                if self.xval == PLOT_DOMAIN - 1:
-                    # save plot to 'plots' dir
-                    exporter = pg.exporters.ImageExporter(
-                        self.win.getPlotItem()
-                    )
-                    exporter.params.param("width").setValue(
-                        1080, blockSignal=exporter.widthChanged
-                    )
-                    exporter.params.param("height").setValue(
-                        1080, blockSignal=exporter.heightChanged
-                    )
-                    exporter.export("plots/" + str(self.fname) + ".png")
-                    self.fname += 1
-                    # zero data
-                    self.data = np.zeros(np.shape(self.data))
-                    self.xval = 0
-                else:
-                    self.xval += 1
-                self.data[self.xval] = val
+            self.xval += 1
+        self.data[self.xval] = val
+        self._imv.setImage(self.data, xvals=data.time)
+        self._imv.setLevels(DB_MIN, DB_MAX)
+        self.app.processEvents()
 
-                self.win.plot(
-                    np.linspace(0, PLOT_DOMAIN - 1, PLOT_DOMAIN),
-                    self.data,
-                    clear=True,
-                )
-                self.app.processEvents()
+    def _save_plot(self):
+        """
+        """
+        self._imv.export("plots/" + str(self.fname) + ".png")
+
+    def _set_title(self):
+        """
+        """
+        self._win.setWindowTitle("Range Plot")
+
+    def _set_yaxis(self):
+        """
+        """
+        self.yaxis = pg.AxisItem("left")
+        self._layout.addItem(self.yaxis, 1, 0)
+
+    def _set_hist_colors(self):
+        """
+        """
+        # colormap = cm.get_cmap("CMRmap")
+        # colormap._init()
+        # colors = (colormap._lut * 255).view(np.ndarray)
+        # colors = [(0, 0, 0), (255, 0, 0), (255, 255, 0), (255, 255, 255)]
+        # cmap = pg.ColorMap(pos=[0, 0.2, 0.6, 1.0], color=colors)
+        # self._imv.setColorMap(cmap)
+        self._imv.setPredefinedGradient("flame")
+
+    def _set_hist_plot(self):
+        """
+        """
+        self.img = pg.ImageItem(border="w")
+        self.img.setLookupTable(self.colors)
+        viewbox = self._layout.addViewBox(1, 1)
+        viewbox.addItem(self.img)
 
 
 # TODO rename
 class DataProc:
+    """
+    """
+
     def __init__(self):
+        """
+        """
         self.data = None
         self.time = 0
         self.indata_type = DType.FFT
@@ -178,6 +263,8 @@ class DataProc:
         self.fft = True
 
     def perform_fft(self):
+        """
+        """
         # TODO explain why we skip first data point
         full_fft = [
             np.fft.rfft(self.data[0])[1:],
@@ -192,11 +279,15 @@ class DataProc:
         )
 
     def perform_window(self):
+        """
+        """
         window = np.kaiser(len(self.data[0]), 6)
         self.data[0] = np.multiply(self.data[0], window)
         self.data[1] = np.multiply(self.data[1], window)
 
     def perform_fir(self):
+        """
+        """
         filtered = [
             np.convolve(self.data[0], TAPS, "same"),
             np.convolve(self.data[1], TAPS, "same"),
@@ -216,6 +307,8 @@ class DataProc:
         self.data = filt_downs
 
     def process_data(self, cur_type):
+        """
+        """
         # make this fastest when FPGA does all processing
         if cur_type == DType.FFT:
             return
@@ -234,12 +327,19 @@ class DataProc:
 
 
 class Monitor:
+    """
+    Monitor communication from C fmcw program.
+    """
+
     def __init__(self):
+        """
+        """
         self.buf = sys.stdin.buffer
-        self.plot = Plot()
         self.data = DataProc()
 
     def _read_n_bytes(self, n):
+        """
+        """
         # TODO what should signed be?
         val = int.from_bytes(
             self.buf.read(n), byteorder=sys.byteorder, signed=True
@@ -247,6 +347,8 @@ class Monitor:
         return val
 
     def _init_data_arrays(self):
+        """
+        """
         if self.data.indata_type == DType.RAW:
             self.data.data = np.zeros((2, RAW_LEN))
         elif self.data.indata_type == DType.FIR:
@@ -259,11 +361,13 @@ class Monitor:
             raise ValueError("Invalid FPGA data type")
 
     def _read_cmd(self):
+        """
+        """
         plot = self._read_n_bytes(1)
         if plot == 1:
-            self.plot.plot_type = PType.HIST
+            self.plot = PlotHist()
         elif plot == 0:
-            self.plot.plot_type = PType.TIME
+            raise RuntimeError("Not yet implemented")
         else:
             raise ValueError("Invalid plot type")
 
@@ -280,6 +384,8 @@ class Monitor:
             self.data.fft = False
 
     def _read_data(self):
+        """
+        """
         self.data.time = self._read_n_bytes(4)
         if self.data.indata_type == DType.FFT:
             for i in range(FFT_LEN):
@@ -302,6 +408,8 @@ class Monitor:
                 self.data.data[1][i] = self._read_n_bytes(4)
 
     def read_packet(self):
+        """
+        """
         indic = self._read_n_bytes(1)
         if indic == 2:
             sys.exit(0)
