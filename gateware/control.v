@@ -74,7 +74,6 @@ module control #(
                           state       <= FIR_WAIT_STATE;
                        end
                     end else begin
-                       state   <= FIR_STATE;
                        fir_ctr <= fir_ctr + 1'b1;
                     end
                  end

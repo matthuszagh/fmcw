@@ -19,7 +19,7 @@ module top #(
    parameter FIR_NORM_SHIFT    = 2,
    parameter FIR_OUTPUT_WIDTH  = 15,
    parameter FFT_TWIDDLE_WIDTH = 10,
-   parameter AVG_LG_N          = 6
+   parameter AVG_LG_N          = 3
 ) (
    // =============== clocks, resets, LEDs, connectors ===============
    // 40MHz

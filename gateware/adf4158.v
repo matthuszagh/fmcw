@@ -30,7 +30,7 @@
 //     f_DEV determines the frequency increment in each ramp step.
 //     default params: 300kHz
 //
-// (5) Delay = (1 / f_PFD) x CLK1_DIV x Delay Start Word
+// (5) Delay = (1 / f_PFD) x CLK1_DIV x DELAY_STEPS
 //     The delay between ramps (this version uses CLK1_DIV for an
 //     additional delay).
 //     default params: 2ms
