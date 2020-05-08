@@ -838,4 +838,9 @@ module fir #(
 `endif
 
 endmodule
+
+`undef N_TAPS
+`undef M
+`undef BANK_LEN
+
 `endif

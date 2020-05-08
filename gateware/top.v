@@ -7,6 +7,7 @@
 `include "fir.v"
 `include "window.v"
 `include "fft.v"
+`include "avg.v"
 
 `define GPIO_WIDTH 6
 `define USB_DATA_WIDTH 8
@@ -17,7 +18,8 @@ module top #(
    parameter FIR_TAP_WIDTH     = 16,
    parameter FIR_NORM_SHIFT    = 2,
    parameter FIR_OUTPUT_WIDTH  = 15,
-   parameter FFT_TWIDDLE_WIDTH = 10
+   parameter FFT_TWIDDLE_WIDTH = 10,
+   parameter AVG_LG_N          = 6
 ) (
    // =============== clocks, resets, LEDs, connectors ===============
    // 40MHz
@@ -108,12 +110,14 @@ module top #(
    localparam [$clog2(FFT_N-1)-1:0] FFT_N_CMP = FFT_N - 1;
    /* verilator lint_on WIDTH */
 
-   assign led_o       = ~pa_en_n_o;
-   assign ext1_io[0]  = ramp_on;
-   assign ext1_io[1]  = ramp_start;
-   assign ext1_io[2]  = ft245_wrfifo_empty;
-   assign ext1_io[3]  = ft245_wrfifo_full;
-   assign ext1_io[4]  = adf_en;
+   assign led_o      = ~pa_en_n_o;
+
+   // assign ext2_io[0] = adf_config_done;
+   // assign ext2_io[1] = ramp_on;
+   // assign ext2_io[2] = fir_en;
+   // assign ext2_io[3] = fir_dvalid;
+   // assign ext2_io[4] = ft245_en;
+   // assign ext2_io[5] = avg_dvalid;
 
    always @(posedge clk_i) begin
       // Multiplex both channels through A, so we can disable channel
@@ -129,7 +133,8 @@ module top #(
       // disable times.
       mix_enbl_n_o <= 1'b0;
    end
-   assign pa_en_n_o = ~ramp_on;
+   // assign pa_en_n_o = ~ramp_on;
+   assign pa_en_n_o = 1'b0;
 
 `ifndef COCOTB_SIM
    /**
@@ -206,7 +211,9 @@ module top #(
    wire fifo_rden;
    wire fft_en;
    reg  ft245_en;
-   control control (
+   control #(
+      .FFT_N (FFT_N)
+   ) control (
       .clk          (clk_i               ),
       .rst_n        (rst_n               ),
       .adf_done     (adf_config_done     ),
@@ -215,6 +222,7 @@ module top #(
       .fifo_full    (fir_fft_fifo_full   ),
       .fft_done     (fft_ctr == 10'd1023 ),
       .ft245_empty  (ft245_wrfifo_empty  ),
+      .clk_2mhz_pos_en (clk_2mhz_pos_en),
       .adf_en       (adf_en              ),
       .fir_en       (fir_en              ),
       .fifo_wren    (fifo_wren           ),
@@ -286,6 +294,36 @@ module top #(
       .dout            (chan_b_filtered )
    );
 
+   wire                               avg_dvalid;
+   wire signed [FIR_OUTPUT_WIDTH-1:0] avg_a_dout;
+   avg #(
+      .WIDTH (FIR_OUTPUT_WIDTH ),
+      .SIZE  (FFT_N            ),
+      .LG_N  (AVG_LG_N         )
+   ) avga (
+      .clk    (clk_i           ),
+      .clken  (clk_2mhz_pos_en ),
+      .en     (fir_dvalid      ),
+      .rst_n  (!fft_en         ),
+      .din    (chan_a_filtered ),
+      .dout   (avg_a_dout      ),
+      .dvalid (avg_dvalid      )
+   );
+
+   wire signed [FIR_OUTPUT_WIDTH-1:0] avg_b_dout;
+   avg #(
+      .WIDTH (FIR_OUTPUT_WIDTH ),
+      .SIZE  (FFT_N            ),
+      .LG_N  (AVG_LG_N         )
+   ) avgb (
+      .clk    (clk_i           ),
+      .clken  (clk_2mhz_pos_en ),
+      .en     (fir_dvalid      ),
+      .rst_n  (!fft_en         ),
+      .din    (chan_b_filtered ),
+      .dout   (avg_b_dout      )
+   );
+
    wire                               kaiser_dvalid;
    wire signed [FIR_OUTPUT_WIDTH-1:0] kaiser_a_out;
    window #(
@@ -295,9 +333,9 @@ module top #(
    ) kaiser (
       .clk    (clk_i           ),
       .rst_n  (rst_n           ),
-      .en     (fir_dvalid      ),
+      .en     (avg_dvalid      ),
       .clk_en (clk_2mhz_pos_en ),
-      .di     (chan_a_filtered ),
+      .di     (avg_a_dout      ),
       .dvalid (kaiser_dvalid   ),
       .dout   (kaiser_a_out    )
    );
@@ -310,14 +348,13 @@ module top #(
    ) kaiserb (
       .clk    (clk_i           ),
       .rst_n  (rst_n           ),
-      .en     (fir_dvalid      ),
+      .en     (avg_dvalid      ),
       .clk_en (clk_2mhz_pos_en ),
-      .di     (chan_b_filtered ),
+      .di     (avg_b_dout      ),
       .dout   (kaiser_b_out    )
    );
 
    // TODO add channel b FFT.
-
    wire signed [FIR_OUTPUT_WIDTH-1:0] fft_in;
    wire                               fir_fft_fifo_full;
    /* verilator lint_off PINMISSING */
@@ -568,3 +605,8 @@ module top #(
 `endif
 
 endmodule
+
+`undef GPIO_WIDTH
+`undef USB_DATA_WIDTH
+`undef ADC_DATA_WIDTH
+`undef SD_DATA_WIDTH
