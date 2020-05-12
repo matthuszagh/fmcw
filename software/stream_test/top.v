@@ -144,22 +144,24 @@ module top #(
       end
    endgenerate
 
-
    reg ft_txe_last;
+   reg [`USB_DATA_WIDTH-1:0] non_cdc_ctr_last;
    always @(posedge ft_clkout_i) begin
       if (!rst_n) begin
-         non_cdc_ctr <= `USB_DATA_WIDTH'd0;
-         ft_wr_n_o   <= 1'b1;
-         ft_txe_last <= 1'b0;
+         non_cdc_ctr      <= `USB_DATA_WIDTH'd0;
+         non_cdc_ctr_last <= `USB_DATA_WIDTH'd0;
+         ft_wr_n_o        <= 1'b1;
+         ft_txe_last      <= 1'b0;
       end else begin
          if (!ft_txe_n_i && ft_suspend_n_i) begin
-            ft_wr_n_o   <= 1'b0;
-            fifo_rden   <= 1'b1;
-            non_cdc_ctr <= non_cdc_ctr + 1'b1;
+            ft_wr_n_o        <= 1'b0;
+            fifo_rden        <= 1'b1;
+            non_cdc_ctr      <= non_cdc_ctr + 1'b1;
+            non_cdc_ctr_last <= non_cdc_ctr;
          end else if (ft_txe_n_i && !ft_txe_last) begin
-            non_cdc_ctr <= non_cdc_ctr - 1'b1;
-            ft_wr_n_o <= 1'b1;
-            fifo_rden <= 1'b0;
+            non_cdc_ctr <= non_cdc_ctr_last;
+            ft_wr_n_o   <= 1'b1;
+            fifo_rden   <= 1'b0;
          end else begin
             ft_wr_n_o <= 1'b1;
             fifo_rden <= 1'b0;
