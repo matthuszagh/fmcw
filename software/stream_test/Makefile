@@ -16,5 +16,12 @@ test: prog test.c
 prog: top.bit
 	openocd -f interface.cfg -f program_fpga.cfg
 
-top.bit: top.v async_fifo.v ram.v pinmap.xdc
+top.bit: top.v fifo.v ram.v ff_sync.v bin2gray.v gray_ctr.v pinmap.xdc
 	vivado -nolog -nojournal -mode batch -source vivado.tcl
+
+.PHONY: test_fifo
+test_fifo: tb/fifo_tb.vcd
+	./a.out
+
+tb/fifo_tb.vcd: fifo.v
+	iverilog -DSIMULATE=1 fifo.v

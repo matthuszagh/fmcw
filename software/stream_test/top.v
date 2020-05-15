@@ -100,75 +100,109 @@ module top #(
    wire                            rst_n = pll_lock;
 
    reg [`USB_DATA_WIDTH-1:0]       ctr;
+   reg                             ft_txe_last;
 
-   wire                            fifo_full;
-   wire                            fifo_empty;
-   reg                             fifo_rden;
-   wire [`USB_DATA_WIDTH-1:0]      fifo_rddata;
-   reg                             fifo_wren;
-   async_fifo #(
-      .WIDTH (`USB_DATA_WIDTH ),
-      .SIZE  (1024            )
-   ) fifo (
-      .rst_n  (rst_n       ),
-      .full   (fifo_full   ),
-      .empty  (fifo_empty  ),
-      .rdclk  (ft_clkout_i ),
-      .rden   (fifo_rden   ),
-      .rddata (fifo_rddata ),
-      .wrclk  (clk_80mhz   ),
-      .wren   (fifo_wren   ),
-      .wrdata (ctr         )
-   );
-
-   always @(posedge clk_80mhz) begin
-      if (!rst_n) begin
-         ctr       <= `USB_DATA_WIDTH'd0;
-         fifo_wren <= 1'b0;
-      end else begin
-         if (!fifo_full) begin
-            ctr       <= ctr + 1'b1;
-            fifo_wren <= 1'b1;
-         end else begin
-            fifo_wren <= 1'b0;
-         end
-      end
-   end
-
-   reg [`USB_DATA_WIDTH-1:0] non_cdc_ctr;
    generate
       if (CROSS_DOMAIN == 1) begin
-         assign ft_data_io = ft_oe_n_o ? fifo_rddata : `USB_DATA_WIDTH'dz;
+         wire                            fifo_full;
+         wire                            fifo_empty;
+         reg                             fifo_ren;
+         wire [`USB_DATA_WIDTH-1:0]      fifo_rdata;
+         reg                             fifo_wen;
+
+         assign ext1_io[0] = fifo_full;
+         assign ext1_io[1] = fifo_empty;
+
+         always @(posedge clk_80mhz) begin
+            if (!rst_n) begin
+               ctr <= `USB_DATA_WIDTH'd0;
+               fifo_wen  <= 1'b0;
+            end else begin
+               if (fifo_full) begin
+                  fifo_wen <= 1'b0;
+               end else begin
+                  ctr <= ctr + 1'b1;
+                  fifo_wen <= 1'b1;
+               end
+            end
+         end
+
+         fifo #(
+            .WIDTH (`USB_DATA_WIDTH ),
+            .DEPTH (1024            )
+         ) fifo (
+            .wclk  (clk_80mhz   ),
+            .rst_n (rst_n       ),
+            .wen   (fifo_wen    ),
+            .full  (fifo_full   ),
+            .wdata (ctr         ),
+            .rclk  (ft_clkout_i ),
+            .ren   (fifo_ren    ),
+            .empty (fifo_empty  ),
+            .rdata (fifo_rdata  )
+         );
+
+         assign ft_data_io = ft_oe_n_o ? fifo_rdata : `USB_DATA_WIDTH'dz;
+         always @(posedge ft_clkout_i) begin
+            if (!rst_n) begin
+               ft_wr_n_o   <= 1'b1;
+               ft_txe_last <= 1'b0;
+               fifo_ren    <= 1'b0;
+            end else begin
+               if (!ft_txe_n_i && ft_suspend_n_i) begin
+                  if (!fifo_empty) begin
+                     fifo_ren  <= 1'b1;
+                     ft_wr_n_o <= 1'b0;
+                  end else begin
+                     fifo_ren  <= 1'b0;
+                     ft_wr_n_o <= 1'b1;
+                  end
+               end else if (ft_txe_n_i && !ft_txe_last) begin
+                  ft_wr_n_o <= 1'b1;
+                  fifo_ren  <= 1'b0;
+               end else begin
+                  ft_wr_n_o <= 1'b1;
+                  fifo_ren  <= 1'b0;
+               end
+               ft_txe_last <= ft_txe_n_i;
+            end
+         end
+
       end else begin
+         reg [`USB_DATA_WIDTH-1:0] non_cdc_ctr;
+         reg [`USB_DATA_WIDTH-1:0] non_cdc_ctr_last;
          assign ft_data_io = ft_oe_n_o ? non_cdc_ctr : `USB_DATA_WIDTH'dz;
+
+         always @(posedge clk_80mhz) begin
+            if (!rst_n) begin
+               ctr <= `USB_DATA_WIDTH'd0;
+            end else begin
+               ctr <= ctr + 1'b1;
+            end
+         end
+
+         always @(posedge ft_clkout_i) begin
+            if (!rst_n) begin
+               non_cdc_ctr      <= `USB_DATA_WIDTH'd0;
+               non_cdc_ctr_last <= `USB_DATA_WIDTH'd0;
+               ft_wr_n_o        <= 1'b1;
+               ft_txe_last      <= 1'b0;
+            end else begin
+               if (!ft_txe_n_i && ft_suspend_n_i) begin
+                  ft_wr_n_o        <= 1'b0;
+                  non_cdc_ctr      <= non_cdc_ctr + 1'b1;
+                  non_cdc_ctr_last <= non_cdc_ctr;
+               end else if (ft_txe_n_i && !ft_txe_last) begin
+                  non_cdc_ctr <= non_cdc_ctr_last;
+                  ft_wr_n_o   <= 1'b1;
+               end else begin
+                  ft_wr_n_o <= 1'b1;
+               end
+               ft_txe_last <= ft_txe_n_i;
+            end
+         end
       end
    endgenerate
-
-   reg ft_txe_last;
-   reg [`USB_DATA_WIDTH-1:0] non_cdc_ctr_last;
-   always @(posedge ft_clkout_i) begin
-      if (!rst_n) begin
-         non_cdc_ctr      <= `USB_DATA_WIDTH'd0;
-         non_cdc_ctr_last <= `USB_DATA_WIDTH'd0;
-         ft_wr_n_o        <= 1'b1;
-         ft_txe_last      <= 1'b0;
-      end else begin
-         if (!ft_txe_n_i && ft_suspend_n_i) begin
-            ft_wr_n_o        <= 1'b0;
-            fifo_rden        <= 1'b1;
-            non_cdc_ctr      <= non_cdc_ctr + 1'b1;
-            non_cdc_ctr_last <= non_cdc_ctr;
-         end else if (ft_txe_n_i && !ft_txe_last) begin
-            non_cdc_ctr <= non_cdc_ctr_last;
-            ft_wr_n_o   <= 1'b1;
-            fifo_rden   <= 1'b0;
-         end else begin
-            ft_wr_n_o <= 1'b1;
-            fifo_rden <= 1'b0;
-         end
-         ft_txe_last <= ft_txe_n_i;
-      end
-   end
 
    // leave configured for writes
    assign ft_oe_n_o    = 1'b1;
