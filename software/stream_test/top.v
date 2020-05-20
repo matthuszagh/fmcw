@@ -147,24 +147,10 @@ module top #(
          );
 
          assign ft_data_io = ft_oe_n_o ? fifo_rdata : `USB_DATA_WIDTH'dz;
-         always @(posedge ft_clkout_i) begin
-            if (!rst_n) begin
-               ft_wr_n_o   <= 1'b1;
-               fifo_ren    <= 1'b0;
-            end else begin
-               if (!ft_txe_n_i && ft_suspend_n_i) begin
-                  if (!fifo_almost_empty) begin
-                     fifo_ren  <= 1'b1;
-                     ft_wr_n_o <= 1'b0;
-                  end else begin
-                     fifo_ren  <= 1'b0;
-                     ft_wr_n_o <= 1'b1;
-                  end
-               end else begin
-                  ft_wr_n_o <= 1'b1;
-                  fifo_ren  <= 1'b0;
-               end
-            end
+
+         always @(*) begin
+            ft_wr_n_o = ft_txe_n_i && fifo_ren;
+            fifo_ren = ~ft_txe_n_i && ~fifo_almost_empty;
          end
 
       end else begin
