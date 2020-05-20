@@ -1,6 +1,6 @@
 CC		= clang
 
-CFLAGS	= -O3 -march=native
+CFLAGS		= -O3 -march=native
 STRICT_CFLAGS	= $(CFLAGS) -Wall -Wextra -Wshadow -Wstrict-aliasing -ansi -pedantic -Werror
 FTDI_CFLAGS	:= $(shell libftdi1-config --cflags)
 LINKER_FLAGS	:= $(shell libftdi1-config --libs) -lm -lpthread
@@ -25,3 +25,7 @@ test_fifo: tb/fifo_tb.vcd
 
 tb/fifo_tb.vcd: fifo.v
 	iverilog -DSIMULATE=1 fifo.v
+
+.PHONY: nmigen
+nmigen:
+	./top.py && ./test -t 10 -l log.bin

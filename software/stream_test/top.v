@@ -1,16 +1,17 @@
 `default_nettype none
-
-`include "async_fifo.v"
+`timescale 1ns/1ps
 
 `define GPIO_WIDTH 6
 `define USB_DATA_WIDTH 8
 `define ADC_DATA_WIDTH 12
 `define SD_DATA_WIDTH 4
 
+`include "fifo.v"
+
 module top #(
    // Have the counter cross a clock domain boundary. This tests the
    // transmission quality when the data must pass through a FIFO.
-   parameter CROSS_DOMAIN = 0
+   parameter CROSS_DOMAIN = 1
 ) (
    // =============== clocks, resets, LEDs, connectors ===============
    // 40MHz
@@ -99,30 +100,31 @@ module top #(
    );
    wire                            rst_n = pll_lock;
 
-   reg [`USB_DATA_WIDTH-1:0]       ctr;
-   reg                             ft_txe_last;
-
    generate
       if (CROSS_DOMAIN == 1) begin
+         reg [`USB_DATA_WIDTH-1:0]       ctr;
          wire                            fifo_full;
+         wire                            fifo_almost_full;
          wire                            fifo_empty;
+         wire                            fifo_almost_empty;
          reg                             fifo_ren;
          wire [`USB_DATA_WIDTH-1:0]      fifo_rdata;
          reg                             fifo_wen;
 
          assign ext1_io[0] = fifo_full;
          assign ext1_io[1] = fifo_empty;
+         assign ext1_io[2] = ft_txe_n_i;
 
-         always @(posedge clk_80mhz) begin
+         always @(posedge clk_i) begin
             if (!rst_n) begin
                ctr <= `USB_DATA_WIDTH'd0;
                fifo_wen  <= 1'b0;
             end else begin
-               if (fifo_full) begin
-                  fifo_wen <= 1'b0;
-               end else begin
+               if (!fifo_almost_full) begin
                   ctr <= ctr + 1'b1;
                   fifo_wen <= 1'b1;
+               end else begin
+                  fifo_wen <= 1'b0;
                end
             end
          end
@@ -131,14 +133,16 @@ module top #(
             .WIDTH (`USB_DATA_WIDTH ),
             .DEPTH (1024            )
          ) fifo (
-            .wclk  (clk_80mhz   ),
+            .wclk  (clk_i   ),
             .rst_n (rst_n       ),
             .wen   (fifo_wen    ),
             .full  (fifo_full   ),
+            .almost_full (fifo_almost_full),
             .wdata (ctr         ),
             .rclk  (ft_clkout_i ),
             .ren   (fifo_ren    ),
             .empty (fifo_empty  ),
+            .almost_empty (fifo_almost_empty),
             .rdata (fifo_rdata  )
          );
 
@@ -146,40 +150,28 @@ module top #(
          always @(posedge ft_clkout_i) begin
             if (!rst_n) begin
                ft_wr_n_o   <= 1'b1;
-               ft_txe_last <= 1'b0;
                fifo_ren    <= 1'b0;
             end else begin
                if (!ft_txe_n_i && ft_suspend_n_i) begin
-                  if (!fifo_empty) begin
+                  if (!fifo_almost_empty) begin
                      fifo_ren  <= 1'b1;
                      ft_wr_n_o <= 1'b0;
                   end else begin
                      fifo_ren  <= 1'b0;
                      ft_wr_n_o <= 1'b1;
                   end
-               end else if (ft_txe_n_i && !ft_txe_last) begin
-                  ft_wr_n_o <= 1'b1;
-                  fifo_ren  <= 1'b0;
                end else begin
                   ft_wr_n_o <= 1'b1;
                   fifo_ren  <= 1'b0;
                end
-               ft_txe_last <= ft_txe_n_i;
             end
          end
 
       end else begin
+         reg                       ft_txe_last;
          reg [`USB_DATA_WIDTH-1:0] non_cdc_ctr;
          reg [`USB_DATA_WIDTH-1:0] non_cdc_ctr_last;
          assign ft_data_io = ft_oe_n_o ? non_cdc_ctr : `USB_DATA_WIDTH'dz;
-
-         always @(posedge clk_80mhz) begin
-            if (!rst_n) begin
-               ctr <= `USB_DATA_WIDTH'd0;
-            end else begin
-               ctr <= ctr + 1'b1;
-            end
-         end
 
          always @(posedge ft_clkout_i) begin
             if (!rst_n) begin

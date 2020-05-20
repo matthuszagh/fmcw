@@ -21,13 +21,13 @@ module fifo #(
    input wire              rst_n,
    input wire              wen,
    output reg              full,
-   // output wire             next_full,
+   output wire             almost_full,
    input wire [WIDTH-1:0]  wdata,
    // read clock domain
    input wire              rclk,
    input wire              ren,
    output reg              empty,
-   // output wire             next_empty,
+   output wire             almost_empty,
    output wire [WIDTH-1:0] rdata
 );
 
@@ -100,6 +100,8 @@ module fifo #(
       .q        (wgray_rdomain )
    );
    assign empty_next = (rgray_next == wgray_rdomain);
+   // TODO this should be registered
+   assign almost_empty = empty_next;
    always @(posedge rclk) begin
       if (!rrst_n) begin
          empty <= 1'b1;
@@ -118,6 +120,7 @@ module fifo #(
       .q        (rgray_wdomain )
    );
    assign full_next = (wgray_next == {~rgray_wdomain[ADDR_WIDTH:ADDR_WIDTH-1], rgray_wdomain[ADDR_WIDTH-2:0]});
+   assign almost_full = full_next;
    always @(posedge wclk) begin
       if (!wrst_n) begin
          full <= 1'b1;
