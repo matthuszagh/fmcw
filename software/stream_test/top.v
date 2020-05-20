@@ -115,7 +115,7 @@ module top #(
          assign ext1_io[1] = fifo_empty;
          assign ext1_io[2] = ft_txe_n_i;
 
-         always @(posedge clk_i) begin
+         always @(posedge clk_80mhz) begin
             if (!rst_n) begin
                ctr <= `USB_DATA_WIDTH'd0;
                fifo_wen  <= 1'b0;
@@ -133,17 +133,17 @@ module top #(
             .WIDTH (`USB_DATA_WIDTH ),
             .DEPTH (1024            )
          ) fifo (
-            .wclk  (clk_i   ),
-            .rst_n (rst_n       ),
-            .wen   (fifo_wen    ),
-            .full  (fifo_full   ),
-            .almost_full (fifo_almost_full),
-            .wdata (ctr         ),
-            .rclk  (ft_clkout_i ),
-            .ren   (fifo_ren    ),
-            .empty (fifo_empty  ),
-            .almost_empty (fifo_almost_empty),
-            .rdata (fifo_rdata  )
+            .wclk         (clk_80mhz         ),
+            .rst_n        (rst_n             ),
+            .wen          (fifo_wen          ),
+            .full         (fifo_full         ),
+            .almost_full  (fifo_almost_full  ),
+            .wdata        (ctr               ),
+            .rclk         (ft_clkout_i       ),
+            .ren          (fifo_ren          ),
+            .empty        (fifo_empty        ),
+            .almost_empty (fifo_almost_empty ),
+            .rdata        (fifo_rdata        )
          );
 
          assign ft_data_io = ft_oe_n_o ? fifo_rdata : `USB_DATA_WIDTH'dz;
