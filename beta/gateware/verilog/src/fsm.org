@@ -1,0 +1,5 @@
+clk40
+
+1. lock
+2. sample_ctr
+3. lsb
