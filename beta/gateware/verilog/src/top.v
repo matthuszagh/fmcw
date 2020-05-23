@@ -147,10 +147,15 @@ module top (
 
    localparam [$clog2(`RAW_SAMPLES)-1:0] RAW_SAMPLES_MAX = `RAW_SAMPLES-1;
    reg [$clog2(`RAW_SAMPLES)-1:0] raw_sample_ctr = `RAW_SAMPLES'd0;
+   // TODO why is ``delay`` necessary? The simulation disagrees...
+   reg                            delay = 1'b0;
    always @(posedge clk80) begin
       if (lock == PROD_STATE) begin
-         if (raw_sample_ctr == RAW_SAMPLES_MAX & lsb) begin
-            lock           <= CONS_STATE;
+         if (delay) begin
+            lock  <= CONS_STATE;
+            delay <= 1'b0;
+         end else if (raw_sample_ctr == RAW_SAMPLES_MAX & lsb) begin
+            delay          <= 1'b1;
             raw_sample_ctr <= `RAW_SAMPLES'd0;
             lsb            <= 1'b0;
          end else begin
@@ -163,6 +168,7 @@ module top (
             lock           <= PROD_STATE;
             raw_sample_ctr <= `RAW_SAMPLES'd0;
             lsb            <= 1'b0;
+            delay          <= 1'b0;
          end
       end
    end
@@ -217,12 +223,12 @@ module top (
          if (fifo_empty) begin
             cons_done <= 1'b1;
          end
-      end else if (cons_done && !ft_txe_n_i) begin
+      end else if (cons_done & ~ft_txe_n_i) begin
          wait_sync <= 1'b1;
          cons_done <= 1'b0;
       end else if (lock_ftclk_domain == PROD_STATE) begin
-         cons_done <= 1'b0;
          wait_sync <= 1'b0;
+         cons_done <= 1'b0;
       end
    end
 
@@ -251,8 +257,8 @@ module top (
               fifo_ren   = 1'b0;
            end else begin
               ft_wr_data = fifo_rdata;
-              ft_wr_n_o  = ~(~ft_txe_n_i && fifo_ren);
-              fifo_ren   = ~ft_txe_n_i && ~fifo_empty;
+              ft_wr_n_o  = ~(~ft_txe_n_i & fifo_ren);
+              fifo_ren   = ~ft_txe_n_i & ~fifo_empty;
            end
         end
       endcase
