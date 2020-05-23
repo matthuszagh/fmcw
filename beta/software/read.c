@@ -10,13 +10,12 @@
 #define PACKETS_PER_TRANSFER 8
 #define TRANSFERS_PER_CALLBACK 256
 #define CHUNKSIZE 16384
-/* Capture data for 60s unless user provides a value. */
+/* Capture data for 10s unless user provides a value. */
 #define CAPTURE_DEFAULT 10
 #define START 0x5a
 #define STOP 0xa5
+#define DISABLE_LOGGING 0
 
-static u_long rx_bytes;
-static u_long err_bytes;
 static uint8_t last;
 /* Amount of time to test capture (in s). */
 static double capture_time;
@@ -24,6 +23,7 @@ static struct timespec tp_start;
 static struct timespec tp_stop;
 static int capture_done;
 static int count;
+static int total_count;
 
 /* Elapsed time in seconds. */
 static double elapsed_time()
@@ -43,13 +43,16 @@ static int callback(uint8_t *buffer, int length, FTDIProgressInfo *progress, voi
 
 	for (int i = 0; i < length; ++i) {
 		if (buffer[i] == STOP) {
+#if !DISABLE_LOGGING
 			printf("sequence length: %d / 40960\n", count);
+#endif
 		} else if (buffer[i] == START) {
 			count = 0;
 		} else {
 			++count;
 		}
 	}
+	total_count += length;
 
 	if (logfile != NULL) {
 		int ret = fwrite(buffer, 1, length, logfile);
@@ -71,11 +74,9 @@ static void print_statistics()
 {
 	double t_elapse;
 
-	printf("%u bytes dropped out of %u total bytes received (%.2f%%).\n", err_bytes, rx_bytes,
-	       100 * (double)err_bytes / (double)rx_bytes);
 	t_elapse = elapsed_time();
 	printf("Elapsed time: %fs\n", t_elapse);
-	printf("Achieved throughput: %.4eB/s\n", (double)rx_bytes / t_elapse);
+	printf("Achieved throughput: %.4eB/s\n", (double)total_count / t_elapse);
 }
 
 int main(int argc, char **argv)

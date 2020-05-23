@@ -8,7 +8,7 @@
 `define FFT_N 1024
 `define DECIMATE 20
 `define RAW_SAMPLES `DECIMATE * `FFT_N
-`define FIFO_DEPTH `RAW_SAMPLES * 2
+`define FIFO_DEPTH 65536
 `define START_FLAG 8'b0101_1010  // 8'h5A
 `define STOP_FLAG 8'b1010_0101   // 8'hA5
 
@@ -77,8 +77,10 @@ module top (
 
    assign pa_en_n_o = 1'b1;
    assign mix_enbl_n_o = 1'b1;
-   assign adc_oe_o = 2'b10;
-   assign adc_shdn_o = 2'b00;
+   // assign adc_oe_o = 2'b10;
+   // assign adc_shdn_o = 2'b00;
+   assign adc_oe_o = 2'b11;
+   assign adc_shdn_o = 2'b11;
 
 `ifndef TOP_SIMULATE
    wire                            clk80;
@@ -99,7 +101,7 @@ module top (
    );
 `endif
 
-   reg                             lsb = 1'b1;
+   reg                             lsb = 1'b0;
    wire [`ADC_DATA_WIDTH-1:0]      adc_chan_a;
    wire [`ADC_DATA_WIDTH-1:0]      adc_chan_a_msb;
    wire [`ADC_DATA_WIDTH-1:0]      adc_chan_a_lsb;
@@ -118,10 +120,10 @@ module top (
    wire [`USB_DATA_WIDTH-1:0]      adc_data = lsb ? adc_chan_a_lsb : adc_chan_a_msb;
 
    //
-   localparam [1:0] PROD_STATE = 2'b01;
-   localparam [1:0] CONS_STATE = 2'b10;
-   reg [1:0]                       lock = PROD_STATE;
-   wire [1:0]                      lock_ftclk_domain;
+   localparam [0:0] PROD_STATE = 2'b0;
+   localparam [0:0] CONS_STATE = 2'b1;
+   reg                             lock = PROD_STATE;
+   wire                            lock_ftclk_domain;
    reg                             cons_done = 1'b0;
    wire                            cons_done_clk80_domain;
 
@@ -135,7 +137,7 @@ module top (
    );
 
    ff_sync #(
-      .WIDTH  (2),
+      .WIDTH  (1),
       .STAGES (2)
    ) lock_ftclk_sync (
       .dest_clk (ft_clkout_i       ),
@@ -147,7 +149,7 @@ module top (
    reg [$clog2(`RAW_SAMPLES)-1:0] raw_sample_ctr = `RAW_SAMPLES'd0;
    always @(posedge clk80) begin
       if (lock == PROD_STATE) begin
-         if (raw_sample_ctr == RAW_SAMPLES_MAX) begin
+         if (raw_sample_ctr == RAW_SAMPLES_MAX & lsb) begin
             lock           <= CONS_STATE;
             raw_sample_ctr <= `RAW_SAMPLES'd0;
             lsb            <= 1'b0;
@@ -205,47 +207,23 @@ module top (
    reg                             lock_ftclk_domain_last = PROD_STATE;
    reg                             send_start = 1'b0;
    reg                             send_stop  = 1'b0;
-   reg                             wait_prod  = 1'b0;
+   reg                             wait_sync = 1'b0;
    always @(posedge ft_clkout_i) begin
-      lock_ftclk_domain_last <= lock_ftclk_domain;
-      if (lock_ftclk_domain == CONS_STATE && !wait_prod) begin
-         if (fifo_almost_empty) begin
-         // if (fifo_empty) begin
-            cons_done <= 1'b1;
-            wait_prod <= 1'b1;
-         end else begin
-            cons_done <= 1'b0;
-         end
-      end else if (lock_ftclk_domain == CONS_STATE && wait_prod) begin
-         cons_done  <= 1'b1;
-      end else begin
-         cons_done  <= 1'b0;
-         wait_prod  <= 1'b0;
+      if (!ft_txe_n_i) begin
+         lock_ftclk_domain_last <= lock_ftclk_domain;
       end
-   end
 
-   always @(*) begin
-      case (lock_ftclk_domain)
-      PROD_STATE:
-        begin
-           send_start = 1'b0;
-           send_stop  = 1'b0;
-        end
-      CONS_STATE:
-        begin
-           if (lock_ftclk_domain_last == PROD_STATE) begin
-              send_start = 1'b1;
-           end else begin
-              send_start = 1'b0;
-           end
-
-           if (fifo_empty) begin
-              send_stop = 1'b1;
-           end else begin
-              send_stop = 1'b0;
-           end
-        end
-      endcase
+      if (lock_ftclk_domain == CONS_STATE & ~cons_done & ~wait_sync) begin
+         if (fifo_empty) begin
+            cons_done <= 1'b1;
+         end
+      end else if (cons_done && !ft_txe_n_i) begin
+         wait_sync <= 1'b1;
+         cons_done <= 1'b0;
+      end else if (lock_ftclk_domain == PROD_STATE) begin
+         cons_done <= 1'b0;
+         wait_sync <= 1'b0;
+      end
    end
 
    reg [`USB_DATA_WIDTH-1:0] ft_wr_data;
@@ -259,25 +237,22 @@ module top (
         end
       CONS_STATE:
         begin
-           if (send_start) begin
+           if (lock_ftclk_domain_last == PROD_STATE) begin
               ft_wr_data = `START_FLAG;
               ft_wr_n_o  = ft_txe_n_i;
               fifo_ren   = 1'b1;
-           end else if (send_stop) begin
+           end else if (cons_done) begin
               ft_wr_data = `STOP_FLAG;
               ft_wr_n_o  = ft_txe_n_i;
               fifo_ren   = 1'b0;
+           end else if (wait_sync) begin
+              ft_wr_data = `USB_DATA_WIDTH'd0;
+              ft_wr_n_o  = 1'b1;
+              fifo_ren   = 1'b0;
            end else begin
-              if (wait_prod) begin
-                 ft_wr_data = `USB_DATA_WIDTH'd0;
-                 ft_wr_n_o  = 1'b1;
-                 fifo_ren   = 1'b0;
-              end else begin
-                 ft_wr_data = fifo_rdata;
-                 ft_wr_n_o  = ~(~ft_txe_n_i && fifo_ren);
-                 fifo_ren   = ~ft_txe_n_i && ~fifo_almost_empty;
-                 // fifo_ren   = ~ft_txe_n_i && ~fifo_empty;
-              end
+              ft_wr_data = fifo_rdata;
+              ft_wr_n_o  = ~(~ft_txe_n_i && fifo_ren);
+              fifo_ren   = ~ft_txe_n_i && ~fifo_empty;
            end
         end
       endcase
@@ -293,9 +268,7 @@ module top (
    assign ext1_io[0] = 1'b0;
    assign ext1_io[3] = lock;
    assign ext1_io[1] = 1'b0;
-   assign ext1_io[4] = wait_prod;
-   assign ext1_io[2] = 1'b0;
-   assign ext1_io[5] = fifo_almost_empty;
+   assign ext1_io[4] = fifo_almost_empty;
 
 endmodule
 

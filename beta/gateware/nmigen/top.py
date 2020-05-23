@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import argparse
 import os
 from enum import Enum, unique
 from nmigen.vendor.xilinx_7series import Xilinx7SeriesPlatform
@@ -16,6 +17,7 @@ from nmigen import (
 )
 from nmigen.lib.fifo import AsyncFIFO
 from nmigen.lib.cdc import FFSynchronizer
+from nmigen.back.pysim import Simulator
 from ltc2292 import LTC2292
 
 
@@ -158,12 +160,12 @@ class Raw(Elaboratable):
         # signals
         clk80 = Signal()
         pll_fb = Signal()
-        chan_a = Signal(ADC_WIDTH)
-        chan_b = Signal(ADC_WIDTH)
+        chan_a = Signal(self.ADC_WIDTH)
+        chan_b = Signal(self.ADC_WIDTH)
         lsb = Signal()
         lock = Signal(RAW_STATE)
-        sample_ctr = Signal(range(DECIMATE * FFT_LEN))
-        sample_ctr_max = Const(DECIMATE * FFT_LEN - 1)
+        sample_ctr = Signal(range(self.DECIMATE * self.FFT_LEN))
+        sample_ctr_max = Const(self.DECIMATE * self.FFT_LEN - 1)
         cons_done = Signal()
         cons_done_clk80_dom = Signal()
         send_start = Signal()
@@ -209,16 +211,19 @@ class Raw(Elaboratable):
 
         # FIFO
         m.submodules.fifo = fifo = AsyncFIFO(
-            width=USB_WIDTH,
-            depth=DECIMATE * FFT_LEN * 2,
+            width=self.USB_WIDTH,
+            depth=self.DECIMATE * self.FFT_LEN * 2,
             r_domain="clk60",
             w_domain="clk80",
         )
         with m.If(lsb):
-            m.d.comb += fifo.w_data.eq(chan_a[:USB_WIDTH])
+            m.d.comb += fifo.w_data.eq(chan_a[: self.USB_WIDTH])
         with m.Else():
             m.d.comb += fifo.w_data.eq(
-                Cat(chan_a[USB_WIDTH:], Const(0, 2 * USB_WIDTH - ADC_WIDTH))
+                Cat(
+                    chan_a[self.USB_WIDTH :],
+                    Const(0, 2 * self.USB_WIDTH - self.ADC_WIDTH),
+                )
             )
 
         # consumption done sync
@@ -235,8 +240,14 @@ class Raw(Elaboratable):
         m.d.comb += [
             pa_en_n_o.o.eq(1),
             mix_en_n_o.o.eq(1),
-            adc_oe_o.o.eq(0b10),
+            adc_oe_o.o.eq(0b01),
             adc_shdn_o.o.eq(0b00),
+            ext1.o[0].eq(0b0),
+            ext1.o[3].eq(lock),
+            ext1.o[1].eq(0b0),
+            ext1.o[4].eq(fifo.r_en),
+            ext1.o[2].eq(0b0),
+            ext1.o[5].eq(fifo.w_en),
         ]
 
         # write clock domain
@@ -269,13 +280,11 @@ class Raw(Elaboratable):
         m.d.clk60 += lock_ftclk_dom_last.eq(lock_ftclk_dom)
         with m.If(lock_ftclk_dom == RAW_STATE.CONS & ~wait_prod):
             with m.If(~fifo.r_rdy):
-                m.d.clk60 += [cons_done.eq(1), wait_prod.eq(1)]
-            with m.Else():
-                m.d.clk60 += cons_done.eq(0)
+                m.d.clk60 += wait_prod.eq(1)
         with m.Elif(lock_ftclk_dom == RAW_STATE.CONS):
-            m.d.clk60 += cons_done.eq(1)
+            m.d.clk60 += wait_prod.eq(1)
         with m.Else():
-            m.d.clk60 += [cons_done.eq(0), wait_prod.eq(0)]
+            m.d.clk60 += wait_prod.eq(0)
 
         m.d.comb += [
             ft_oe_n_o.o.eq(1),
@@ -298,19 +307,19 @@ class Raw(Elaboratable):
                     m.d.comb += send_start.eq(0)
 
                 with m.If(~fifo.r_rdy):
-                    m.d.comb += send_stop.eq(1)
+                    m.d.comb += [send_stop.eq(1), cons_done.eq(1)]
                 with m.Else():
-                    m.d.comb += send_stop.eq(0)
+                    m.d.comb += [send_stop.eq(0), cons_done.eq(0)]
 
                 with m.If(send_start):
                     m.d.comb += [
-                        ft_data_io.o.eq(START_FLAG),
+                        ft_data_io.o.eq(self.START_FLAG),
                         ft_wr_n_o.o.eq(ft_txe_n_i.i),
                         fifo.r_en.eq(1),
                     ]
                 with m.Elif(send_stop):
                     m.d.comb += [
-                        ft_data_io.o.eq(STOP_FLAG),
+                        ft_data_io.o.eq(self.STOP_FLAG),
                         ft_wr_n_o.o.eq(ft_txe_n_i.i),
                         fifo.r_en.eq(0),
                     ]
@@ -332,8 +341,26 @@ class Raw(Elaboratable):
 
 
 if __name__ == "__main__":
-    os.environ[
-        "NMIGEN_add_constraints"
-    ] = "set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets pin_ft_clkout_i_0/clk60_clk]"
-    platform = FMCWRadar()
-    platform.build(Raw(), do_program=True)
+    raw = Raw()
+
+    parser = argparse.ArgumentParser()
+    p_action = parser.add_subparsers(dest="action")
+    p_action.add_parser("simulate")
+    p_action.add_parser("generate")
+    p_action.add_parser("build")
+
+    args = parser.parse_args()
+    if args.action == "simulate":
+        sim = Simulator(raw)
+        sim.add_clock(25e-9, domain="sync")
+        sim.add_clock(25e-9, domain="clk40_neg")
+        sim.add_clock(16.67e-9, domain="clk60")
+        with sim.write_vcd("raw.vcd", "raw.gtkw"):
+            sim.run()
+
+    if args.action == "build":
+        os.environ[
+            "NMIGEN_add_constraints"
+        ] = "set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets pin_ft_clkout_i_0/clk60_clk]"
+        platform = FMCWRadar()
+        platform.build(raw, do_program=True)
