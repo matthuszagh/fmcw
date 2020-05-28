@@ -247,13 +247,14 @@ module top (
    );
 
    // ==================== FT clock state machine ====================
-   localparam FTCLK_NUM_STATES = 6;
+   localparam FTCLK_NUM_STATES = 7;
    localparam FTCLK_IDLE  = 0,
               FTCLK_START = 1,
               FTCLK_CONS  = 2,
-              FTCLK_LAST  = 3,
-              FTCLK_STOP  = 4,
-              FTCLK_WAIT  = 5;
+              FTCLK_TXE   = 3,
+              FTCLK_LAST  = 4,
+              FTCLK_STOP  = 5,
+              FTCLK_WAIT  = 6;
    reg [FTCLK_NUM_STATES-1:0] ftclk_state = FTCLK_IDLE,
                               ftclk_next = FTCLK_IDLE;
 
@@ -269,7 +270,10 @@ module top (
       ftclk_state[FTCLK_START] : if (~ft_txe_n_i)                      ftclk_next[FTCLK_CONS]  = 1'b1;
                                  else                                  ftclk_next[FTCLK_START] = 1'b1;
       ftclk_state[FTCLK_CONS]  : if (fifo_empty)                       ftclk_next[FTCLK_LAST]  = 1'b1;
+                                 else if (ft_txe_n_i)                  ftclk_next[FTCLK_TXE]   = 1'b1;
                                  else                                  ftclk_next[FTCLK_CONS]  = 1'b1;
+      ftclk_state[FTCLK_TXE]   : if (~ft_txe_n_i)                      ftclk_next[FTCLK_CONS]  = 1'b1;
+                                 else                                  ftclk_next[FTCLK_TXE]   = 1'b1;
       ftclk_state[FTCLK_LAST]  : if (~ft_txe_n_i)                      ftclk_next[FTCLK_STOP]  = 1'b1;
                                  else                                  ftclk_next[FTCLK_LAST]  = 1'b1;
       ftclk_state[FTCLK_STOP]  : if (~ft_txe_n_i)                      ftclk_next[FTCLK_WAIT]  = 1'b1;
@@ -280,11 +284,14 @@ module top (
       endcase
    end
 
-   reg [`USB_DATA_WIDTH-1:0] ft_wr_data = `USB_DATA_WIDTH'd0;
+   reg [`USB_DATA_WIDTH-1:0] ft_wr_data      = `USB_DATA_WIDTH'd0;
+   reg [`USB_DATA_WIDTH-1:0] fifo_rdata_last = `USB_DATA_WIDTH'd0;
+   reg                       ft_txe_last = 1'b0;
    always @(posedge ft_clkout_i) begin
       ft_wr_data <= `USB_DATA_WIDTH'd0;
-      ft_wr_n_o  <= 1'b1;
-      cons_done  <= 1'b0;
+      ft_wr_n_o       <= 1'b1;
+      cons_done       <= 1'b0;
+      ft_txe_last     <= ft_txe_n_i;
 
       case (1'b1)
       ftclk_next[FTCLK_START]:
@@ -292,10 +299,16 @@ module top (
            ft_wr_data <= `START_FLAG;
            ft_wr_n_o  <= 1'b0;
         end
-      ftclk_next[FTCLK_CONS] | ftclk_next[FTCLK_LAST]:
+      ftclk_next[FTCLK_CONS] & ftclk_state[FTCLK_TXE]:
+        begin
+           ft_wr_data <= fifo_rdata_last;
+           ft_wr_n_o  <= 1'b0;
+        end
+      (ftclk_next[FTCLK_CONS] | ftclk_next[FTCLK_LAST]) & ~ftclk_state[FTCLK_TXE]:
         begin
            ft_wr_data <= fifo_rdata;
            ft_wr_n_o  <= 1'b0;
+           fifo_rdata_last <= fifo_rdata;
         end
       ftclk_next[FTCLK_STOP]:
         begin
@@ -315,7 +328,7 @@ module top (
       fifo_ren = 1'b0;
       case (1'b1)
       ftclk_next[FTCLK_START]: fifo_ren = 1'b1;
-      ftclk_next[FTCLK_CONS] : fifo_ren = ~ft_txe_n_i;
+      ftclk_next[FTCLK_CONS] : fifo_ren = ~ft_txe_last;
       ftclk_next[FTCLK_STOP] : fifo_ren = 1'b0;
       endcase
    end
@@ -383,6 +396,27 @@ module top_tb;
       #10000000 $finish;
    end
 
+   reg ft_txe_n = 1'b0;
+   integer ft_txe_on_ctr = 0;
+   integer ft_txe_off_ctr = 0;
+   always @(posedge clk60) begin
+      if (ft_txe_n == 1'b0) begin
+         ft_txe_off_ctr    <= 0;
+         if (ft_txe_on_ctr == 500) begin
+            ft_txe_n <= 1'b1;
+         end else begin
+            ft_txe_on_ctr <= ft_txe_on_ctr + 1;
+         end
+      end else begin
+         ft_txe_on_ctr      <= 0;
+         if (ft_txe_off_ctr == 5) begin
+            ft_txe_n <= 1'b0;
+         end else begin
+            ft_txe_off_ctr <= ft_txe_off_ctr + 1;
+         end
+      end
+   end
+
    always #12.5 clk40 = ~clk40;
    always #8.33 clk60 = ~clk60;
 
@@ -393,7 +427,7 @@ module top_tb;
       .clk_i          (clk40                   ),
       .ft_data_io     (ft_data_io              ),
       .ft_rxf_n_i     (1'b1                    ),
-      .ft_txe_n_i     (1'b0                    ),
+      .ft_txe_n_i     (ft_txe_n                ),
       .ft_clkout_i    (clk60                   ),
       .ft_suspend_n_i (1'b1                    ),
       // send the least significant counter nibble with the full
@@ -403,6 +437,14 @@ module top_tb;
       .adc_of_i       (2'd0                    ),
       .adf_muxout_i   (muxout                  )
    );
+
+   reg [`USB_DATA_WIDTH-1:0]  data_rx;
+   always @(posedge clk60) begin
+      if (~ft_txe_n & ~dut.ft_wr_n_o)
+        data_rx <= ft_data_io;
+      else
+        data_rx <= `USB_DATA_WIDTH'dx;
+   end
 
 endmodule
 

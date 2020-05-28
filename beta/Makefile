@@ -9,7 +9,7 @@ SOFTWARE_DIR	= software
 .PHONY: run
 run: pc prog
 ifeq ($(LOG), 1)
-	./$(SOFTWARE_DIR)/read -t1 -l log.bin
+	./$(SOFTWARE_DIR)/read -t2 -l log.bin
 else
 	./$(SOFTWARE_DIR)/read -t60
 endif
