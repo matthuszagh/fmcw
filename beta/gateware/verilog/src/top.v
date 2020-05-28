@@ -11,7 +11,6 @@
 `define FIFO_DEPTH 65536
 `define START_FLAG 8'b0101_1010  // 8'h5A
 `define STOP_FLAG 8'b1010_0101   // 8'hA5
-`define LSB_INIT 1'b0
 
 `include "fifo.v"
 `include "ltc2292.v"
@@ -123,7 +122,7 @@ module top (
       .data        (adf_data_o      )
    );
 
-   reg                             lsb = `LSB_INIT;
+   reg                             lsb = 1'b1;
    wire [`ADC_DATA_WIDTH-1:0]      adc_chan_a;
    wire [`USB_DATA_WIDTH-1:0]      adc_chan_a_msb;
    wire [`USB_DATA_WIDTH-1:0]      adc_chan_a_lsb;
@@ -139,7 +138,7 @@ module top (
    assign adc_chan_a_msb = {4'd0, adc_chan_a[`ADC_DATA_WIDTH-1:8]};
    assign adc_chan_a_lsb = adc_chan_a[7:0];
 
-   // wire [`USB_DATA_WIDTH-1:0]      adc_data = lsb ? adc_chan_a_lsb : adc_chan_a_msb;
+   wire [`USB_DATA_WIDTH-1:0]      adc_data = lsb ? adc_chan_a_lsb : adc_chan_a_msb;
 
    localparam NUM_STATES = 4;
    localparam CONFIG     = 0,
@@ -188,13 +187,13 @@ module top (
         end
       state[IDLE]:
         begin
-           if (adf_ramp_start) next[PROD] = 1'b1;
-           else                next[IDLE] = 1'b1;
+           if (adf_ramp_start & lsb) next[PROD] = 1'b1;
+           else                      next[IDLE] = 1'b1;
         end
       state[PROD]:
         begin
-           if (raw_sample_ctr == RAW_SAMPLES_MAX & lsb != `LSB_INIT) next[CONS] = 1'b1;
-           else                                                      next[PROD] = 1'b1;
+           if (raw_sample_ctr == RAW_SAMPLES_MAX & lsb) next[CONS] = 1'b1;
+           else                                         next[PROD] = 1'b1;
         end
       state[CONS]:
         begin
@@ -205,32 +204,20 @@ module top (
       endcase
    end
 
-   reg [`USB_DATA_WIDTH-1:0]      adc_data = `USB_DATA_WIDTH'd0;
    always @(posedge clk80) begin
       raw_sample_ctr <= `RAW_SAMPLES'd0;
-      lsb            <= `LSB_INIT;
+      lsb            <= ~lsb;
       case (1'b1)
       state[PROD]:
         begin
-           lsb <= ~lsb;
-           if (lsb != `LSB_INIT) raw_sample_ctr <= raw_sample_ctr + 1'b1;
-           else                  raw_sample_ctr <= raw_sample_ctr;
+           if (lsb) raw_sample_ctr <= raw_sample_ctr + 1'b1;
+           else     raw_sample_ctr <= raw_sample_ctr;
         end
       endcase
 
-      if (next[PROD] & ~state[PROD]) begin
-         adc_data <= adc_chan_a_msb;
-      end else if (state[PROD]) begin
-         if (~lsb) adc_data <= adc_chan_a_lsb;
-         else      adc_data <= adc_chan_a_msb;
-      end
-
       fifo_wen <= 1'b0;
       case (1'b1)
-      next[PROD]:
-        begin
-           fifo_wen <= 1'b1;
-        end
+      next[PROD]: fifo_wen <= 1'b1;
       endcase
    end
    // ================================================================
@@ -325,15 +312,11 @@ module top (
    end
 
    always @(*) begin
-      fifo_ren   = 1'b0;
+      fifo_ren = 1'b0;
       case (1'b1)
       ftclk_next[FTCLK_START]: fifo_ren = 1'b1;
       ftclk_next[FTCLK_CONS] : fifo_ren = ~ft_txe_n_i;
       ftclk_next[FTCLK_STOP] : fifo_ren = 1'b0;
-
-      // ftclk_state[FTCLK_START]: fifo_ren = 1'b1;
-      // ftclk_state[FTCLK_CONS] : fifo_ren = ~ft_txe_n_i;
-      // ftclk_state[FTCLK_STOP] : fifo_ren = 1'b0;
       endcase
    end
    // ================================================================
