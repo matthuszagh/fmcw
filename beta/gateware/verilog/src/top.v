@@ -11,14 +11,17 @@
 `define FIFO_DEPTH 65536
 `define START_FLAG 8'b0101_1010  // 8'h5A
 `define STOP_FLAG 8'b1010_0101   // 8'hA5
+`define LSB_INIT 1'b0
 
 `include "fifo.v"
 `include "ltc2292.v"
 `include "ff_sync.v"
+`include "adf4158.v"
 
 module top (
 `ifdef TOP_SIMULATE
    input wire clk80,
+   input wire clk20,
 `endif
    // =============== clocks, resets, LEDs, connectors ===============
    // 40MHz
@@ -75,24 +78,25 @@ module top (
    // input wire                             adf_done_i,
 );
 
-   assign pa_en_n_o = 1'b1;
+   assign pa_en_n_o    = 1'b0;
    assign mix_enbl_n_o = 1'b1;
-   // assign adc_oe_o = 2'b10;
-   // assign adc_shdn_o = 2'b00;
-   assign adc_oe_o = 2'b11;
-   assign adc_shdn_o = 2'b11;
+   assign adc_oe_o     = 2'b10;
+   assign adc_shdn_o   = 2'b00;
 
 `ifndef TOP_SIMULATE
    wire                            clk80;
+   wire                            clk20;
    wire                            pll_lock;
    wire                            pll_fb;
    PLLE2_BASE #(
       .CLKFBOUT_MULT  (24 ),
       .DIVCLK_DIVIDE  (1  ),
       .CLKOUT0_DIVIDE (12 ),
+      .CLKOUT1_DIVIDE (48 ),
       .CLKIN1_PERIOD  (25 )
    ) main_pll (
       .CLKOUT0  (clk80      ),
+      .CLKOUT1  (clk20      ),
       .LOCKED   (pll_lock   ),
       .CLKIN1   (clk_i      ),
       .RST      (1'b0       ),
@@ -101,10 +105,28 @@ module top (
    );
 `endif
 
-   reg                             lsb = 1'b0;
+   wire                            adf_config_done;
+   wire                            adf_ramp_start;
+   wire                            adf_ramp_on;
+   adf4158 adf4158 (
+      .clk         (clk_i           ),
+      .clk_20mhz   (clk20           ),
+      .rst_n       (1'b1            ),
+      .enable      (1'b1            ),
+      .config_done (adf_config_done ),
+      .le          (adf_le_o        ),
+      .ce          (adf_ce_o        ),
+      .muxout      (adf_muxout_i    ),
+      .ramp_start  (adf_ramp_start  ),
+      .ramp_on     (adf_ramp_on     ),
+      .txdata      (adf_txdata_o    ),
+      .data        (adf_data_o      )
+   );
+
+   reg                             lsb = `LSB_INIT;
    wire [`ADC_DATA_WIDTH-1:0]      adc_chan_a;
-   wire [`ADC_DATA_WIDTH-1:0]      adc_chan_a_msb;
-   wire [`ADC_DATA_WIDTH-1:0]      adc_chan_a_lsb;
+   wire [`USB_DATA_WIDTH-1:0]      adc_chan_a_msb;
+   wire [`USB_DATA_WIDTH-1:0]      adc_chan_a_lsb;
    wire [`ADC_DATA_WIDTH-1:0]      adc_chan_b;
 
    ltc2292 ltc2292 (
@@ -117,13 +139,16 @@ module top (
    assign adc_chan_a_msb = {4'd0, adc_chan_a[`ADC_DATA_WIDTH-1:8]};
    assign adc_chan_a_lsb = adc_chan_a[7:0];
 
-   wire [`USB_DATA_WIDTH-1:0]      adc_data = lsb ? adc_chan_a_lsb : adc_chan_a_msb;
+   // wire [`USB_DATA_WIDTH-1:0]      adc_data = lsb ? adc_chan_a_lsb : adc_chan_a_msb;
 
-   //
-   localparam [0:0] PROD_STATE = 2'b0;
-   localparam [0:0] CONS_STATE = 2'b1;
-   reg                             lock = PROD_STATE;
-   wire                            lock_ftclk_domain;
+   localparam NUM_STATES = 4;
+   localparam CONFIG     = 0,
+              IDLE       = 1,
+              PROD       = 2,
+              CONS       = 3;
+   reg [NUM_STATES-1:0]            state = CONFIG,
+                                   next  = CONFIG;
+   wire [NUM_STATES-1:0]           state_ftclk_domain;
    reg                             cons_done = 1'b0;
    wire                            cons_done_clk80_domain;
 
@@ -137,54 +162,78 @@ module top (
    );
 
    ff_sync #(
-      .WIDTH  (1),
-      .STAGES (2)
-   ) lock_ftclk_sync (
-      .dest_clk (ft_clkout_i       ),
-      .d        (lock              ),
-      .q        (lock_ftclk_domain )
+      .WIDTH  (NUM_STATES ),
+      .STAGES (2          )
+   ) state_ftclk_sync (
+      .dest_clk (ft_clkout_i        ),
+      .d        (state              ),
+      .q        (state_ftclk_domain )
    );
 
+   // =============== Write clock (80MHz) state machine ==============
    localparam [$clog2(`RAW_SAMPLES)-1:0] RAW_SAMPLES_MAX = `RAW_SAMPLES-1;
    reg [$clog2(`RAW_SAMPLES)-1:0] raw_sample_ctr = `RAW_SAMPLES'd0;
-   // TODO why is ``delay`` necessary? The simulation disagrees...
-   reg                            delay = 1'b0;
+
    always @(posedge clk80) begin
-      if (lock == PROD_STATE) begin
-         if (delay) begin
-            lock  <= CONS_STATE;
-            delay <= 1'b0;
-         end else if (raw_sample_ctr == RAW_SAMPLES_MAX & lsb) begin
-            delay          <= 1'b1;
-            raw_sample_ctr <= `RAW_SAMPLES'd0;
-            lsb            <= 1'b0;
-         end else begin
-            if (lsb)
-              raw_sample_ctr <= raw_sample_ctr + 1'b1;
-            lsb <= ~lsb;
-         end
-      end else begin
-         if (cons_done_clk80_domain) begin
-            lock           <= PROD_STATE;
-            raw_sample_ctr <= `RAW_SAMPLES'd0;
-            lsb            <= 1'b0;
-            delay          <= 1'b0;
-         end
-      end
+      state <= next;
    end
 
    always @(*) begin
-      case (lock)
-      PROD_STATE:
+      next = {NUM_STATES{1'b0}};
+      case (1'b1)
+      state[CONFIG]:
         begin
-           fifo_wen = 1'b1;
+           if (adf_config_done) next[IDLE] = 1'b1;
+           else                 next[CONFIG] = 1'b1;
         end
-      CONS_STATE:
+      state[IDLE]:
         begin
-           fifo_wen = 1'b0;
+           if (adf_ramp_start) next[PROD] = 1'b1;
+           else                next[IDLE] = 1'b1;
+        end
+      state[PROD]:
+        begin
+           if (raw_sample_ctr == RAW_SAMPLES_MAX & lsb != `LSB_INIT) next[CONS] = 1'b1;
+           else                                                      next[PROD] = 1'b1;
+        end
+      state[CONS]:
+        begin
+           if (cons_done_clk80_domain) next[IDLE] = 1'b1;
+           else                        next[CONS] = 1'b1;
+        end
+      default: next[IDLE] = 1'b1;
+      endcase
+   end
+
+   reg [`USB_DATA_WIDTH-1:0]      adc_data = `USB_DATA_WIDTH'd0;
+   always @(posedge clk80) begin
+      raw_sample_ctr <= `RAW_SAMPLES'd0;
+      lsb            <= `LSB_INIT;
+      case (1'b1)
+      state[PROD]:
+        begin
+           lsb <= ~lsb;
+           if (lsb != `LSB_INIT) raw_sample_ctr <= raw_sample_ctr + 1'b1;
+           else                  raw_sample_ctr <= raw_sample_ctr;
+        end
+      endcase
+
+      if (next[PROD] & ~state[PROD]) begin
+         adc_data <= adc_chan_a_msb;
+      end else if (state[PROD]) begin
+         if (~lsb) adc_data <= adc_chan_a_lsb;
+         else      adc_data <= adc_chan_a_msb;
+      end
+
+      fifo_wen <= 1'b0;
+      case (1'b1)
+      next[PROD]:
+        begin
+           fifo_wen <= 1'b1;
         end
       endcase
    end
+   // ================================================================
 
    wire                            fifo_full;
    wire                            fifo_almost_full;
@@ -210,59 +259,84 @@ module top (
       .rdata        (fifo_rdata        )
    );
 
-   reg                             lock_ftclk_domain_last = PROD_STATE;
-   reg                             send_start = 1'b0;
-   reg                             send_stop  = 1'b0;
-   reg                             wait_sync = 1'b0;
-   always @(posedge ft_clkout_i) begin
-      if (!ft_txe_n_i) begin
-         lock_ftclk_domain_last <= lock_ftclk_domain;
-      end
+   // ==================== FT clock state machine ====================
+   localparam FTCLK_NUM_STATES = 6;
+   localparam FTCLK_IDLE  = 0,
+              FTCLK_START = 1,
+              FTCLK_CONS  = 2,
+              FTCLK_LAST  = 3,
+              FTCLK_STOP  = 4,
+              FTCLK_WAIT  = 5;
+   reg [FTCLK_NUM_STATES-1:0] ftclk_state = FTCLK_IDLE,
+                              ftclk_next = FTCLK_IDLE;
 
-      if (lock_ftclk_domain == CONS_STATE & ~cons_done & ~wait_sync) begin
-         if (fifo_empty) begin
-            cons_done <= 1'b1;
-         end
-      end else if (cons_done & ~ft_txe_n_i) begin
-         wait_sync <= 1'b1;
-         cons_done <= 1'b0;
-      end else if (lock_ftclk_domain == PROD_STATE) begin
-         wait_sync <= 1'b0;
-         cons_done <= 1'b0;
-      end
+   always @(posedge ft_clkout_i) begin
+      ftclk_state <= ftclk_next;
    end
 
-   reg [`USB_DATA_WIDTH-1:0] ft_wr_data;
    always @(*) begin
-      case (lock_ftclk_domain)
-      PROD_STATE:
+      ftclk_next = {FTCLK_NUM_STATES{1'b0}};
+      case (1'b1)
+      ftclk_state[FTCLK_IDLE]  : if (state_ftclk_domain[CONS] == 1'b1) ftclk_next[FTCLK_START] = 1'b1;
+                                 else                                  ftclk_next[FTCLK_IDLE]  = 1'b1;
+      ftclk_state[FTCLK_START] : if (~ft_txe_n_i)                      ftclk_next[FTCLK_CONS]  = 1'b1;
+                                 else                                  ftclk_next[FTCLK_START] = 1'b1;
+      ftclk_state[FTCLK_CONS]  : if (fifo_empty)                       ftclk_next[FTCLK_LAST]  = 1'b1;
+                                 else                                  ftclk_next[FTCLK_CONS]  = 1'b1;
+      ftclk_state[FTCLK_LAST]  : if (~ft_txe_n_i)                      ftclk_next[FTCLK_STOP]  = 1'b1;
+                                 else                                  ftclk_next[FTCLK_LAST]  = 1'b1;
+      ftclk_state[FTCLK_STOP]  : if (~ft_txe_n_i)                      ftclk_next[FTCLK_WAIT]  = 1'b1;
+                                 else                                  ftclk_next[FTCLK_STOP]  = 1'b1;
+      ftclk_state[FTCLK_WAIT]  : if (state_ftclk_domain[PROD] == 1'b1) ftclk_next[FTCLK_IDLE]  = 1'b1;
+                                 else                                  ftclk_next[FTCLK_WAIT]  = 1'b1;
+      default                  :                                       ftclk_next[FTCLK_IDLE]  = 1'b1;
+      endcase
+   end
+
+   reg [`USB_DATA_WIDTH-1:0] ft_wr_data = `USB_DATA_WIDTH'd0;
+   always @(posedge ft_clkout_i) begin
+      ft_wr_data <= `USB_DATA_WIDTH'd0;
+      ft_wr_n_o  <= 1'b1;
+      cons_done  <= 1'b0;
+
+      case (1'b1)
+      ftclk_next[FTCLK_START]:
         begin
-           ft_wr_data = `USB_DATA_WIDTH'd0;
-           ft_wr_n_o  = 1'b1;
-           fifo_ren   = 1'b0;
+           ft_wr_data <= `START_FLAG;
+           ft_wr_n_o  <= 1'b0;
         end
-      CONS_STATE:
+      ftclk_next[FTCLK_CONS] | ftclk_next[FTCLK_LAST]:
         begin
-           if (lock_ftclk_domain_last == PROD_STATE) begin
-              ft_wr_data = `START_FLAG;
-              ft_wr_n_o  = ft_txe_n_i;
-              fifo_ren   = 1'b1;
-           end else if (cons_done) begin
-              ft_wr_data = `STOP_FLAG;
-              ft_wr_n_o  = ft_txe_n_i;
-              fifo_ren   = 1'b0;
-           end else if (wait_sync) begin
-              ft_wr_data = `USB_DATA_WIDTH'd0;
-              ft_wr_n_o  = 1'b1;
-              fifo_ren   = 1'b0;
-           end else begin
-              ft_wr_data = fifo_rdata;
-              ft_wr_n_o  = ~(~ft_txe_n_i & fifo_ren);
-              fifo_ren   = ~ft_txe_n_i & ~fifo_empty;
-           end
+           ft_wr_data <= fifo_rdata;
+           ft_wr_n_o  <= 1'b0;
+        end
+      ftclk_next[FTCLK_STOP]:
+        begin
+           ft_wr_data <= `STOP_FLAG;
+           ft_wr_n_o  <= 1'b0;
+           cons_done  <= 1'b1;
+        end
+      ftclk_next[FTCLK_WAIT]:
+        begin
+           ft_wr_n_o  <= 1'b1;
+           cons_done  <= 1'b1;
         end
       endcase
    end
+
+   always @(*) begin
+      fifo_ren   = 1'b0;
+      case (1'b1)
+      ftclk_next[FTCLK_START]: fifo_ren = 1'b1;
+      ftclk_next[FTCLK_CONS] : fifo_ren = ~ft_txe_n_i;
+      ftclk_next[FTCLK_STOP] : fifo_ren = 1'b0;
+
+      // ftclk_state[FTCLK_START]: fifo_ren = 1'b1;
+      // ftclk_state[FTCLK_CONS] : fifo_ren = ~ft_txe_n_i;
+      // ftclk_state[FTCLK_STOP] : fifo_ren = 1'b0;
+      endcase
+   end
+   // ================================================================
 
    assign ft_data_io = ft_oe_n_o ? ft_wr_data : `USB_DATA_WIDTH'dz;
 
@@ -272,9 +346,11 @@ module top (
    assign ft_siwua_n_o = 1'b1;
 
    assign ext1_io[0] = 1'b0;
-   assign ext1_io[3] = lock;
+   assign ext1_io[3] = state[0];
    assign ext1_io[1] = 1'b0;
-   assign ext1_io[4] = fifo_almost_empty;
+   assign ext1_io[4] = state[1];
+   assign ext1_io[2] = 1'b0;
+   assign ext1_io[5] = state[2];
 
 endmodule
 
@@ -282,33 +358,67 @@ endmodule
 
 module top_tb;
 
+   reg clk20 = 1'b0;
    reg clk40 = 1'b0;
    reg clk60 = 1'b0;
    reg clk80 = 1'b0;
+
+   reg muxout = 1'b0;
+
+   localparam MUXOUT_ASSERT_CTR = 120000;
+   reg [$clog2(MUXOUT_ASSERT_CTR)-1:0] muxout_ctr = 0;
+
+   reg [`USB_DATA_WIDTH-1:0]           adc_ctr = 0;
+
+   always @(posedge clk40) begin
+      adc_ctr <= adc_ctr + 1'b1;
+      if (muxout_ctr == MUXOUT_ASSERT_CTR) begin
+         muxout_ctr <= 0;
+         muxout     <= 1'b1;
+      end else begin
+         muxout_ctr <= muxout_ctr + 1;
+         muxout     <= 1'b0;
+      end
+   end
 
    initial begin
       $dumpfile("tb/top_tb.vcd");
       $dumpvars(0, top_tb);
 
+      #12.5;
+      clk20 = ~clk20;
+      forever clk20 = #25 ~clk20;
+   end
+
+   initial begin
+      #12.5;
+      clk80 = ~clk80;
+      forever clk80 = #6.25 ~clk80;
+   end
+
+   initial begin
       #10000000 $finish;
    end
 
    always #12.5 clk40 = ~clk40;
-   always #6.25 clk80 = ~clk80;
    always #8.33 clk60 = ~clk60;
 
    wire [`USB_DATA_WIDTH-1:0] ft_data_io;
    top dut (
-      .clk80          (clk80      ),
-      .clk_i          (clk40      ),
-      .ft_data_io     (ft_data_io ),
-      .ft_rxf_n_i     (1'b1       ),
-      .ft_txe_n_i     (1'b0       ),
-      .ft_clkout_i    (clk60      ),
-      .ft_suspend_n_i (1'b1       ),
-      .adc_d_i        (12'hfff    ),
-      .adc_of_i       (2'd0       )
-      // .adf_muxout_i,
+      .clk20          (clk20                   ),
+      .clk80          (clk80                   ),
+      .clk_i          (clk40                   ),
+      .ft_data_io     (ft_data_io              ),
+      .ft_rxf_n_i     (1'b1                    ),
+      .ft_txe_n_i     (1'b0                    ),
+      .ft_clkout_i    (clk60                   ),
+      .ft_suspend_n_i (1'b1                    ),
+      // send the least significant counter nibble with the full
+      // counter to ensure corresponding most significant and least
+      // significant bytes are sent in the correct order.
+      .adc_d_i        ({adc_ctr[3:0], adc_ctr} ),
+      .adc_of_i       (2'd0                    ),
+      .adf_muxout_i   (muxout                  )
    );
 
 endmodule
