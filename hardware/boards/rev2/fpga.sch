@@ -94,16 +94,6 @@ Connection ~ 16550 1350
 Connection ~ 16300 1350
 Connection ~ 7250 15300
 Connection ~ 7300 3350
-Connection ~ 11750 1700
-Connection ~ 11650 1700
-Connection ~ 11550 1700
-Connection ~ 11450 1700
-Connection ~ 11350 1700
-Connection ~ 9150 1700
-Connection ~ 9050 1700
-Connection ~ 8950 1700
-Connection ~ 8850 1700
-Connection ~ 8750 1700
 Connection ~ 16850 11850
 Connection ~ 16000 11850
 Connection ~ 16850 11450
@@ -129,7 +119,6 @@ NoConn ~ 12250 3600
 NoConn ~ 12250 3700
 NoConn ~ 12250 2500
 NoConn ~ 12250 5300
-NoConn ~ 12250 4800
 NoConn ~ 12250 5400
 NoConn ~ 12250 5200
 NoConn ~ 12250 5000
@@ -635,8 +624,6 @@ Wire Wire Line
 Wire Wire Line
 	8550 1400 8700 1400
 Wire Wire Line
-	8650 1700 8750 1700
-Wire Wire Line
 	8700 1000 8700 1050
 Wire Wire Line
 	8700 1000 8950 1000
@@ -645,19 +632,9 @@ Wire Wire Line
 Wire Wire Line
 	8700 1400 8950 1400
 Wire Wire Line
-	8750 1700 8850 1700
-Wire Wire Line
-	8850 1700 8950 1700
-Wire Wire Line
 	8950 1000 8950 1050
 Wire Wire Line
 	8950 1350 8950 1400
-Wire Wire Line
-	8950 1700 9050 1700
-Wire Wire Line
-	9050 1700 9150 1700
-Wire Wire Line
-	9150 1700 11350 1700
 Wire Wire Line
 	9750 14450 9950 14450
 Wire Wire Line
@@ -687,17 +664,7 @@ Wire Wire Line
 Wire Wire Line
 	11300 14000 11300 14050
 Wire Wire Line
-	11350 1700 11450 1700
-Wire Wire Line
-	11450 1700 11550 1700
-Wire Wire Line
-	11550 1700 11650 1700
-Wire Wire Line
-	11650 1700 11750 1700
-Wire Wire Line
 	11700 9550 12050 9550
-Wire Wire Line
-	11750 1700 11850 1700
 Wire Wire Line
 	11800 1000 11800 1050
 Wire Wire Line
@@ -738,8 +705,6 @@ Wire Wire Line
 	12150 1400 12300 1400
 Wire Wire Line
 	12250 3800 12350 3800
-Wire Wire Line
-	12250 4300 12350 4300
 Wire Wire Line
 	12250 4700 12350 4700
 Wire Wire Line
@@ -1452,7 +1417,7 @@ Text Label 12350 4100 0    60   ~ 0
 RD#
 Text Label 12350 4200 0    60   ~ 0
 TXE#
-Text Label 12350 4300 0    60   ~ 0
+Text Label 12350 4800 0    60   ~ 0
 CLKOUT
 Text Label 12350 4400 0    60   ~ 0
 FT_SUSPEND
@@ -2834,20 +2799,6 @@ F 4 "XC7A15T-1FTG256C" H 4100 3050 50  0001 C CNN "MFN"
 $EndComp
 $Comp
 L FPGA_Xilinx_Artix7:XC7A15T-FTG256 U?
-U 1 1 5B9D6CE1
-P 10250 4600
-AR Path="/5B9D6CE1" Ref="U?"  Part="1" 
-AR Path="/59395D6A/5B9D6CE1" Ref="U6"  Part="1" 
-F 0 "U6" H 10250 4600 50  0000 C CNN
-F 1 "XC7A15T-FTG256" H 10250 1535 50  0000 C CNN
-F 2 "Package_BGA:Xilinx_FTG256" H 10250 4600 50  0001 C CNN
-F 3 "" H 10250 4600 50  0000 C CNN
-F 4 "XC7A15T-1FTG256C" H 3900 1100 50  0001 C CNN "MFN"
-	1    10250 4600
-	1    0    0    -1  
-$EndComp
-$Comp
-L FPGA_Xilinx_Artix7:XC7A15T-FTG256 U?
 U 2 1 5CE2C3EB
 P 17800 4850
 AR Path="/5CE2C3EB" Ref="U?"  Part="2" 
@@ -2920,4 +2871,53 @@ F20 "CLKOUT" O R 3750 3300 60
 F21 "OE#" I R 3750 3400 60 
 F22 "SUSPEND" O L 2650 2800 60 
 $EndSheet
+Connection ~ 11750 1700
+Connection ~ 11650 1700
+Connection ~ 11550 1700
+Connection ~ 11450 1700
+Connection ~ 11350 1700
+Connection ~ 9150 1700
+Connection ~ 9050 1700
+Connection ~ 8950 1700
+Connection ~ 8850 1700
+Connection ~ 8750 1700
+Wire Wire Line
+	8650 1700 8750 1700
+Wire Wire Line
+	8750 1700 8850 1700
+Wire Wire Line
+	8850 1700 8950 1700
+Wire Wire Line
+	8950 1700 9050 1700
+Wire Wire Line
+	9050 1700 9150 1700
+Wire Wire Line
+	9150 1700 11350 1700
+Wire Wire Line
+	11350 1700 11450 1700
+Wire Wire Line
+	11450 1700 11550 1700
+Wire Wire Line
+	11550 1700 11650 1700
+Wire Wire Line
+	11650 1700 11750 1700
+Wire Wire Line
+	11750 1700 11850 1700
+$Comp
+L FPGA_Xilinx_Artix7:XC7A15T-FTG256 U?
+U 1 1 5B9D6CE1
+P 10250 4600
+AR Path="/5B9D6CE1" Ref="U?"  Part="1" 
+AR Path="/59395D6A/5B9D6CE1" Ref="U6"  Part="1" 
+F 0 "U6" H 10250 4600 50  0000 C CNN
+F 1 "XC7A15T-FTG256" H 10250 1535 50  0000 C CNN
+F 2 "Package_BGA:Xilinx_FTG256" H 10250 4600 50  0001 C CNN
+F 3 "" H 10250 4600 50  0000 C CNN
+F 4 "XC7A15T-1FTG256C" H 3900 1100 50  0001 C CNN "MFN"
+	1    10250 4600
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	12250 4800 12350 4800
+NoConn ~ 12250 4300
 $EndSCHEMATC
