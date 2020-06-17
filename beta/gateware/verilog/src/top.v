@@ -9,8 +9,9 @@
 `define DECIMATE 20
 `define RAW_SAMPLES `DECIMATE * `FFT_N
 `define FIFO_DEPTH 65536
-`define START_FLAG 8'b0101_1010  // 8'h5A
-`define STOP_FLAG 8'b1010_0101   // 8'hA5
+`define START_FLAG 8'hFF
+`define STOP_FLAG 8'h1F
+`define LSB_INIT 1'b1
 
 `include "fifo.v"
 `include "ltc2292.v"
@@ -77,9 +78,9 @@ module top (
    // input wire                             adf_done_i,
 );
 
-   assign pa_en_n_o    = 1'b0;
-   assign mix_enbl_n_o = 1'b1;
-   assign adc_oe_o     = 2'b10;
+   // assign pa_en_n_o    = 1'b1;
+   assign mix_enbl_n_o = 1'b0;
+   assign adc_oe_o     = 2'b00;
    assign adc_shdn_o   = 2'b00;
 
 `ifndef TOP_SIMULATE
@@ -106,27 +107,25 @@ module top (
 
    wire                            adf_config_done;
    wire                            adf_ramp_start;
-   wire                            adf_ramp_on;
    adf4158 adf4158 (
-      .clk         (clk_i           ),
-      .clk_20mhz   (clk20           ),
-      .rst_n       (1'b1            ),
-      .enable      (1'b1            ),
-      .config_done (adf_config_done ),
-      .le          (adf_le_o        ),
-      .ce          (adf_ce_o        ),
-      .muxout      (adf_muxout_i    ),
-      .ramp_start  (adf_ramp_start  ),
-      .ramp_on     (adf_ramp_on     ),
-      .txdata      (adf_txdata_o    ),
-      .data        (adf_data_o      )
+      .clk         (clk_i                       ),
+      .clk20       (clk20                       ),
+      .clk_o       (adf_clk_o                   ),
+      .configure   (pll_lock & ~adf_config_done ),
+      .muxout      (adf_muxout_i                ),
+      .ramp_start  (adf_ramp_start              ),
+      .config_done (adf_config_done             ),
+      .le          (adf_le_o                    ),
+      .ce          (adf_ce_o                    ),
+      .txdata      (adf_txdata_o                ),
+      .data        (adf_data_o                  )
    );
 
-   reg                             lsb = 1'b1;
-   wire [`ADC_DATA_WIDTH-1:0]      adc_chan_a;
+   reg                             lsb = `LSB_INIT;
+   wire signed [`ADC_DATA_WIDTH-1:0] adc_chan_a;
    wire [`USB_DATA_WIDTH-1:0]      adc_chan_a_msb;
    wire [`USB_DATA_WIDTH-1:0]      adc_chan_a_lsb;
-   wire [`ADC_DATA_WIDTH-1:0]      adc_chan_b;
+   wire signed [`ADC_DATA_WIDTH-1:0] adc_chan_b;
 
    ltc2292 ltc2292 (
       .clk (clk_i      ),
@@ -134,9 +133,10 @@ module top (
       .dao (adc_chan_a ),
       .dbo (adc_chan_b )
    );
+   wire signed [`ADC_DATA_WIDTH-1:0] single_chan = adc_chan_a + adc_chan_b;
 
-   assign adc_chan_a_msb = {4'd0, adc_chan_a[`ADC_DATA_WIDTH-1:8]};
-   assign adc_chan_a_lsb = adc_chan_a[7:0];
+   assign adc_chan_a_msb = {4'd0, adc_chan_b[`ADC_DATA_WIDTH-1:8]};
+   assign adc_chan_a_lsb = adc_chan_b[7:0];
 
    wire [`USB_DATA_WIDTH-1:0]      adc_data = lsb ? adc_chan_a_lsb : adc_chan_a_msb;
 
@@ -187,8 +187,8 @@ module top (
         end
       state[IDLE]:
         begin
-           if (adf_ramp_start & lsb) next[PROD] = 1'b1;
-           else                      next[IDLE] = 1'b1;
+           if (adf_ramp_start) next[PROD] = 1'b1;
+           else                next[IDLE] = 1'b1;
         end
       state[PROD]:
         begin
@@ -206,10 +206,11 @@ module top (
 
    always @(posedge clk80) begin
       raw_sample_ctr <= `RAW_SAMPLES'd0;
-      lsb            <= ~lsb;
+      lsb            <= `LSB_INIT;
       case (1'b1)
       state[PROD]:
         begin
+           lsb                     <= ~lsb;
            if (lsb) raw_sample_ctr <= raw_sample_ctr + 1'b1;
            else     raw_sample_ctr <= raw_sample_ctr;
         end
@@ -247,14 +248,16 @@ module top (
    );
 
    // ==================== FT clock state machine ====================
-   localparam FTCLK_NUM_STATES = 7;
-   localparam FTCLK_IDLE  = 0,
-              FTCLK_START = 1,
-              FTCLK_CONS  = 2,
-              FTCLK_TXE   = 3,
-              FTCLK_LAST  = 4,
-              FTCLK_STOP  = 5,
-              FTCLK_WAIT  = 6;
+   localparam FTCLK_NUM_STATES = 9;
+   localparam FTCLK_IDLE   = 0,
+              FTCLK_STARTA = 1,
+              FTCLK_STARTB = 2,
+              FTCLK_CONS   = 3,
+              FTCLK_TXE    = 4,
+              FTCLK_LAST   = 5,
+              FTCLK_STOPA  = 6,
+              FTCLK_STOPB  = 7,
+              FTCLK_WAIT   = 8;
    reg [FTCLK_NUM_STATES-1:0] ftclk_state = FTCLK_IDLE,
                               ftclk_next = FTCLK_IDLE;
 
@@ -265,22 +268,26 @@ module top (
    always @(*) begin
       ftclk_next = {FTCLK_NUM_STATES{1'b0}};
       case (1'b1)
-      ftclk_state[FTCLK_IDLE]  : if (state_ftclk_domain[CONS] == 1'b1) ftclk_next[FTCLK_START] = 1'b1;
-                                 else                                  ftclk_next[FTCLK_IDLE]  = 1'b1;
-      ftclk_state[FTCLK_START] : if (~ft_txe_n_i)                      ftclk_next[FTCLK_CONS]  = 1'b1;
-                                 else                                  ftclk_next[FTCLK_START] = 1'b1;
-      ftclk_state[FTCLK_CONS]  : if (fifo_empty)                       ftclk_next[FTCLK_LAST]  = 1'b1;
-                                 else if (ft_txe_n_i)                  ftclk_next[FTCLK_TXE]   = 1'b1;
-                                 else                                  ftclk_next[FTCLK_CONS]  = 1'b1;
-      ftclk_state[FTCLK_TXE]   : if (~ft_txe_n_i)                      ftclk_next[FTCLK_CONS]  = 1'b1;
-                                 else                                  ftclk_next[FTCLK_TXE]   = 1'b1;
-      ftclk_state[FTCLK_LAST]  : if (~ft_txe_n_i)                      ftclk_next[FTCLK_STOP]  = 1'b1;
-                                 else                                  ftclk_next[FTCLK_LAST]  = 1'b1;
-      ftclk_state[FTCLK_STOP]  : if (~ft_txe_n_i)                      ftclk_next[FTCLK_WAIT]  = 1'b1;
-                                 else                                  ftclk_next[FTCLK_STOP]  = 1'b1;
-      ftclk_state[FTCLK_WAIT]  : if (state_ftclk_domain[PROD] == 1'b1) ftclk_next[FTCLK_IDLE]  = 1'b1;
-                                 else                                  ftclk_next[FTCLK_WAIT]  = 1'b1;
-      default                  :                                       ftclk_next[FTCLK_IDLE]  = 1'b1;
+      ftclk_state[FTCLK_IDLE]   : if (state_ftclk_domain[CONS] == 1'b1) ftclk_next[FTCLK_STARTA] = 1'b1;
+                                  else                                  ftclk_next[FTCLK_IDLE]   = 1'b1;
+      ftclk_state[FTCLK_STARTA] : if (~ft_txe_n_i)                      ftclk_next[FTCLK_STARTB] = 1'b1;
+                                  else                                  ftclk_next[FTCLK_STARTA] = 1'b1;
+      ftclk_state[FTCLK_STARTB] : if (~ft_txe_n_i)                      ftclk_next[FTCLK_CONS]   = 1'b1;
+                                  else                                  ftclk_next[FTCLK_STARTB] = 1'b1;
+      ftclk_state[FTCLK_CONS]   : if (fifo_empty)                       ftclk_next[FTCLK_LAST]   = 1'b1;
+                                  else if (ft_txe_n_i)                  ftclk_next[FTCLK_TXE]    = 1'b1;
+                                  else                                  ftclk_next[FTCLK_CONS]   = 1'b1;
+      ftclk_state[FTCLK_TXE]    : if (~ft_txe_n_i)                      ftclk_next[FTCLK_CONS]   = 1'b1;
+                                  else                                  ftclk_next[FTCLK_TXE]    = 1'b1;
+      ftclk_state[FTCLK_LAST]   : if (~ft_txe_n_i)                      ftclk_next[FTCLK_STOPA]  = 1'b1;
+                                  else                                  ftclk_next[FTCLK_LAST]   = 1'b1;
+      ftclk_state[FTCLK_STOPA]  : if (~ft_txe_n_i)                      ftclk_next[FTCLK_STOPB]  = 1'b1;
+                                  else                                  ftclk_next[FTCLK_STOPA]  = 1'b1;
+      ftclk_state[FTCLK_STOPB]  : if (~ft_txe_n_i)                      ftclk_next[FTCLK_WAIT]   = 1'b1;
+                                  else                                  ftclk_next[FTCLK_STOPB]  = 1'b1;
+      ftclk_state[FTCLK_WAIT]   : if (state_ftclk_domain[PROD] == 1'b1) ftclk_next[FTCLK_IDLE]   = 1'b1;
+                                  else                                  ftclk_next[FTCLK_WAIT]   = 1'b1;
+      default                   :                                       ftclk_next[FTCLK_IDLE]   = 1'b1;
       endcase
    end
 
@@ -294,7 +301,7 @@ module top (
       ft_txe_last     <= ft_txe_n_i;
 
       case (1'b1)
-      ftclk_next[FTCLK_START]:
+      ftclk_next[FTCLK_STARTA] | ftclk_next[FTCLK_STARTB]:
         begin
            ft_wr_data <= `START_FLAG;
            ft_wr_n_o  <= 1'b0;
@@ -310,7 +317,7 @@ module top (
            ft_wr_n_o  <= 1'b0;
            fifo_rdata_last <= fifo_rdata;
         end
-      ftclk_next[FTCLK_STOP]:
+      ftclk_next[FTCLK_STOPA] | ftclk_next[FTCLK_STOPB]:
         begin
            ft_wr_data <= `STOP_FLAG;
            ft_wr_n_o  <= 1'b0;
@@ -327,9 +334,9 @@ module top (
    always @(*) begin
       fifo_ren = 1'b0;
       case (1'b1)
-      ftclk_next[FTCLK_START]: fifo_ren = 1'b1;
-      ftclk_next[FTCLK_CONS] : fifo_ren = ~ft_txe_last;
-      ftclk_next[FTCLK_STOP] : fifo_ren = 1'b0;
+      ftclk_next[FTCLK_STARTA] | ftclk_next[FTCLK_STARTB] : fifo_ren = 1'b1;
+      ftclk_next[FTCLK_CONS]                              : fifo_ren = ~ft_txe_last;
+      ftclk_next[FTCLK_STOPA] | ftclk_next[FTCLK_STOPB]   : fifo_ren = 1'b0;
       endcase
    end
    // ================================================================
@@ -342,11 +349,18 @@ module top (
    assign ft_siwua_n_o = 1'b1;
 
    assign ext1_io[0] = 1'b0;
-   assign ext1_io[3] = state[0];
+   assign ext1_io[3] = state[PROD];
    assign ext1_io[1] = 1'b0;
-   assign ext1_io[4] = state[1];
+   assign ext1_io[4] = state[CONS];
    assign ext1_io[2] = 1'b0;
    assign ext1_io[5] = state[2];
+
+   assign ext2_io[0] = 1'b0;
+   assign ext2_io[3] = adf_config_done;
+   assign ext2_io[1] = 1'b0;
+   assign ext2_io[4] = adf_ramp_start;
+   assign ext2_io[2] = 1'b0;
+   assign ext2_io[5] = adf_muxout_i;
 
 endmodule
 
@@ -461,3 +475,4 @@ endmodule
 `undef DELAY_BITS
 `undef START_FLAG
 `undef STOP_FLAG
+`undef LSB_INIT

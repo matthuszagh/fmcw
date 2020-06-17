@@ -4,7 +4,6 @@ Unit tests for fir.
 """
 
 import numpy as np
-from scipy import signal
 
 from cocotb_helpers import Clock, ClockEnable, random_samples
 from fir import FIR

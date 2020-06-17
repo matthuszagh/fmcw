@@ -11,7 +11,7 @@
 module top #(
    // Have the counter cross a clock domain boundary. This tests the
    // transmission quality when the data must pass through a FIFO.
-   parameter CROSS_DOMAIN = 1
+   parameter CROSS_DOMAIN = 0
 ) (
    // =============== clocks, resets, LEDs, connectors ===============
    // 40MHz

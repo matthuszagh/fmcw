@@ -1,11 +1,12 @@
 create_clock -period 25.000 -name clk_i -waveform {0.000 12.500} [get_ports clk_i]
 create_clock -period 16.667 -name ft_clkout_i -waveform {0.000 8.333} [get_ports ft_clkout_i]
+# set_output_delay -clock ft_clkout_i -max 8 [get_ports ft_data_io]
 
 set_clock_groups -asynchronous -group [get_clocks clk_i -include_generated_clocks]
 set_clock_groups -asynchronous -group [get_clocks ft_clkout_i -include_generated_clocks]
 
 set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets ft_clkout_i_IBUF]
-set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets ext1_io_IBUF[0]]
+# set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets ext1_io_IBUF[0]]
 
 set_property CONFIG_VOLTAGE 3.3 [current_design]
 set_property CFGBVS VCCO [current_design]
@@ -39,6 +40,7 @@ set_property -dict {IOSTANDARD LVCMOS33 PACKAGE_PIN B14} [get_ports ft_rd_n_o]
 set_property -dict {IOSTANDARD LVCMOS33 PACKAGE_PIN A14} [get_ports ft_wr_n_o]
 set_property -dict {IOSTANDARD LVCMOS33 PACKAGE_PIN A13} [get_ports ft_siwua_n_o]
 set_property -dict {IOSTANDARD LVCMOS33 PACKAGE_PIN A15} [get_ports ft_clkout_i]
+# set_property -dict {IOSTANDARD LVCMOS33 PACKAGE_PIN D13} [get_ports ft_clkout_i]
 set_property -dict {IOSTANDARD LVCMOS33 PACKAGE_PIN A12} [get_ports ft_oe_n_o]
 set_property -dict {IOSTANDARD LVCMOS33 PACKAGE_PIN C16} [get_ports ft_suspend_n_i]
 

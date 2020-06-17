@@ -7,14 +7,16 @@ from skidl.pyspice import (
     SPICE,
     gnd,
     node,
+    no_files,
 )
 import numpy as np
 import os
 
+no_files()
+
 spicelib = os.getenv("SPICELIB")
 
-
-fname = "data/if-amp-spice.dat"
+fname = ".data/if-amp-spice.dat"
 lib_search_paths[SPICE].append(spicelib)
 
 rcm_val = 50e6

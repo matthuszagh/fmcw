@@ -4,14 +4,14 @@ import numpy as np
 from pyems.simulation import Simulation
 from pyems.structure import Coax
 from pyems.coordinate import Coordinate3, Axis
-from pyems.utilities import mil_to_mm, pretty_print
+from pyems.utilities import mil_to_mm, print_table
 from pyems.calc import coax_core_diameter
 from pyems.material import common_dielectrics
 from pyems.field_dump import FieldDump, DumpType
 from pyems.mesh import Mesh
 from pyems.boundary import BoundaryConditions
 
-freq = np.linspace(4e9, 8e9, 501)
+freq = np.arange(4e9, 18e9, 1e7)
 unit = 1e-3
 sim = Simulation(
     freq=freq,
@@ -50,7 +50,6 @@ mesh = Mesh(
     sim=sim,
     metal_res=1 / 40,
     nonmetal_res=1 / 10,
-    smooth=(1.1, 1.5, 1.5),
     min_lines=9,
     expand_bounds=((0, 0), (8, 8), (8, 8)),
 )
@@ -63,7 +62,7 @@ sim.view_field()
 
 z0 = sim.ports[0].impedance()
 s11 = sim.s_param(1, 1)
-pretty_print(
+print_table(
     data=[sim.freq / 1e9, np.abs(z0), s11],
     col_names=["freq", "z0", "s11"],
     prec=[4, 4, 4],

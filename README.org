@@ -93,6 +93,40 @@ depending on whether I can test the change.
 * TODO Operation
 Link blog post.
 
+** streaming raw data
+We'll focus on a single channel, since it doesn't seem worth it to try
+to get the raw data from both channels simultaneously. The ADC outputs
+a 12-bit sample every 25ns (rate of 40MHz). The FT2232H can stream
+data to the host at 480Mbps (1 byte at 60MHz). Superficially, this
+seems convenient since these data rates are the same. However, the
+streaming data requires some overhead bits to avoid transmission
+errors.
+
+On the other hand -- in the worst case -- we would have to store a
+full sequence before sending it to the host. To have enough data for a
+1024-point FFT (as is done on the FPGA), we would need 20 times this
+or 20,480 raw samples (FFT is performed on downsampled data). At
+12-bits per sample, this amounts to a total of 245,760 bits of data to
+store on the FPGA. The onboard FPGA has 25 36kb RAM blocks (or
+equivalently, 50 18kb RAM blocks). Storing all our data would require
+7 of these. We can do better than this by streaming data to the host
+while capturing it. But, while we don't have to store our overhead
+bits, we still do have to send them.
+
+Imagine we only need to send each transmission once and we just need 1
+byte for the header and tail combined (a nibble for each) to ensure
+reads are aligned. We also need a counter to ensure we don't miss any
+whole packets (whether or not this will be necessary remains to be
+seen and I guess depends on how well the OS/FTDI handle the
+communication). 1 byte for the counter only allows us 256 packets and
+is not nearly enought. 2 bytes permits 65,536 packets and is
+plenty. This leaves 5 bytes of data in each packet. Because of the
+overhead, we now need to send 393,216 bits. Since we capture and send
+at the same bit rate, when all 245,760 bits are sent, we will be left
+with 147,456 bits. However, 3/8 of this is overhead and doesn't need
+to be stored. This leaves us with a max storage requirement of 92,160
+bits. This would require just 3 BRAMs, which is very manageable.
+
 * TODO Attribution
 + Henrik, of course (see [[id:20ff1c28-cfc6-4280-8501-83314fee390d][About]]).
 + An additional thanks to AlexBdx for finding a way to 3D print horn

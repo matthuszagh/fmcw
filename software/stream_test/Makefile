@@ -28,4 +28,4 @@ tb/fifo_tb.vcd: fifo.v
 
 .PHONY: nmigen
 nmigen:
-	./top.py && ./test -t 10 -l log.bin
+	./top.py && ./test -t1 -l log.bin

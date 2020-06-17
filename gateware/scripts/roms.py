@@ -23,9 +23,17 @@ except OSError:
     pass
 
 # FIR roms
+# fir = FIR(
+#     numtaps=120,
+#     bands=[0, 1e6, 1.5e6, 20e6],
+#     band_gain=[1, 0],
+#     fs=40e6,
+#     pass_db=0.5,
+#     stop_db=-40,
+# )
 fir = FIR(
     numtaps=120,
-    bands=[0, 1e6, 1.5e6, 20e6],
+    bands=[0, 0.75e6, 1.25e6, 20e6],
     band_gain=[1, 0],
     fs=40e6,
     pass_db=0.5,

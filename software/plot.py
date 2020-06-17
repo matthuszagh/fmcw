@@ -195,9 +195,9 @@ class PlotHist(Plot):
         """
         """
         val = data.data[0]
-        val[val == 0] = 1
-        val = 20 * np.log10(1 / (np.power(2, 11) * 512) * val)
-        val = np.clip(val, DB_MIN, DB_MAX)
+        # val[val == 0] = 1
+        # val = 20 * np.log10(1 / (np.power(2, 11) * 512) * val)
+        # val = np.clip(val, DB_MIN, DB_MAX)
         if self.xval == PLOT_DOMAIN - 1:
             self._save_plot()
             self.fname += 1
@@ -208,7 +208,7 @@ class PlotHist(Plot):
             self.xval += 1
         self.data[self.xval] = val
         self._imv.setImage(self.data, xvals=data.time)
-        self._imv.setLevels(DB_MIN, DB_MAX)
+        # self._imv.setLevels(DB_MIN, DB_MAX)
         self.app.processEvents()
 
     def _save_plot(self):

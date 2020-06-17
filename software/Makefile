@@ -16,7 +16,7 @@ acquire: fmcw
 	rm -rf plots
 	mkdir plots
 ifeq ($(DEBUG),0)
-	./fmcw -b 0
+	./fmcw -b0
 endif
 
 fmcw: fmcw.c bitmanip.c bitmanip.h

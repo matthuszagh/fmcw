@@ -145,7 +145,6 @@ class StreamCDC(Elaboratable):
         # pins
         ft_clkout_i = platform.request("ft_clkout_i")
         ft_wr_n_o = platform.request("ft_wr_n_o")
-        ft_wr_n_o.o.reset = 1
         ft_txe_n_i = platform.request("ft_txe_n_i")
         ft_suspend_n_i = platform.request("ft_suspend_n_i")
         ft_oe_n_o = platform.request("ft_oe_n_o")
@@ -184,14 +183,17 @@ class StreamCDC(Elaboratable):
         ]
 
         with m.If(fifo.w_rdy):
-            m.d.sync += [fifo.w_en.eq(1), ctr.eq(ctr + 1)]
+            m.d.comb += fifo.w_en.eq(1)
+            m.d.sync += ctr.eq(ctr + 1)
         with m.Else():
-            m.d.sync += fifo.w_en.eq(0)
+            m.d.comb += fifo.w_en.eq(0)
 
         with m.If(~ft_txe_n_i & ft_suspend_n_i & fifo.r_rdy):
-            m.d.clk60 += [ft_wr_n_o.o.eq(0), fifo.r_en.eq(1)]
+            m.d.comb += ft_wr_n_o.o.eq(0)
+            m.d.clk60 += fifo.r_en.eq(1)
         with m.Else():
-            m.d.clk60 += [ft_wr_n_o.o.eq(1), fifo.r_en.eq(0)]
+            m.d.comb += ft_wr_n_o.o.eq(1)
+            m.d.clk60 += fifo.r_en.eq(0)
 
         return m
 

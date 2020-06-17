@@ -4,6 +4,7 @@ Unit tests for async_fifo.v
 """
 
 import random
+from typing import List
 from collections import deque
 
 from cocotb_helpers import Clock, MultiClock
@@ -20,9 +21,9 @@ class AsyncFifoTB:
     async FIFO under test.
     """
 
-    def __init__(self, dut):
-        rdclk = Clock(dut.rdclk, 60)
-        wrclk = Clock(dut.wrclk, 40)
+    def __init__(self, dut, read_freq: float = 60, write_freq: float = 40):
+        rdclk = Clock(dut.rdclk, read_freq)
+        wrclk = Clock(dut.wrclk, write_freq)
         self.multiclock = MultiClock([rdclk, wrclk])
         self.dut = dut
 
@@ -73,6 +74,39 @@ class AsyncFifoTB:
         await ReadOnly()
         rdval = self.dut.rddata.value
         return rdval
+
+    @cocotb.coroutine
+    async def write_continuous(self, vals: List[int]):
+        """
+        """
+        num_vals = len(vals)
+        i = 0
+        while i < num_vals:
+            await RisingEdge(self.dut.wrclk)
+            if self.dut.full.value.integer == 0:
+                self.dut.wren <= 1
+                self.dut.wrdata <= vals[i]
+                i += 1
+
+    @cocotb.coroutine
+    async def read_continuous(self, num_vals: int) -> List[int]:
+        """
+        """
+        vals = []
+        i = 0
+        while i < num_vals:
+            await RisingEdge(self.dut.rdclk)
+            if self.dut.empty.value.integer == 0:
+                self.dut.rden <= 1
+            else:
+                self.dut.rden <= 0
+
+            if self.dut.rden.value.integer == 1:
+                val = self.dut.rddata.value.integer
+                vals.append(val)
+                i += 1
+
+        return vals
 
     @cocotb.coroutine
     async def wait_n_read_cycles(self, ncycles):
@@ -295,3 +329,18 @@ async def write_read_simultaneous(dut):
                         )
                         % (top_queue, rdval.integer)
                     )
+
+
+@cocotb.test()
+async def read_write_continuous(dut):
+    """
+    """
+    fifo = AsyncFifoTB(dut)
+    await fifo.setup()
+    num_vals = 24000
+    write_vals = [random.randint(0, 2 ** 64 - 1) for _ in range(num_vals)]
+    cocotb.fork(fifo.write_continuous(vals=write_vals))
+    read_vals = await fifo.read_continuous(num_vals=num_vals)
+    if write_vals != read_vals:
+        print(read_vals)
+        raise TestFailure("Write and read values differ")

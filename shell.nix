@@ -1,27 +1,32 @@
-{ nixpkgs ? (import <nixpkgs> {})
+{ pkgs ? (import <nixpkgs> {})
 }:
 
 let
   custompkgs = import <custompkgs> {};
-  pkgs = (nixpkgs // custompkgs);
-  python-with-pkgs = pkgs.python3Full.withPackages (ps: with ps; [
-    matplotlib
-    bitstring
-    numpy
-    pyqtgraph
-    pkgs.cocotb
-    pyclipper
-    simplejson
-  ] ++ (with custompkgs; [
-    skidl
-    pyems
-  ]));
-  kicad = pkgs.kicad;
+  # pkgs = (nixpkgs // custompkgs);
+  pythonEnv = (pkgs.python3Full.buildEnv.override {
+    extraLibs = (with pkgs.python3Packages; [
+      matplotlib
+      bitstring
+      numpy
+      pyqtgraph
+      cocotb
+      pyclipper
+      simplejson
+      nmigen
+      migen
+    ]) ++ (with custompkgs; [
+      # skidl
+      pyems
+      python-openems
+      python-csxcad
+    ]);
+    ignoreCollisions = true;
+  });
 in
 pkgs.mkShell {
   buildInputs = with pkgs; [
-    python-with-pkgs
-    ebase
+    pythonEnv
 
     # fpga
     yosys
@@ -30,9 +35,8 @@ pkgs.mkShell {
     verilog
     # nextpnr
     gtkwave
-    python3Packages.xdot # TODO is this necessary?
-    graphviz # TODO should this be a yosys dep?
-    vivado-2017-2
+    python3Packages.xdot
+    graphviz
 
     # ftdi
     openocd
@@ -45,19 +49,21 @@ pkgs.mkShell {
     kicad
 
     # ems
-    python-openems
-    python-csxcad
-    openems
-    appcsxcad
-    hyp2mat
     qucs
 
     # 3d printing
     openscad
     freecad
-    (cura.override { plugins = [ pkgs.curaPlugins.octoprint ]; })
-    curaengine
-  ];
+    # TODO fix
+    # (cura.override { plugins = [ pkgs.curaPlugins.octoprint ]; })
+    # curaengine
+  ] ++ (with custompkgs; [
+    ebase
+    openems
+    appcsxcad
+    hyp2mat
+    vivado-2017-2
+  ]);
 
   KICAD_SYMBOL_DIR="/home/matt/src/kicad-symbols";
 }

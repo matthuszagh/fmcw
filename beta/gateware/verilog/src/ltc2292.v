@@ -13,8 +13,8 @@ module ltc2292 #(
 ) (
    input wire        clk,
    input wire [11:0] di,
-   output reg [11:0] dao = 0,
-   output reg [11:0] dbo = 0
+   output reg [11:0] dao = 12'd0,
+   output reg [11:0] dbo = 12'd0
 );
 
    // TODO verify this is correct. It's not clear, and Henrik does it
@@ -22,11 +22,11 @@ module ltc2292 #(
    // should be sampled on the clock's falling edge and channel B
    // sampled on the clock's rising edge.
 
-   reg [11:0] dbuf;
+   reg [11:0] dbuf = 12'd0;
 
    always @(posedge clk) begin
-      dao <= dbuf;
-      dbo <= di;
+      dao <= di;
+      dbo <= dbuf;
    end
 
    always @(negedge clk) begin

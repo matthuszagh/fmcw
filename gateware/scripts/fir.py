@@ -268,7 +268,7 @@ class FIR:
         with open(savefile, "w") as f:
             f.write("freq val\n")
             for freq, val in zip(resp[0], resp[1]):
-                f.write("{:.2f} {:.2f}\n".format(freq, val))
+                f.write("{:5.0f}     {:5.2f}\n".format(freq / 1e3, val))
 
     def plot_response(self, savefile, taps=None):
         """Utility function to plot response functions."""
@@ -290,14 +290,14 @@ class FIR:
 
 
 # os.remove("env.sh")
-# fir = FIR(
-#     numtaps=120,
-#     bands=[0, 1e6, 1.5e6, 20e6],
-#     band_gain=[1, 0],
-#     fs=40e6,
-#     pass_db=0.5,
-#     stop_db=-40,
-# )
+fir = FIR(
+    numtaps=120,
+    bands=[0, 0.5e6, 1.00e6, 20e6],
+    band_gain=[1, 0],
+    fs=40e6,
+    pass_db=0.5,
+    stop_db=-40,
+)
 
 # tap_bits = 16
 # input_bits = 12
@@ -306,7 +306,7 @@ class FIR:
 #     ["../roms/fir/"], tap_bits, downsample_factor, True, False
 # )
 # # fir.plot_response("fir_response.png")
-# fir.print_response("freq_response.dat")
+fir.print_response("freq_response.dat")
 # set_env("FIR_TAP_WIDTH", tap_bits)
 # set_env("FIR_NORM_SHIFT", fir.tap_normalization_shift())
 # set_env("FIR_OUTPUT_WIDTH", fir.output_bit_width(input_bits))

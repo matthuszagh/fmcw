@@ -1,5 +1,5 @@
 [options]
-mode prove
+mode bmc
 depth 100
 multiclock on
 

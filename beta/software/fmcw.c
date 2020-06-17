@@ -12,8 +12,8 @@
 #define CHUNKSIZE 16384
 /* Capture data for 10s unless user provides a value. */
 #define CAPTURE_DEFAULT 10
-#define START 0x5a
-#define STOP 0xa5
+#define START 0xFF
+#define STOP 0x1F
 #define DISABLE_LIVE_LOGGING 1
 #define DECIMATE 20
 #define FFT_LEN 1024
@@ -36,6 +36,7 @@ static int byte_count;
 static int count;
 static int total_count;
 static uint8_t buffer_last;
+static uint8_t in_sweep;
 
 struct callback_data {
 	FILE *logfile;
@@ -66,50 +67,56 @@ static int callback(uint8_t *buffer, int length, FTDIProgressInfo *progress, voi
 	int16_t *buf = data->buf;
 	FILE *pipe = data->pipe;
 
+	/* TODO why does this happen? */
+	if (length == 0) {
+		return 0;
+	}
+
 	if (capture_done) {
 		return 1;
 	}
 
 	for (int i = 0; i < length; ++i) {
-		if (buffer[i] == STOP) {
+		if (buffer[i] == STOP && buffer_last == STOP) {
 #if !DISABLE_LIVE_LOGGING
 			printf("sequence length: %d / 20480\n", count);
 #endif
-			if (count == RAW_LEN) {
-				/* fwrite(buf, sizeof(int16_t), RAW_LEN, pipe); */
-				/* if (logfile != NULL) { */
-				/* 	fwrite(buf, sizeof(int16_t), RAW_LEN, logfile); */
-				/* } */
+			if (count == RAW_LEN - 1) {
+				size_t ret = fwrite(buf, sizeof(int16_t), RAW_LEN, pipe);
+				if (ret != RAW_LEN) {
+					fprintf(stderr, "Failed to write to pipe. Terminating.\n");
+					exit(1);
+				}
+				if (logfile != NULL) {
+					fwrite(buf, sizeof(int16_t), RAW_LEN, logfile);
+				}
 				/* printf("Wrote %d samples to pipe.\n", RAW_LEN); */
-				/* for (int i = 0; i < RAW_LEN; ++i) { */
-				/* 	printf("%4d: %hd\n", i, buf[i]); */
-				/* } */
 			}
 			count = 0;
 			byte_count = 0;
-		} else if (buffer[i] == START) {
+			in_sweep = 0;
+		} else if (buffer[i] == START && buffer_last == START) {
+			/* puts("start"); */
 			byte_count = 0;
 			count = 0;
-		} else {
+			in_sweep = 1;
+		} else if (in_sweep) {
+			/* puts("continue"); */
 			/* printf("buffer: %hhx\n", buffer[i]); */
 			if (byte_count % 2 == 1) {
 				if (count < RAW_LEN) {
-					uint8_t buf_last;
-					if (i == 0) {
-						buf_last = buffer_last;
-					} else {
-						buf_last = buffer[i - 1];
-					}
-					printf("buffer[i-1]: %0hhx\n", buf_last);
-					printf("buffer[i]  : %0hhx\n", buffer[i]);
-					buf[count] = sign_extend((int16_t)(buf_last << BYTE_BITS) |
-								 (int16_t)buffer[i]);
-					printf("buf[%4d]  : %hx\n\n", count, buf[count]);
+					/* printf("buffer[i-1]: %0hhx\n", buf_last); */
+					/* printf("buffer[i]  : %0hhx\n", buffer[i]); */
+					buf[count] =
+						sign_extend((int16_t)(buffer_last << BYTE_BITS) |
+							    (int16_t)buffer[i]);
+					/* printf("buf[%4d]  : %hx\n\n", count, buf[count]); */
 				}
 				++count;
 			}
 			++byte_count;
 		}
+		buffer_last = buffer[i];
 	}
 	total_count += length;
 	buffer_last = buffer[length - 1];
@@ -145,11 +152,10 @@ int main(int argc, char **argv)
 	int read_ret;
 	int opt;
 	FILE *logfile = NULL;
+	FILE *pipe = NULL;
 
 	struct callback_data callback_data = {
-		.logfile = logfile, .buf = malloc(RAW_LEN * sizeof(int16_t)),
-		/* .pipe = popen("/home/matt/src/fmcw-radar/beta/software/plot.py", "w") */
-	};
+		.logfile = logfile, .buf = malloc(RAW_LEN * sizeof(int16_t)), .pipe = pipe};
 
 	capture_time = CAPTURE_DEFAULT;
 	while ((opt = getopt(argc, argv, "t:l:h")) != -1) {
@@ -168,7 +174,7 @@ int main(int argc, char **argv)
 			callback_data.logfile = fopen(optarg, "w");
 			if (callback_data.logfile == NULL) {
 				fprintf(stderr, "Failed to open log file. Terminating.\n");
-				return 1;
+				goto cleanup;
 			}
 			break;
 		}
@@ -176,40 +182,29 @@ int main(int argc, char **argv)
 
 	if ((ftdi = ftdi_new()) == 0) {
 		fprintf(stderr, "ftdi_new failed\n");
-		fclose(callback_data.logfile);
-		exit(1);
+		goto cleanup;
 	}
 
 	if (ftdi_set_interface(ftdi, INTERFACE_A) < 0) {
 		fprintf(stderr, "ftdi_set_interface failed\n");
-		fclose(callback_data.logfile);
-		ftdi_free(ftdi);
-		exit(1);
+		goto cleanup;
 	}
 
 	if (ftdi_usb_open_desc(ftdi, VENDOR_ID, MODEL_ID, NULL, NULL) < 0) {
 		fprintf(stderr, "Can't open ftdi device: %s\n", ftdi_get_error_string(ftdi));
-		fclose(callback_data.logfile);
-		ftdi_free(ftdi);
-		exit(1);
+		goto cleanup;
 	}
 
 	if (ftdi_set_latency_timer(ftdi, 2)) {
 		fprintf(stderr, "Can't set latency, Error %s\n", ftdi_get_error_string(ftdi));
-		fclose(callback_data.logfile);
-		ftdi_usb_close(ftdi);
-		ftdi_free(ftdi);
-		exit(1);
+		goto cleanup;
 	}
 
 	/* Configures FT2232H for synchronous FIFO mode. */
 	if (ftdi_set_bitmode(ftdi, 0xff, BITMODE_SYNCFF) < 0) {
 		fprintf(stderr, "Can't set synchronous fifo mode, Error %s\n",
 			ftdi_get_error_string(ftdi));
-		fclose(callback_data.logfile);
-		ftdi_usb_close(ftdi);
-		ftdi_free(ftdi);
-		exit(1);
+		goto cleanup;
 	}
 
 	/* Unfortunately this is maxed out on linux as 16KB even
@@ -218,16 +213,20 @@ int main(int argc, char **argv)
 
 	if (ftdi_setflowctrl(ftdi, SIO_RTS_CTS_HS) < 0) {
 		fprintf(stderr, "Unable to set flow control %s\n", ftdi_get_error_string(ftdi));
-		fclose(callback_data.logfile);
-		ftdi_usb_close(ftdi);
-		ftdi_free(ftdi);
-		exit(1);
+		goto cleanup;
+	}
+
+	if ((callback_data.pipe = popen("/home/matt/src/fmcw-radar/beta/software/plot.py fft -b",
+					"w")) == NULL) {
+		fputs("Failed to start plot. Terminating.\n", stderr);
+		goto cleanup;
 	}
 
 	clock_gettime(CLOCK_MONOTONIC, &tp_start);
 	read_ret = ftdi_readstream(ftdi, callback, &callback_data, PACKETS_PER_TRANSFER,
 				   TRANSFERS_PER_CALLBACK);
 	print_statistics();
+cleanup:
 	fclose(callback_data.logfile);
 	pclose(callback_data.pipe);
 	free(callback_data.buf);

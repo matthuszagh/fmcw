@@ -21,7 +21,7 @@ module shift_reg #(
    output wire [DATA_WIDTH-1:0] data_o
 );
 
-   localparam [$clog2(LEN-1)-1:0] LEN_CMP = LEN-1;
+   localparam [$clog2(LEN)-1:0] LEN_CMP = LEN-1;
 
    reg [$clog2(LEN)-1:0]           addr;
    reg [$clog2(LEN)-1:0]           rdaddr;

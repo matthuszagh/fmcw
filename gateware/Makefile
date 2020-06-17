@@ -39,7 +39,7 @@ lint:
 		$(TOP_MODULE_SRC)
 
 .PHONY: test
-test: test_top test_fft test_fir test_ft245 test_async_fifo test_pll_sync_ctr test_shift_reg test_window
+test: test_top test_fft test_fir test_ft245 test_async_fifo test_pll_sync_ctr test_shift_reg test_window test_avg
 
 .PHONY: test_top
 test_top:
@@ -79,6 +79,11 @@ test_shift_reg:
 .PHONY: test_window
 test_window:
 	$(eval TOP_MODULE = window)
+	$(MAKE) -C $(TEST_DIR) cocotb
+
+.PHONY: test_avg
+test_avg:
+	$(eval TOP_MODULE = avg)
 	$(MAKE) -C $(TEST_DIR) cocotb
 
 .PHONY: formal

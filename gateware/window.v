@@ -20,7 +20,7 @@ module window #(
 
    localparam INTERNAL_WIDTH = DATA_WIDTH + COEFF_WIDTH;
    /* verilator lint_off WIDTH */
-   localparam [$clog2(N-1)-1:0] N_CMP = N - 1;
+   localparam [$clog2(N)-1:0] N_CMP = N - 1;
    /* verilator lint_on WIDTH */
 
    function [INTERNAL_WIDTH-1:0] round_convergent(input [INTERNAL_WIDTH-1:0] expr);

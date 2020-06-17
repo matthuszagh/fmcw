@@ -1,6 +1,6 @@
 # options
 USE_NMIGEN	= 0
-LOG		= 1
+LOG		= 0
 
 # constants
 GATEWARE_DIR	= gateware
@@ -9,14 +9,14 @@ SOFTWARE_DIR	= software
 .PHONY: run
 run: pc prog
 ifeq ($(LOG), 1)
-	./$(SOFTWARE_DIR)/read -t2 -l log.bin
+	./$(SOFTWARE_DIR)/fmcw -t2 -l log.bin
 else
-	./$(SOFTWARE_DIR)/read -t60
+	./$(SOFTWARE_DIR)/fmcw -t360
 endif
 
 .PHONY: pc
 pc:
-	$(MAKE) -C $(SOFTWARE_DIR) read
+	$(MAKE) -C $(SOFTWARE_DIR) fmcw
 
 .PHONY: prog
 prog:

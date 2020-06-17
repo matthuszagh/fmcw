@@ -11,6 +11,11 @@
 // configurable at synthesis time. Future iterations should support
 // live reconfiguration.
 
+// TODO disable and enable should be updated to use the soft
+// power-down facility. See parameter `PWR_DWN_INIT'. It's probably a
+// good idea to reset the frequency counters as well (see parameter
+// `COUNTER_RST_INIT').
+
 // Relevant equations (taken from datasheet and provided here for
 // convenience):
 //
@@ -55,7 +60,6 @@
 //              we've scheduled a delay between ramps of 2ms.
 // ramp_start : Pulses high for one clk period to signal the start of the
 //              ramp period.
-// ramp_on    : High when the ramp is on and low when off.
 // txdata     : TODO
 // data       : Serial configuration data for ADF4158 internal
 //              registers. Connect directly to corresponding device pin.
@@ -77,6 +81,7 @@ module adf4158 #(
    // this must be set to 4'b1111. For other values, see the
    // datasheet.
    parameter [3:0] MUXOUT           = 4'b1111,
+   // parameter [3:0] MUXOUT           = 4'b0110,
    // Frequency multiplier for VCO output frequency. See eqn (2).
    parameter [11:0] INT             = 12'd265,
    // Fractional value used in determining the VCO output
@@ -153,7 +158,7 @@ module adf4158 #(
    parameter [1:0] CLK_DIV_MODE    = 2'b11,
    // Clock 2 divider. Determines the duration of a ramp step in ramp
    // mode. See eqn (3).
-   parameter [11:0] CLK2_DIV        = 12'd1000,
+   parameter [11:0] CLK2_DIV        = 12'd1,
    // Set this to 0 to use the clock divider clock for clocking a
    // ramp. Set this to 1 to use the TX data clock instea.
    parameter [0:0] TX_RAMP_CLK      = 1'b0,
@@ -194,30 +199,22 @@ module adf4158 #(
    // Sets the number of steps in a delay.
    parameter [11:0] DELAY_STEPS     = 12'd4000
 ) (
-   input wire clk,
-   input wire clk_20mhz,
-   input wire rst_n,
-   input wire enable,
-   output reg config_done,
-   output reg le,
-   output reg ce,
-   input wire muxout,
-   output reg ramp_start,
-   output reg ramp_on,
-   output reg txdata,
-   output reg data
+   input wire  clk,
+   input wire  clk20,
+   output wire clk_o,
+   input wire  configure,
+   input wire  muxout,
+   output reg  config_done = 1'b0,
+   output reg  le = 1'b1,
+   output reg  ramp_start = 1'b0,
+   output reg  ce = 1'b0,
+   output reg  txdata = 1'b0,
+   output reg  data = 1'b0
 );
 
-   // TODO disable and enable should be updated to use the soft
-   // power-down facility. See parameter `PWR_DWN_INIT'. It's probably
-   // a good idea to reset the frequency counters as well (see
-   // parameter `COUNTER_RST_INIT').
-   localparam [1:0] CONFIG_STATE  = 2'd0;
-   localparam [1:0] ENABLE_STATE  = 2'd1;
-   localparam [1:0] DISABLE_STATE = 2'd2;
-   localparam [1:0] IDLE_STATE    = 2'd3;
+   assign clk_o = clk20;
 
-   reg        ramp_en;
+   reg        ramp_en = 1'b0;
 
    /* Configuration registers.
     * Initialization sequence: r7, r6_0, r6_1, r5_0, r5_1, r4, r3, r2, r1, r0
@@ -237,171 +234,252 @@ module adf4158 #(
       r[9] = {13'd0, RAMP_DEL_FST_LCK, RAMP_DELAY, DELAY_CLK_SEL, DELAY_START_EN, DELAY_STEPS, 3'd7}; /* reg 7 */
    end
 
+   reg muxout_last = 1'b0;
    always @(posedge clk) begin
+      muxout_last <= muxout;
+      ramp_start <= ~muxout & muxout_last;
+   end
+
+   always @(negedge clk20) begin
       r[0] <= {ramp_en, r[0][30:0]};
    end
 
-   // signal ramp start signal for control logic.
+   localparam NUM_STATES = 4;
+   localparam IDLE       = 0,
+              CONFIG_LE  = 1,
+              CONFIG_DAT = 2,
+              ACTIVE     = 3;
+   reg [NUM_STATES-1:0] state = IDLE,
+                        next  = IDLE;
 
-   // TODO this isn't properly parameterized because it isn't
-   // necessarily consistent with the module parameters.
-   localparam DELAY_PERIODS = 80000;
-   localparam [$clog2(DELAY_PERIODS)-1:0] DELAY_PERIODS_CMP = DELAY_PERIODS - 1;
-   reg [$clog2(DELAY_PERIODS)-1:0] delay_ctr;
-
-   always @(posedge clk) begin
-      if (!rst_n) begin
-         delay_ctr  <= {$clog2(DELAY_PERIODS){1'b0}};
-         ramp_start <= 1'b0;
-         ramp_on    <= 1'b0;
-      end else begin
-         if (delay_ctr == {$clog2(DELAY_PERIODS){1'b0}}) begin
-            ramp_start <= 1'b0;
-            ramp_on    <= 1'b1;
-            if (muxout) begin
-               delay_ctr <= {{$clog2(DELAY_PERIODS)-1{1'b0}}, 1'b1};
-            end else begin
-               delay_ctr <= {$clog2(DELAY_PERIODS){1'b0}};
-            end
-         end else begin
-            if (delay_ctr == DELAY_PERIODS_CMP) begin
-               delay_ctr  <= {$clog2(DELAY_PERIODS){1'b0}};
-               ramp_start <= 1'b1;
-               ramp_on    <= 1'b1;
-            end else begin
-               delay_ctr  <= delay_ctr + 1'b1;
-               ramp_start <= 1'b0;
-               ramp_on    <= 1'b0;
-            end
-         end
-      end
+   always @(negedge clk20) begin
+      state <= next;
    end
 
-   reg [3:0]  reg_ctr;
-   reg [4:0]  bit_ctr;
-   // only want to configure this once, unless we power cycle the
-   // chip.
-   reg        configured;
-   reg        enabled;
-   reg        le_delay;
-   reg [1:0]  state;
+   reg [3:0]  reg_ctr    = 4'd9;
+   reg [4:0]  bit_ctr    = 5'd31;
 
-   // write configuration data
-   always @(negedge clk_20mhz) begin
-      if (!rst_n) begin
-         state       <= IDLE_STATE;
-         ce          <= 1'b0;
-         le          <= 1'b1;
-         le_delay    <= 1'b0;
-         enabled     <= 1'b0;
-         configured  <= 1'b0;
-         bit_ctr     <= 5'd31;
-         reg_ctr     <= 4'd9;
-         ramp_en     <= RAMP_EN_INIT;
-         txdata      <= 1'b0;
-         config_done <= 1'b0;
-      end else begin
-         data <= r[reg_ctr][bit_ctr];
-         ce   <= 1'b1;
-
-         if (ce) begin
-            case (state)
-            CONFIG_STATE:
-              begin
-                 bit_ctr <= bit_ctr - 5'd1;
-                 le      <= 1'b0;
-
-                 if (reg_ctr == 4'd0 && bit_ctr == 5'd0) begin
-                    le_delay <= 1'b1;
-                    if (le_delay) begin
-                       state         <= ENABLE_STATE;
-                       le_delay      <= 1'b0;
-                       le            <= 1'b1;
-                       configured    <= 1'b1;
-                       ramp_en       <= 1'b1;
-                    end else begin
-                       bit_ctr       <= bit_ctr;
-                    end
-                 end else if (bit_ctr == 5'd0) begin
-                    le_delay <= 1'b1;
-                    if (le_delay) begin
-                       reg_ctr  <= reg_ctr - 4'd1;
-                       le_delay <= 1'b0;
-                       le       <= 1'b1;
-                    end else begin
-                       bit_ctr <= bit_ctr;
-                    end
-                 end
-              end
-
-            ENABLE_STATE:
-              begin
-                 bit_ctr <= bit_ctr - 5'd1;
-                 le      <= 1'b0;
-                 ramp_en <= 1'b1;
-                 config_done <= 1'b0;
-                 if (ramp_en) begin
-                    if (bit_ctr == 5'd0) begin
-                       le_delay <= 1'b1;
-                       if (le_delay) begin
-                          state       <= IDLE_STATE;
-                          enabled     <= 1'b1;
-                          le_delay    <= 1'b0;
-                          le          <= 1'b1;
-                          config_done <= 1'b1;
-                       end else begin
-                          bit_ctr <= bit_ctr;
-                       end
-                    end
-                 end
-              end
-
-            DISABLE_STATE:
-              begin
-                 bit_ctr <= bit_ctr - 5'd1;
-                 le      <= 1'b0;
-                 ramp_en <= 1'b0;
-                 config_done <= 1'b0;
-                 if (!ramp_en) begin
-                    if (bit_ctr == 5'd0) begin
-                       le_delay <= 1'b1;
-                       if (le_delay) begin
-                          state       <= IDLE_STATE;
-                          enabled     <= 1'b0;
-                          le_delay    <= 1'b0;
-                          le          <= 1'b1;
-                          config_done <= 1'b1;
-                       end else begin
-                          bit_ctr <= bit_ctr;
-                       end
-                    end
-                 end
-              end
-
-            IDLE_STATE:
-              begin
-                 le <= 1'b1;
-                 if (enable && !configured) begin
-                    state <= CONFIG_STATE;
-                    config_done <= 1'b0;
-                 end else if (enable && !enabled) begin
-                    state <= ENABLE_STATE;
-                    config_done <= 1'b0;
-                 end else if (enable && enabled) begin
-                    state <= IDLE_STATE;
-                    config_done <= 1'b1;
-                 end else if (!enable && enabled) begin
-                    state <= DISABLE_STATE;
-                    config_done <= 1'b0;
-                 end else if (!enable && !enabled) begin
-                    state <= IDLE_STATE;
-                    config_done <= 1'b1;
-                 end
-              end
-            endcase
-         end
-      end
+   always @(*) begin
+      next = {NUM_STATES{1'b0}};
+      case (1'b1)
+      state[IDLE]       : if (configure)                      next[CONFIG_LE]  = 1'b1;
+                          else                                next[IDLE]       = 1'b1;
+      state[CONFIG_LE]  : if (config_done)                    next[ACTIVE]     = 1'b1;
+                          else                                next[CONFIG_DAT] = 1'b1;
+      state[CONFIG_DAT] : if (bit_ctr == 5'd0)                next[CONFIG_LE]  = 1'b1;
+                          else                                next[CONFIG_DAT] = 1'b1;
+      state[ACTIVE]     :                                     next[ACTIVE]     = 1'b1;
+      default           :                                     next[IDLE]       = 1'b1;
+      endcase
    end
+
+   always @(negedge clk20) begin
+      ce <= 1'b1;
+      case (1'b1)
+      next[IDLE]:
+        begin
+           reg_ctr     <= 4'd9;
+           bit_ctr     <= 5'd31;
+           le          <= 1'b1;
+           config_done <= 1'b0;
+           data        <= 1'b0;
+           ramp_en     <= 1'b0;
+        end
+
+      next[CONFIG_LE]:
+        begin
+           if (~state[IDLE]) reg_ctr <= reg_ctr - 1'b1;
+           bit_ctr <= 5'd31;
+           le      <= 1'b1;
+           if (reg_ctr == 4'd0) config_done <= 1'b1;
+           else                 config_done <= 1'b0;
+           data        <= 1'b0;
+           ramp_en     <= 1'b1;
+        end
+
+      next[CONFIG_DAT]:
+        begin
+           if (~state[CONFIG_LE]) bit_ctr <= bit_ctr - 1'b1;
+           le   <= 1'b0;
+           config_done <= 1'b0;
+           data <= r[reg_ctr][bit_ctr-1'b1];
+           ramp_en     <= 1'b1;
+        end
+
+      next[ACTIVE]:
+        begin
+           reg_ctr     <= 4'd9;
+           bit_ctr     <= 5'd31;
+           le          <= 1'b1;
+           config_done <= 1'b1;
+           data        <= 1'b0;
+           ramp_en     <= 1'b1;
+        end
+
+      endcase
+   end
+
+   // // ================================================================
+
+   // // signal ramp start signal for control logic.
+
+   // localparam DELAY_PERIODS = ((R_COUNTER * (1 + RDIV2)) / (1 + DOUBLER)) * CLK1_DIV * DELAY_STEPS;
+   // localparam [$clog2(DELAY_PERIODS)-1:0] DELAY_PERIODS_CMP = DELAY_PERIODS - 1;
+   // reg [$clog2(DELAY_PERIODS)-1:0] delay_ctr = {$clog2(DELAY_PERIODS){1'b0}};
+
+   // always @(posedge clk) begin
+   //    if (!rst_n) begin
+   //       delay_ctr  <= {$clog2(DELAY_PERIODS){1'b0}};
+   //       ramp_start <= 1'b0;
+   //       ramp_on    <= 1'b0;
+   //    end else begin
+   //       if (delay_ctr == {$clog2(DELAY_PERIODS){1'b0}}) begin
+   //          ramp_start <= 1'b0;
+   //          ramp_on    <= 1'b1;
+   //          if (muxout) begin
+   //             delay_ctr <= {{$clog2(DELAY_PERIODS)-1{1'b0}}, 1'b1};
+   //          end else begin
+   //             delay_ctr <= {$clog2(DELAY_PERIODS){1'b0}};
+   //          end
+   //       end else begin
+   //          if (delay_ctr == DELAY_PERIODS_CMP) begin
+   //             delay_ctr  <= {$clog2(DELAY_PERIODS){1'b0}};
+   //             ramp_start <= 1'b1;
+   //             ramp_on    <= 1'b1;
+   //          end else begin
+   //             delay_ctr  <= delay_ctr + 1'b1;
+   //             ramp_start <= 1'b0;
+   //             ramp_on    <= 1'b0;
+   //          end
+   //       end
+   //    end
+   // end
+
+   // reg [3:0]  reg_ctr = 4'd9;
+   // reg [4:0]  bit_ctr = 5'd31;
+   // // only want to configure this once, unless we power cycle the
+   // // chip.
+   // reg        configured = 1'b0;
+   // reg        enabled = 1'b0;
+   // reg        le_delay = 1'b0;
+   // reg [1:0]  state = IDLE_STATE;
+
+   // // write configuration data
+   // always @(negedge clk20) begin
+   //    if (!rst_n) begin
+   //       state       <= IDLE_STATE;
+   //       ce          <= 1'b0;
+   //       le          <= 1'b1;
+   //       le_delay    <= 1'b0;
+   //       enabled     <= 1'b0;
+   //       configured  <= 1'b0;
+   //       bit_ctr     <= 5'd31;
+   //       reg_ctr     <= 4'd9;
+   //       ramp_en     <= RAMP_EN_INIT;
+   //       txdata      <= 1'b0;
+   //       config_done <= 1'b0;
+   //    end else begin
+   //       data <= r[reg_ctr][bit_ctr];
+   //       ce   <= 1'b1;
+
+   //       if (ce) begin
+   //          case (state)
+   //          CONFIG_STATE:
+   //            begin
+   //               bit_ctr <= bit_ctr - 5'd1;
+   //               le      <= 1'b0;
+
+   //               if (reg_ctr == 4'd0 && bit_ctr == 5'd0) begin
+   //                  le_delay <= 1'b1;
+   //                  if (le_delay) begin
+   //                     state         <= ENABLE_STATE;
+   //                     le_delay      <= 1'b0;
+   //                     le            <= 1'b1;
+   //                     configured    <= 1'b1;
+   //                     ramp_en       <= 1'b1;
+   //                  end else begin
+   //                     bit_ctr       <= bit_ctr;
+   //                  end
+   //               end else if (bit_ctr == 5'd0) begin
+   //                  le_delay <= 1'b1;
+   //                  if (le_delay) begin
+   //                     reg_ctr  <= reg_ctr - 4'd1;
+   //                     le_delay <= 1'b0;
+   //                     le       <= 1'b1;
+   //                  end else begin
+   //                     bit_ctr <= bit_ctr;
+   //                  end
+   //               end
+   //            end
+
+   //          ENABLE_STATE:
+   //            begin
+   //               bit_ctr <= bit_ctr - 5'd1;
+   //               le      <= 1'b0;
+   //               ramp_en <= 1'b1;
+   //               config_done <= 1'b0;
+   //               if (ramp_en) begin
+   //                  if (bit_ctr == 5'd0) begin
+   //                     le_delay <= 1'b1;
+   //                     if (le_delay) begin
+   //                        state       <= IDLE_STATE;
+   //                        enabled     <= 1'b1;
+   //                        le_delay    <= 1'b0;
+   //                        le          <= 1'b1;
+   //                        config_done <= 1'b1;
+   //                     end else begin
+   //                        bit_ctr <= bit_ctr;
+   //                     end
+   //                  end
+   //               end
+   //            end
+
+   //          DISABLE_STATE:
+   //            begin
+   //               bit_ctr <= bit_ctr - 5'd1;
+   //               le      <= 1'b0;
+   //               ramp_en <= 1'b0;
+   //               config_done <= 1'b0;
+   //               if (!ramp_en) begin
+   //                  if (bit_ctr == 5'd0) begin
+   //                     le_delay <= 1'b1;
+   //                     if (le_delay) begin
+   //                        state       <= IDLE_STATE;
+   //                        enabled     <= 1'b0;
+   //                        le_delay    <= 1'b0;
+   //                        le          <= 1'b1;
+   //                        config_done <= 1'b1;
+   //                     end else begin
+   //                        bit_ctr <= bit_ctr;
+   //                     end
+   //                  end
+   //               end
+   //            end
+
+   //          IDLE_STATE:
+   //            begin
+   //               le <= 1'b1;
+   //               if (enable && !configured) begin
+   //                  state <= CONFIG_STATE;
+   //                  config_done <= 1'b0;
+   //               end else if (enable && !enabled) begin
+   //                  state <= ENABLE_STATE;
+   //                  config_done <= 1'b0;
+   //               end else if (enable && enabled) begin
+   //                  state <= IDLE_STATE;
+   //                  config_done <= 1'b1;
+   //               end else if (!enable && enabled) begin
+   //                  state <= DISABLE_STATE;
+   //                  config_done <= 1'b0;
+   //               end else if (!enable && !enabled) begin
+   //                  state <= IDLE_STATE;
+   //                  config_done <= 1'b1;
+   //               end
+   //            end
+   //          endcase
+   //       end
+   //    end
+   // end
 
 endmodule
 
@@ -410,28 +488,30 @@ endmodule
 module adf4158_tb;
 
    reg clk = 1'b0;
-   reg clk_20mhz = 1'b0;
+   reg clk20 = 1'b0;
    reg ce = 1'b1;
    wire le;
    wire clk_adf;
    wire txdata;
    wire data;
    reg  rst_n = 1'b0;
+   reg  configure = 1'b0;
 
    initial begin
       $dumpfile("tb/adf4158_tb.vcd");
       $dumpvars(0, adf4158_tb);
-      $dumpvars(0, dut.r[0]);
+      // $dumpvars(0, dut.r[0]);
 
-      #10 rst_n = 1'b1;
+      // #10 rst_n = 1'b1;
+      #100 configure = 1'b1;
 
       #100000 $finish;
    end
 
    always #12.5 clk = !clk;
    initial begin
-      #12.5 clk_20mhz = 1'b1;
-      forever #25 clk_20mhz = !clk_20mhz;
+      #12.5 clk20 = 1'b1;
+      forever #25 clk20 = !clk20;
    end
 
    reg       adf_soft_enable = 1'b0;
@@ -450,14 +530,13 @@ module adf4158_tb;
    wire      adf_config_done;
 
    adf4158 dut (
-      .clk         (clk),
-      .clk_20mhz   (clk_20mhz),
-      .rst_n       (rst_n),
-      .enable      (adf_soft_enable),
-      .config_done (adf_config_done),
-      .le          (le),
-      .txdata      (txdata),
-      .data        (data)
+      .clk         (clk             ),
+      .clk20       (clk20           ),
+      .configure   (configure       ),
+      .config_done (adf_config_done ),
+      .le          (le              ),
+      .txdata      (txdata          ),
+      .data        (data            )
    );
 
 endmodule

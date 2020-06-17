@@ -8,6 +8,7 @@
 `include "window.v"
 `include "fft.v"
 `include "avg.v"
+`include "clk_enable.v"
 
 `define GPIO_WIDTH 6
 `define USB_DATA_WIDTH 8
@@ -19,7 +20,7 @@ module top #(
    parameter FIR_NORM_SHIFT    = 2,
    parameter FIR_OUTPUT_WIDTH  = 15,
    parameter FFT_TWIDDLE_WIDTH = 10,
-   parameter AVG_LG_N          = 3
+   parameter AVG_LG_N          = 0
 ) (
    // =============== clocks, resets, LEDs, connectors ===============
    // 40MHz
@@ -107,7 +108,7 @@ module top #(
    localparam FFT_N                           = 1024;
    localparam FFT_OUTPUT_WIDTH                = FIR_OUTPUT_WIDTH + 1 + $clog2(FFT_N);
    /* verilator lint_off WIDTH */
-   localparam [$clog2(FFT_N-1)-1:0] FFT_N_CMP = FFT_N - 1;
+   localparam [$clog2(FFT_N)-1:0] FFT_N_CMP = FFT_N - 1;
    /* verilator lint_on WIDTH */
 
    assign led_o      = ~pa_en_n_o;
@@ -191,19 +192,14 @@ module top #(
 `endif
    wire                            rst_n = pll_lock;
 
-   // Generate 2MHz and 4MHz clock enables.
-   reg                             clk_2mhz_pos_en = 1'b1;
-   reg [4:0]                       clk_2mhz_ctr    = 5'd0;
-
-   always @(posedge clk_i) begin
-      if (clk_2mhz_ctr == 5'd19) begin
-         clk_2mhz_pos_en <= 1'b1;
-         clk_2mhz_ctr    <= 5'd0;
-      end else begin
-         clk_2mhz_pos_en <= 1'b0;
-         clk_2mhz_ctr    <= clk_2mhz_ctr + 1'b1;
-      end
-   end
+   wire                            clk_2mhz_pos_en;
+   clk_enable #(
+      .DIVIDE (20)
+   ) clk_enable (
+      .clk_base   (clk_i           ),
+      .rst_n      (clk_i           ),
+      .clk_enable (clk_2mhz_pos_en )
+   );
 
    wire adf_en;
    wire fir_en;
@@ -214,20 +210,20 @@ module top #(
    control #(
       .FFT_N (FFT_N)
    ) control (
-      .clk          (clk_i               ),
-      .rst_n        (rst_n               ),
-      .adf_done     (adf_config_done     ),
-      .ramp_start   (ramp_start          ),
-      .window_valid (kaiser_dvalid       ),
-      .fifo_full    (fir_fft_fifo_full   ),
-      .fft_done     (fft_ctr == 10'd1023 ),
-      .ft245_empty  (ft245_wrfifo_empty  ),
-      .clk_2mhz_pos_en (clk_2mhz_pos_en),
-      .adf_en       (adf_en              ),
-      .fir_en       (fir_en              ),
-      .fifo_wren    (fifo_wren           ),
-      .fifo_rden    (fifo_rden           ),
-      .fft_en       (fft_en              )
+      .clk             (clk_i               ),
+      .rst_n           (rst_n               ),
+      .adf_done        (adf_config_done     ),
+      .ramp_start      (ramp_start          ),
+      .window_valid    (kaiser_dvalid       ),
+      .fifo_full       (fir_fft_fifo_full   ),
+      .fft_done        (fft_ctr == 10'd1023 ),
+      .ft245_empty     (ft245_wrfifo_empty  ),
+      .clk_2mhz_pos_en (clk_2mhz_pos_en     ),
+      .adf_en          (adf_en              ),
+      .fir_en          (fir_en              ),
+      .fifo_wren       (fifo_wren           ),
+      .fifo_rden       (fifo_rden           ),
+      .fft_en          (fft_en              )
    );
 
    wire                            adf_config_done;
@@ -504,7 +500,7 @@ module top #(
    // not enough memory for a full 20,480 length sequence
    // localparam RAW_SEQ_LEN = 20*FFT_N;
    localparam RAW_SEQ_LEN = 8000;
-   localparam [$clog2(RAW_SEQ_LEN-1)-1:0] RAW_SEQ_MAX_CMP = RAW_SEQ_LEN-1;
+   localparam [$clog2(RAW_SEQ_LEN)-1:0] RAW_SEQ_MAX_CMP = RAW_SEQ_LEN-1;
    reg [$clog2(RAW_SEQ_LEN)-1:0] raw_ctr;
    always @(posedge clk_i) begin
       if (!fir_en) begin
