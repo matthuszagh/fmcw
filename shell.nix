@@ -15,6 +15,7 @@ let
       simplejson
       nmigen
       migen
+      pylibftdi
     ]) ++ (with custompkgs; [
       # skidl
       pyems

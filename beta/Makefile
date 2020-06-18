@@ -7,12 +7,16 @@ GATEWARE_DIR	= gateware
 SOFTWARE_DIR	= software
 
 .PHONY: run
-run: pc prog
-ifeq ($(LOG), 1)
-	./$(SOFTWARE_DIR)/fmcw -t2 -l log.bin
-else
-	./$(SOFTWARE_DIR)/fmcw -t360
-endif
+run: prog
+	./$(SOFTWARE_DIR)/fmcw.py
+
+# .PHONY: run
+# run: pc prog
+# ifeq ($(LOG), 1)
+# 	./$(SOFTWARE_DIR)/fmcw -t2 -l log.bin
+# else
+# 	./$(SOFTWARE_DIR)/fmcw -t360
+# endif
 
 .PHONY: pc
 pc:
