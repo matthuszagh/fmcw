@@ -10,7 +10,7 @@
 `define RAW_SAMPLES `DECIMATE * `FFT_N
 `define FIFO_DEPTH 65536
 `define START_FLAG 8'hFF
-`define STOP_FLAG 8'h1F
+`define STOP_FLAG 8'h8F
 `define LSB_INIT 1'b1
 
 `include "fifo.v"
@@ -104,6 +104,9 @@ module top (
       .CLKFBIN  (pll_fb     )
    );
 `endif
+`ifdef TOP_SIMULATE
+   reg                             pll_lock = 1'b1;
+`endif
 
    wire                            adf_config_done;
    wire                            adf_ramp_start;
@@ -187,13 +190,13 @@ module top (
         end
       state[IDLE]:
         begin
-           if (adf_ramp_start) next[PROD] = 1'b1;
-           else                next[IDLE] = 1'b1;
+           if (adf_ramp_start & lsb == `LSB_INIT) next[PROD] = 1'b1;
+           else                                   next[IDLE] = 1'b1;
         end
       state[PROD]:
         begin
-           if (raw_sample_ctr == RAW_SAMPLES_MAX & lsb) next[CONS] = 1'b1;
-           else                                         next[PROD] = 1'b1;
+           if (raw_sample_ctr == RAW_SAMPLES_MAX & lsb == `LSB_INIT) next[CONS] = 1'b1;
+           else                                                      next[PROD] = 1'b1;
         end
       state[CONS]:
         begin
@@ -206,13 +209,12 @@ module top (
 
    always @(posedge clk80) begin
       raw_sample_ctr <= `RAW_SAMPLES'd0;
-      lsb            <= `LSB_INIT;
+      lsb            <= ~lsb;
       case (1'b1)
       state[PROD]:
         begin
-           lsb                     <= ~lsb;
-           if (lsb) raw_sample_ctr <= raw_sample_ctr + 1'b1;
-           else     raw_sample_ctr <= raw_sample_ctr;
+           if (lsb == `LSB_INIT) raw_sample_ctr <= raw_sample_ctr + 1'b1;
+           else                  raw_sample_ctr <= raw_sample_ctr;
         end
       endcase
 
@@ -334,7 +336,7 @@ module top (
    always @(*) begin
       fifo_ren = 1'b0;
       case (1'b1)
-      ftclk_next[FTCLK_STARTA] | ftclk_next[FTCLK_STARTB] : fifo_ren = 1'b1;
+      ftclk_next[FTCLK_STARTB]                            : fifo_ren = ~ft_txe_last;
       ftclk_next[FTCLK_CONS]                              : fifo_ren = ~ft_txe_last;
       ftclk_next[FTCLK_STOPA] | ftclk_next[FTCLK_STOPB]   : fifo_ren = 1'b0;
       endcase
@@ -413,23 +415,24 @@ module top_tb;
    reg ft_txe_n = 1'b0;
    integer ft_txe_on_ctr = 0;
    integer ft_txe_off_ctr = 0;
-   always @(posedge clk60) begin
-      if (ft_txe_n == 1'b0) begin
-         ft_txe_off_ctr    <= 0;
-         if (ft_txe_on_ctr == 500) begin
-            ft_txe_n <= 1'b1;
-         end else begin
-            ft_txe_on_ctr <= ft_txe_on_ctr + 1;
-         end
-      end else begin
-         ft_txe_on_ctr      <= 0;
-         if (ft_txe_off_ctr == 5) begin
-            ft_txe_n <= 1'b0;
-         end else begin
-            ft_txe_off_ctr <= ft_txe_off_ctr + 1;
-         end
-      end
-   end
+   // Note: uncomment if you want to test effect of ft_txe_n.
+   // always @(posedge clk60) begin
+   //    if (ft_txe_n == 1'b0) begin
+   //       ft_txe_off_ctr    <= 0;
+   //       if (ft_txe_on_ctr == 500) begin
+   //          ft_txe_n <= 1'b1;
+   //       end else begin
+   //          ft_txe_on_ctr <= ft_txe_on_ctr + 1;
+   //       end
+   //    end else begin
+   //       ft_txe_on_ctr      <= 0;
+   //       if (ft_txe_off_ctr == 5) begin
+   //          ft_txe_n <= 1'b0;
+   //       end else begin
+   //          ft_txe_off_ctr <= ft_txe_off_ctr + 1;
+   //       end
+   //    end
+   // end
 
    always #12.5 clk40 = ~clk40;
    always #8.33 clk60 = ~clk60;
