@@ -5,11 +5,14 @@ import sys
 from enum import IntEnum, auto
 from typing import Union, Optional, Callable, List
 from pathlib import Path
+from shutil import rmtree
 from multiprocessing import Process, Pipe
 from multiprocessing.connection import Connection
 from queue import Queue
 import pylibftdi as ftdi
 import numpy as np
+from pyqtgraph.Qt import QtGui
+import pyqtgraph as pg
 
 BITMODE_SYNCFF = 0x40
 CHUNKSIZE = 0x10000
@@ -22,6 +25,7 @@ DECIMATED_LEN = RAW_LEN // DECIMATE
 FFT_LEN = DECIMATED_LEN // 2 + 1
 BYTE_BITS = 8
 ADC_BITS = 12
+HIST_RANGE = 2000
 # TODO might need to be set programmatically
 DECIMATE_BITS = 14
 WINDOW_BITS = 14
@@ -128,6 +132,30 @@ def number_from_array(arr: List[np.uint8], nbits: int) -> int:
     mask = 2 ** (nbits - 1)
     sval = -(uval & mask) + (uval & ~mask)
     return sval
+
+
+def path_is_subdir(path: Path) -> bool:
+    """
+    """
+    cwd = Path.cwd().as_posix()
+    return cwd == path.as_posix()[: len(cwd)] and not cwd == path.as_posix()
+
+
+def subdivide_range(rg: int, divider: int) -> List[Tuple[int, int]]:
+    """
+    """
+    nbins = rg // divider
+    if not rg % divider == 0:
+        nbins += 1
+
+    ranges = []
+    last_upper = 0
+    for i in range(nbins - 1):
+        ranges.append((last_upper, last_upper + divider))
+        last_upper += divider
+
+    ranges.append((last_upper, rg - 1))
+    return ranges
 
 
 class Radar:
@@ -303,6 +331,175 @@ class Radar:
             raise RuntimeError("Only raw FPGA output currently supported.")
 
 
+class PlotType(IntEnum):
+    TIME = auto()
+    SPECTRUM = auto()
+    HIST = auto()
+
+
+def plot_type_from_str(strval: str) -> PlotType:
+    """
+    """
+    strval = strval.lower()
+    if strval == "time":
+        return PlotType.TIME
+    elif strval == "spectrum":
+        return PlotType.SPECTRUM
+    elif strval == "hist":
+        return PlotType.HIST
+
+    raise RuntimeError("Invalid Data string.")
+
+
+class Plot:
+    """
+    """
+
+    def __init__(self):
+        """
+        """
+        self._ptype = None
+        self._output = None
+        self._app = QtGui.QApplication([])
+        self._data = None
+        self.db_min = None
+        self.db_max = None
+        self.plot_path = None
+
+    def set_type(self, ptype: PlotType, output: Data) -> None:
+        """
+        Set the plot and output type.
+        """
+        self._ptype = ptype
+        self._output = output
+
+        if self._ptype == PlotType.TIME:
+            self._data = np.zeros(data_sweep_len(self._output))
+            self._initialize_time_plot()
+        elif self._ptype == PlotType.SPECTRUM:
+            self._data = np.zeros(data_sweep_len(self._output))
+            self._initialize_spectrum_plot()
+        elif self._ptype == PlotType.HIST:
+            self._data = np.zeros((HIST_RANGE, data_sweep_len(self._output)))
+            self._initialize_hist_plot()
+        else:
+            raise ValueError("Invalid plot type.")
+
+    def add_sweep(self, sweep: np.array) -> None:
+        """
+        Plot the next sweep of data.
+        """
+        if self._ptype is None:
+            raise ValueError("Must call set_type before adding sweeps.")
+
+        if self._ptype == PlotType.TIME:
+            self._add_time_sweep(sweep)
+        elif self._ptype == PlotType.SPECTRUM:
+            self._add_spectrum_sweep(sweep)
+        else:
+            self._add_hist_sweep(sweep)
+
+    def _initialize_time_plot(self) -> None:
+        """
+        """
+        self._win = pg.PlotWidget()
+        self._win.setWindowTitle("Time Plot (" + self._output.name + ")")
+        self._win.setXRange(0, self._data.shape[0])
+        self._win.show()
+
+    def _initialize_spectrum_plot(self) -> None:
+        """
+        """
+        self._win = pg.PlotWidget()
+        self._win.setWindowTitle("Spectrum Plot (" + self._output.name + ")")
+        self._win.setXRange(0, self._data.shape[0])
+        self._win.show()
+
+    def _initialize_hist_plot(self) -> None:
+        """
+        """
+        self._fname = 0
+        self._xval = 0
+        self._win = QtGui.QMainWindow()
+        self._imv = pg.ImageView(view=pg.PlotItem())
+        self._img_view = self._imv.getView()
+        self._img_view.invertY(False)
+        self._img_view.setLimits(yMin=0, yMax=self._data.shape[1])
+        self._img_view.getAxis("left").setScale(0.5)
+        self._win.setCentralWidget(self._imv)
+        self._win.show()
+        self._win.setWindowTitle(
+            "Range-Time Histogram (" + self._output.name + ")"
+        )
+        self._imv.setPredefinedGradient("flame")
+
+    def _add_time_sweep(self, sweep: np.array) -> None:
+        """
+        """
+        # makes the update much faster
+        ranges = subdivide_range(self._data.shape[0], 100)
+        for rg in ranges:
+            self._data[rg[0] : rg[1]] = sweep[rg[0] : rg[1]]
+            self._win.disableAutoRange()
+            self._win.plot(
+                np.linspace(0, self._data.shape[0] - 1, self._data.shape[0]),
+                self._data,
+                clear=True,
+            )
+            self._win.autoRange()
+            self._app.processEvents()
+
+        self._data = np.zeros(self._data.shape)
+
+    def _add_spectrum_sweep(self, sweep: np.array) -> None:
+        """
+        """
+        self._win.plot(
+            np.linspace(0, self._data.shape[0] - 1, self._data.shape[0]),
+            sweep,
+            clear=True,
+        )
+        self._app.processEvents()
+
+    def _add_hist_sweep(self, sweep: np.array) -> None:
+        """
+        """
+        self._data[self._xval] = sweep
+        xrg = self._data.shape[0]
+        self._imv.setImage(self._data, xvals=[i for i in range(xrg)])
+
+        if self.db_min is None:
+            db_min = -120
+        else:
+            db_min = self.db_min
+        if self.db_max is None:
+            db_max = 0
+        else:
+            db_max = self.db_max
+        self._imv.setLevels(db_min, db_max)
+        self._app.processEvents()
+
+        self._xval += 1
+        if self._xval == xrg:
+            if self._save_plotsp():
+                self._save_hist()
+                self._fname += 1
+            self._data = np.zeros(np.shape(self._data))
+            self._xval = 0
+
+    def _save_hist(self) -> None:
+        """
+        """
+        self._imv.export(self.plot_path.as_posix() + str(self._fname) + ".png")
+
+    def _save_plotsp(self) -> bool:
+        """
+        True if plots should be saved.
+        """
+        if not self.plot_path == Path.cwd():
+            return True
+
+
 class Parameter:
     """
     """
@@ -329,7 +526,7 @@ class Parameter:
         """
         """
         return "{:{width}} : {value}\n".format(
-            self.name, width=name_width, value=self.getter(string=True)
+            self.name, width=name_width, value=self.getter(strval=True)
         )
 
     def display_number_menu(self) -> str:
@@ -342,10 +539,11 @@ class Configuration:
     """
     """
 
-    def __init__(self, radar: Radar):
+    def __init__(self, radar: Radar, plot: Plot):
         """
         """
         self.radar = radar
+        self.plot = plot
         self._param_ctr = 0
 
         # parameter variables
@@ -353,6 +551,10 @@ class Configuration:
         self._display_output = None
         self.log_file = None
         self.time = None
+        self.ptype = None
+        self.db_min = None
+        self.db_max = None
+        self.plot_dir = None
         self.params = [
             Parameter(
                 name="FPGA output",
@@ -386,6 +588,38 @@ class Configuration:
                 possible=self._time_possible,
                 init="2",
             ),
+            Parameter(
+                name="plot type",
+                number=self._get_inc_ctr(),
+                getter=self._get_plot_type,
+                setter=self._set_plot_type,
+                possible=self._plot_type_possible,
+                init="hist",
+            ),
+            Parameter(
+                name="dB min",
+                number=self._get_inc_ctr(),
+                getter=self._get_db_min,
+                setter=self._set_db_min,
+                possible=self._db_min_possible,
+                init="-80",
+            ),
+            Parameter(
+                name="dB max",
+                number=self._get_inc_ctr(),
+                getter=self._get_db_max,
+                setter=self._set_db_max,
+                possible=self._db_max_possible,
+                init="0",
+            ),
+            Parameter(
+                name="plot save dir",
+                number=self._get_inc_ctr(),
+                getter=self._get_plot_dir,
+                setter=self._set_plot_dir,
+                possible=self._plot_dir_possible,
+                init="",
+            ),
         ]
         self._param_name_width = self._max_param_name_width()
 
@@ -397,7 +631,7 @@ class Configuration:
             display_str += "{:{width}} : ".format(
                 param.name, width=self._param_name_width
             )
-            display_str += param.getter(string=True)
+            display_str += param.getter(strval=True)
             display_str += "\n"
 
         return display_str
@@ -450,10 +684,10 @@ class Configuration:
 
         self.radar.fpga_output = self._fpga_output
 
-    def _get_fpga_output(self, string: bool = False):
+    def _get_fpga_output(self, strval: bool = False):
         """
         """
-        if string:
+        if strval:
             return self._fpga_output.name
         return self._fpga_output
 
@@ -479,10 +713,10 @@ class Configuration:
         newdata = data_from_str(newval)
         self._display_output = newdata
 
-    def _get_display_output(self, string: bool = False):
+    def _get_display_output(self, strval: bool = False):
         """
         """
-        if string:
+        if strval:
             return self._display_output.name
         return self._display_output
 
@@ -501,10 +735,10 @@ class Configuration:
         """
         self.log_file = Path(newval).resolve()
 
-    def _get_log_file(self, string: bool = False):
+    def _get_log_file(self, strval: bool = False):
         """
         """
-        if string:
+        if strval:
             return self.log_file.as_posix()
         return self.log_file
 
@@ -538,10 +772,10 @@ class Configuration:
         timeval = int(newval)
         self.time = int(timeval * multiplier)
 
-    def _get_time(self, string: bool = False):
+    def _get_time(self, strval: bool = False):
         """
         """
-        if string:
+        if strval:
             return str(self.time)
         return self.time
 
@@ -559,6 +793,127 @@ class Configuration:
         """
         return True
 
+    def _get_plot_type(self, strval: bool = False):
+        """
+        """
+        if strval:
+            return self.ptype.name
+        return self.ptype
+
+    def _set_plot_type(self, newval: str):
+        """
+        """
+        ptype = plot_type_from_str(newval)
+        self.ptype = ptype
+
+    def _plot_type_possible(self) -> str:
+        """
+        """
+        return "{TIME (except FFT output), SPECTRUM, HIST} (case insensitive)"
+
+    def _check_plot_type(self) -> bool:
+        """
+        """
+        if self._fpga_output == Data.FFT and self.ptype == PlotType.TIME:
+            return False
+        return True
+
+    def _get_db_min(self, strval: bool = False):
+        """
+        """
+        if strval:
+            if self.db_min is None:
+                return "None"
+            return str(self.db_min)
+        return self.db_min
+
+    def _set_db_min(self, newval: Optional[str]):
+        """
+        """
+        if newval is None:
+            self.db_min = None
+        else:
+            self.db_min = float(newval)
+        self.plot.db_min = self.db_min
+
+    def _db_min_possible(self) -> str:
+        """
+        """
+        return "Any float or None, in which case no minimum clipping will be performed."
+
+    def _check_db_min(self) -> bool:
+        """
+        """
+        return True
+
+    def _get_db_max(self, strval: bool = False):
+        """
+        """
+        if strval:
+            if self.db_max is None:
+                return "None"
+            return str(self.db_max)
+        return self.db_max
+
+    def _set_db_max(self, newval: Optional[str]):
+        """
+        """
+        if newval is None:
+            self.db_max = None
+        self.db_max = float(newval)
+        self.plot.db_max = self.db_max
+
+    def _db_max_possible(self) -> str:
+        """
+        """
+        return "Any float or None, in which case no maximum clipping will be performed."
+
+    def _check_db_max(self) -> bool:
+        """
+        """
+        if self.db_max is None or self.db_min is None:
+            return True
+        if self.db_max > self.db_min:
+            return True
+        return False
+
+    def _get_plot_dir(self, strval: bool = False):
+        """
+        """
+        if strval:
+            return self.plot_dir.as_posix()
+        return self.plot_dir
+
+    def _set_plot_dir(self, newval: str):
+        """
+        """
+        self.plot_dir = Path(newval).resolve()
+        self.plot.plot_path = self.plot_dir
+
+    def _plot_dir_possible(self) -> str:
+        """
+        """
+        return (
+            "Any valid subdirectory path. If the directory already "
+            "exists, it will be emptied before new plots are added. "
+            "If it doesn't exist, it will be created."
+        )
+
+    def _check_plot_dir(self) -> bool:
+        """
+        """
+        if self.plot_dir == Path.cwd():
+            return True
+
+        if not path_is_subdir(self.plot_dir):
+            return False
+
+        if self.plot_dir.exists():
+            rmtree(self.plot_dir)
+
+        self.plot_dir.mkdir(parents=True)
+        return True
+
     def _check_parameters(self) -> bool:
         """
         """
@@ -567,6 +922,10 @@ class Configuration:
         valid &= self._check_display_output()
         valid &= self._check_log_file()
         valid &= self._check_time()
+        valid &= self._check_plot_type()
+        valid &= self._check_db_min()
+        valid &= self._check_db_max()
+        valid &= self._check_plot_dir()
 
         return valid
 
@@ -590,7 +949,8 @@ class Shell:
         """
         """
         self.radar = Radar()
-        self.configuration = Configuration(self.radar)
+        self.plot = Plot()
+        self.configuration = Configuration(self.radar, self.plot)
         self.help()
         self.prompt()
 
@@ -609,7 +969,7 @@ class Shell:
         param = self.configuration.param_for_number(int_input)
         param_str = (
             ("Parameter       : {}\n".format(param.name))
-            + ("Current Value   : {}\n".format(param.getter(string=True)))
+            + ("Current Value   : {}\n".format(param.getter(strval=True)))
             + ("Possible Values : {}\n".format(param.possible()))
         )
         write(param_str)
@@ -633,6 +993,9 @@ class Shell:
             self.set_prompt()
         elif uinput == "run":
             self.radar.program()
+            self.plot.set_type(
+                self.configuration.ptype, self.configuration._fpga_output
+            )
             self.run()
         else:
             write("Unrecognized input. Try again.")
@@ -657,7 +1020,7 @@ class Shell:
                 "set  : Change the value of a configuration \n"
                 "       variable.\n"
             )
-            + "stop : Terminate the current data acquisition early.\n"
+            # + "stop : Terminate the current data acquisition early.\n"
         )
         write(help_str)
 
@@ -682,9 +1045,7 @@ class Shell:
             full_data = self.radar.read()
             sweep = self.radar.read_sweep()
             while not sweep is None:
-                # for val in sweep:
-                #     f.write(str(val))
-                #     f.write("\n")
+                self.plot.add_sweep(sweep)
                 sweep = self.radar.read_sweep()
             if logging:
                 log_pipe.send(full_data)
