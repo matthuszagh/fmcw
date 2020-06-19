@@ -13,6 +13,7 @@ import pylibftdi as ftdi
 import numpy as np
 from pyqtgraph.Qt import QtGui
 import pyqtgraph as pg
+from scipy import signal
 
 BITMODE_SYNCFF = 0x40
 CHUNKSIZE = 0x10000
@@ -20,6 +21,12 @@ SIO_RTS_CTS_HS = 0x1 << 8
 START_FLAG = 0xFF
 STOP_FLAG = 0x8F
 RAW_LEN = 20480
+FS = 40e6
+PASS_DB = 0.5
+STOP_DB = -40
+NUMTAPS = 120
+BANDS = [0, 0.5e6, 1.0e6, 20e6]
+BAND_GAIN = [1, 0]
 DECIMATE = 20
 DECIMATED_LEN = RAW_LEN // DECIMATE
 FFT_LEN = DECIMATED_LEN // 2 + 1
@@ -156,6 +163,10 @@ def subdivide_range(rg: int, divider: int) -> List[Tuple[int, int]]:
 
     ranges.append((last_upper, rg - 1))
     return ranges
+
+
+def db_arr(indata, maxval):
+    return 20 * np.log10(indata / maxval)
 
 
 class Radar:
@@ -372,18 +383,49 @@ class Plot:
         """
         self._ptype = ptype
         self._output = output
+        self._set_type_and_output()
+
+    @property
+    def ptype(self) -> PlotType:
+        """
+        """
+        return self._ptype
+
+    @ptype.setter
+    def ptype(self, newval: Data):
+        """
+        """
+        if self._output is None:
+            raise RuntimeError("Must set output type before plot type.")
+
+        if self._ptype is not None:
+            self._close_plot()
+
+        self._ptype = newval
 
         if self._ptype == PlotType.TIME:
             self._data = np.zeros(data_sweep_len(self._output))
             self._initialize_time_plot()
         elif self._ptype == PlotType.SPECTRUM:
-            self._data = np.zeros(data_sweep_len(self._output))
+            self._data = np.zeros(data_sweep_len(self._output) // 2 + 1)
             self._initialize_spectrum_plot()
         elif self._ptype == PlotType.HIST:
             self._data = np.zeros((HIST_RANGE, data_sweep_len(self._output)))
             self._initialize_hist_plot()
         else:
             raise ValueError("Invalid plot type.")
+
+    @property
+    def output(self) -> Data:
+        """
+        """
+        return self._output
+
+    @ptype.setter
+    def output(self, newval: Data):
+        """
+        """
+        self._output = newval
 
     def add_sweep(self, sweep: np.array) -> None:
         """
@@ -412,7 +454,7 @@ class Plot:
         """
         self._win = pg.PlotWidget()
         self._win.setWindowTitle("Spectrum Plot (" + self._output.name + ")")
-        self._win.setXRange(0, self._data.shape[0])
+        self._win.setXRange(0, self._data.shape[0] // 2 + 1)
         self._win.show()
 
     def _initialize_hist_plot(self) -> None:
@@ -432,6 +474,11 @@ class Plot:
             "Range-Time Histogram (" + self._output.name + ")"
         )
         self._imv.setPredefinedGradient("flame")
+
+    def _close_plot(self) -> None:
+        """
+        """
+        self._win.close()
 
     def _add_time_sweep(self, sweep: np.array) -> None:
         """
@@ -539,11 +586,12 @@ class Configuration:
     """
     """
 
-    def __init__(self, radar: Radar, plot: Plot):
+    def __init__(self, radar: Radar, plot: Plot, proc: Proc):
         """
         """
         self.radar = radar
         self.plot = plot
+        self.proc = proc
         self._param_ctr = 0
 
         # parameter variables
@@ -586,7 +634,7 @@ class Configuration:
                 getter=self._get_time,
                 setter=self._set_time,
                 possible=self._time_possible,
-                init="2",
+                init="30",
             ),
             Parameter(
                 name="plot type",
@@ -683,6 +731,7 @@ class Configuration:
             self._fpga_output = newdata
 
         self.radar.fpga_output = self._fpga_output
+        self.proc.indata = self._fpga_output
 
     def _get_fpga_output(self, strval: bool = False):
         """
@@ -712,6 +761,8 @@ class Configuration:
         """
         newdata = data_from_str(newval)
         self._display_output = newdata
+        self.proc.output = self._display_output
+        self.plot.output = self._display_output
 
     def _get_display_output(self, strval: bool = False):
         """
@@ -805,6 +856,9 @@ class Configuration:
         """
         ptype = plot_type_from_str(newval)
         self.ptype = ptype
+        self.plot.ptype = self.ptype
+        if self.ptype == PlotType.SPECTRUM:
+            self.proc.spectrum = True
 
     def _plot_type_possible(self) -> str:
         """
@@ -941,6 +995,123 @@ class Configuration:
         return width
 
 
+class Proc:
+    """
+    Data processing.
+    """
+
+    def __init__(self):
+        """
+        """
+        self._output = None
+        self.indata = None
+        self.spectrum = None
+        self._sub_last = None
+        self.last_seq = None
+
+    @property
+    def output(self) -> Data:
+        """
+        """
+        return self._output
+
+    @output.setter
+    def output(self, newval: Data):
+        """
+        """
+        self._output = newval
+        if self._output.value > Data.RAW:
+            self._init_fir()
+        if self._output.value > Data.DECIMATE:
+            self._init_window()
+
+    @property
+    def sub_last(self) -> bool:
+        """
+        """
+        return self._sub_last
+
+    @sub_last.setter
+    def sub_last(self, newval: bool):
+        """
+        """
+        self._sub_last = newval
+        if self._sub_last:
+            self.last_seq = np.zeros(data_sweep_len(self.output))
+
+    def _init_fir(self):
+        """
+        """
+        w = [1 / (1 - 10 ** (-PASS_DB / 20)), 1 / (10 ** (STOP_DB / 20))]
+        self.taps = signal.remez(
+            numtaps=NUMTAPS,
+            bands=BANDS,
+            desired=BAND_GAIN,
+            weight=w,
+            fs=FS,
+            type="bandpass",
+        )
+
+    def _init_window(self):
+        """
+        """
+        self.window_coeffs = np.kaiser(data_sweep_len(Data.WINDOW), 6)
+
+    def process_sequence(self, seq: np.array) -> np.array:
+        """
+        """
+        if self.sub_last:
+            new_seq = np.subtract(seq, self.last_seq)
+            self.last_seq = np.copy(seq)
+            seq = new_seq
+
+        i = self.indata.value
+        proc_func = [
+            self.perform_fir,
+            self.perform_decimate,
+            self.perform_window,
+            self.perform_fft,
+        ]
+        while i < self.output.value - 1:
+            seq = proc_func[i](seq)
+            i += 1
+
+        if self.output == Data.FFT:
+            # TODO what should maxval be?
+            seq = db_arr(seq, len(seq))
+
+        if self.spectrum:
+            seq = np.abs(np.fft.rfft(seq))
+            # TODO what should maxval be?
+            seq = db_arr(seq, len(seq))
+
+        return seq
+
+    def perform_fir(self, seq: np.array) -> np.array:
+        """
+        """
+        fir = np.convolve(seq, self.taps, mode="same")
+        return fir
+
+    def perform_decimate(self, seq: np.array) -> np.array:
+        """
+        """
+        dec_arr = [seq[i] for i in range(len(seq)) if i % DECIMATE == 0]
+        return dec_arr
+
+    def perform_window(self, seq: np.array) -> np.array:
+        """
+        """
+        window = np.multiply(seq, self.window_coeffs)
+        return window
+
+    def perform_fft(self, seq: np.array) -> np.array:
+        """
+        """
+        fft = np.fft.rfft(seq)
+        return np.abs(fft)
+
+
 class Shell:
     """
     """
@@ -950,7 +1121,8 @@ class Shell:
         """
         self.radar = Radar()
         self.plot = Plot()
-        self.configuration = Configuration(self.radar, self.plot)
+        self.proc = Proc()
+        self.configuration = Configuration(self.radar, self.plot, self.proc)
         self.help()
         self.prompt()
 
@@ -993,9 +1165,6 @@ class Shell:
             self.set_prompt()
         elif uinput == "run":
             self.radar.program()
-            self.plot.set_type(
-                self.configuration.ptype, self.configuration._fpga_output
-            )
             self.run()
         else:
             write("Unrecognized input. Try again.")
@@ -1045,7 +1214,8 @@ class Shell:
             full_data = self.radar.read()
             sweep = self.radar.read_sweep()
             while not sweep is None:
-                self.plot.add_sweep(sweep)
+                proc_sweep = self.proc.process_sequence(sweep)
+                self.plot.add_sweep(proc_sweep)
                 sweep = self.radar.read_sweep()
             if logging:
                 log_pipe.send(full_data)
