@@ -29,7 +29,6 @@ BANDS = [0, 0.5e6, 1.0e6, 20e6]
 BAND_GAIN = [1, 0]
 DECIMATE = 20
 DECIMATED_LEN = RAW_LEN // DECIMATE
-FFT_LEN = DECIMATED_LEN // 2 + 1
 BYTE_BITS = 8
 ADC_BITS = 12
 HIST_RANGE = 2000
@@ -37,6 +36,9 @@ HIST_RANGE = 2000
 DECIMATE_BITS = 14
 WINDOW_BITS = 14
 FFT_BITS = 25
+# dB min and max if no other value is set
+DB_MIN = -120
+DB_MAX = 0
 
 
 HORIZONTAL_LINES = "----------\n"
@@ -71,14 +73,16 @@ def data_from_str(strval: str) -> Data:
 def data_sweep_len(data: Data) -> int:
     """
     """
-    if data == Data.RAW or data == Data.FIR:
+    if data < Data.FIR:
         return RAW_LEN
-    if data == Data.DECIMATE or data == Data.WINDOW:
+    else:
         return DECIMATED_LEN
-    if data == Data.FFT:
-        return FFT_LEN
 
-    raise ValueError("Invalid Data value.")
+
+def spectrum_len(data: Data) -> int:
+    """
+    """
+    return data_sweep_len(data) // 2 + 1
 
 
 def data_nbits(data: Data) -> int:
@@ -373,17 +377,9 @@ class Plot:
         self._output = None
         self._app = QtGui.QApplication([])
         self._data = None
-        self.db_min = None
-        self.db_max = None
+        self.db_min = DB_MIN
+        self.db_max = DB_MAX
         self.plot_path = None
-
-    def set_type(self, ptype: PlotType, output: Data) -> None:
-        """
-        Set the plot and output type.
-        """
-        self._ptype = ptype
-        self._output = output
-        self._set_type_and_output()
 
     @property
     def ptype(self) -> PlotType:
@@ -407,10 +403,10 @@ class Plot:
             self._data = np.zeros(data_sweep_len(self._output))
             self._initialize_time_plot()
         elif self._ptype == PlotType.SPECTRUM:
-            self._data = np.zeros(data_sweep_len(self._output) // 2 + 1)
+            self._data = np.zeros(spectrum_len(self._output))
             self._initialize_spectrum_plot()
         elif self._ptype == PlotType.HIST:
-            self._data = np.zeros((HIST_RANGE, data_sweep_len(self._output)))
+            self._data = np.zeros((HIST_RANGE, spectrum_len(self._output)))
             self._initialize_hist_plot()
         else:
             raise ValueError("Invalid plot type.")
@@ -454,7 +450,8 @@ class Plot:
         """
         self._win = pg.PlotWidget()
         self._win.setWindowTitle("Spectrum Plot (" + self._output.name + ")")
-        self._win.setXRange(0, self._data.shape[0] // 2 + 1)
+        self._win.setXRange(0, self._data.shape[0])
+        self._win.setYRange(self.db_min, self.db_max)
         self._win.show()
 
     def _initialize_hist_plot(self) -> None:
@@ -468,6 +465,7 @@ class Plot:
         self._img_view.invertY(False)
         self._img_view.setLimits(yMin=0, yMax=self._data.shape[1])
         self._img_view.getAxis("left").setScale(0.5)
+        self._imv.setLevels(self.db_min, self.db_max)
         self._win.setCentralWidget(self._imv)
         self._win.show()
         self._win.setWindowTitle(
@@ -515,15 +513,6 @@ class Plot:
         xrg = self._data.shape[0]
         self._imv.setImage(self._data, xvals=[i for i in range(xrg)])
 
-        if self.db_min is None:
-            db_min = -120
-        else:
-            db_min = self.db_min
-        if self.db_max is None:
-            db_max = 0
-        else:
-            db_max = self.db_max
-        self._imv.setLevels(db_min, db_max)
         self._app.processEvents()
 
         self._xval += 1
@@ -885,7 +874,7 @@ class Configuration:
         """
         """
         if newval is None:
-            self.db_min = None
+            self.db_min = DB_MIN
         else:
             self.db_min = float(newval)
         self.plot.db_min = self.db_min
@@ -913,7 +902,7 @@ class Configuration:
         """
         """
         if newval is None:
-            self.db_max = None
+            self.db_max = DB_MAX
         self.db_max = float(newval)
         self.plot.db_max = self.db_max
 
@@ -1079,8 +1068,7 @@ class Proc:
         if self.output == Data.FFT:
             # TODO what should maxval be?
             seq = db_arr(seq, len(seq))
-
-        if self.spectrum:
+        elif self.spectrum:
             seq = np.abs(np.fft.rfft(seq))
             # TODO what should maxval be?
             seq = db_arr(seq, len(seq))
