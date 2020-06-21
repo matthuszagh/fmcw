@@ -9,11 +9,11 @@ from shutil import rmtree
 from multiprocessing import Process, Pipe
 from multiprocessing.connection import Connection
 from queue import Queue
-import pylibftdi as ftdi
 import numpy as np
 from pyqtgraph.Qt import QtGui
 import pyqtgraph as pg
 from scipy import signal
+from device import *
 
 BITMODE_SYNCFF = 0x40
 CHUNKSIZE = 0x10000
@@ -45,11 +45,11 @@ HORIZONTAL_LINES = "----------\n"
 
 
 class Data(IntEnum):
-    RAW = auto()
-    FIR = auto()
-    DECIMATE = auto()
-    WINDOW = auto()
-    FFT = auto()
+    RAW = 0
+    FIR = 1
+    DECIMATE = 2
+    WINDOW = 3
+    FFT = 4
 
 
 def data_from_str(strval: str) -> Data:
@@ -123,19 +123,6 @@ def write(txt: str, newline: bool = True):
     sys.stdout.flush()
 
 
-def log(fpath: Path, pipe: Connection):
-    """
-    """
-    f = fpath.open("wb")
-    read_data = pipe.recv()
-    while read_data:
-        f.write(read_data)
-        read_data = pipe.recv()
-
-    f.close()
-    pipe.close()
-
-
 def number_from_array(arr: List[np.uint8], nbits: int) -> int:
     """
     """
@@ -169,181 +156,9 @@ def subdivide_range(rg: int, divider: int) -> List[Tuple[int, int]]:
     return ranges
 
 
-def db_arr(indata, maxval):
-    return 20 * np.log10(indata / maxval)
-
-
-class Radar:
-    """
-    """
-
-    def __init__(self):
-        """
-        """
-        self.device = ftdi.Device(mode="b", interface_select=ftdi.INTERFACE_A)
-        self.device.open()
-        self.device.ftdi_fn.ftdi_set_bitmode(0xFF, BITMODE_SYNCFF)
-        self.device.ftdi_fn.ftdi_setflowctrl(SIO_RTS_CTS_HS)
-        self.device.ftdi_fn.ftdi_set_latency_timer(2)
-        self.device.ftdi_fn.ftdi_read_data_set_chunksize(CHUNKSIZE)
-        self.device.ftdi_fn.ftdi_write_data_set_chunksize(CHUNKSIZE)
-        self.device.flush()
-
-        self._data_queue = Queue()
-        self._queue_size = 0
-        self._sweep = None
-        self._sweep_idx = 0
-        self._start_flag_count = 0
-        self._stop_flag_count = 0
-
-        # set later
-        self._fpga_output = None
-
-    @property
-    def fpga_output(self) -> Data:
-        """
-        """
-        return self._fpga_output
-
-    @fpga_output.setter
-    def fpga_output(self, newval: Data):
-        """
-        """
-        self._fpga_output = newval
-        self._sweep = np.zeros(data_sweep_len(newval), dtype=int)
-
-    def read(self):
-        """
-        Read a chunk of data from the radar.
-        """
-        data = self.device.read(CHUNKSIZE)
-        data_bytes = np.frombuffer(data, dtype=np.uint8)
-        data_len = len(data)
-        if data_len > 0:
-            for val in data_bytes:
-                self._data_queue.put(val)
-            self._queue_size += data_len
-
-        return data
-
-    def read_sweep(self) -> Optional[np.array]:
-        """
-        Read the next full sweep of data.  This does not actually
-        perform a read from the device.  Instead, it returns data
-        already acquired by read().  Therefore, you must call read
-        prior to calling this.
-
-        :returns: The next sweep of data or None if the acquired data
-                  does not contain a full sweep.
-        """
-        sweep_len = data_sweep_len(self.fpga_output)
-        sample_bits = data_nbits(self.fpga_output)
-        nflags = num_flags(sample_bits)
-        if sweep_len * sample_bits + 2 * nflags > self._queue_size * BYTE_BITS:
-            return None
-
-        if not self._stop_flag_count == 0:
-            if self._read_stop_sequence(nflags):
-                sweep = np.copy(self._sweep)
-                self._zero_sweep()
-                return sweep
-
-        if not self._sweep_idx == 0:
-            if self._read_sample_sequence(sample_bits, sweep_len):
-                if self._read_stop_sequence(nflags):
-                    sweep = np.copy(self._sweep)
-                    self._zero_sweep()
-                    return sweep
-
-        if self._read_start_sequence(nflags):
-            if self._read_sample_sequence(sample_bits, sweep_len):
-                if self._read_stop_sequence(nflags):
-                    sweep = np.copy(self._sweep)
-                    self._zero_sweep()
-                    return sweep
-
-        return None
-
-    def _read_start_sequence(self, nflags: int) -> bool:
-        """
-        """
-        while self._start_flag_count < nflags:
-            if self._queue_size == 0:
-                return False
-            qval = self._data_queue.get()
-            self._queue_size -= 1
-            if qval == START_FLAG:
-                self._start_flag_count += 1
-            else:
-                self._start_flag_count = 0
-
-        # A read chunk can end on a full start sequence.
-        if not self._queue_size == 0:
-            self._start_flag_count = 0
-        return True
-
-    def _read_stop_sequence(self, nflags: int) -> bool:
-        """
-        :returns: True if full stop sequence read.  Otherwise returns
-                  false.
-        """
-        # for i in range(self._sweep_idx):
-        #     print("{:6}: {}".format(i, self._sweep[i]))
-        while self._stop_flag_count < nflags:
-            if self._queue_size == 0:
-                return False
-            self._sweep_idx = 0
-            qval = self._data_queue.get()
-            self._queue_size -= 1
-            if qval == STOP_FLAG:
-                self._stop_flag_count += 1
-            else:
-                # We did not read a full stop sequence. Drop all data
-                # and start again with the next sweep.
-                self._zero_sweep()
-                self._start_flag_count = 0
-                self._stop_flag_count = 0
-                return False
-
-        self._zero_sweep()
-        self._start_flag_count = 0
-        self._stop_flag_count = 0
-        return True
-
-    def _read_sample_sequence(self, sample_bits: int, sweep_len: int) -> bool:
-        """
-        :returns: True if full sequence read. False otherwise.
-        """
-        sample_bytes = num_flags(sample_bits)
-        sample_array = []
-        while self._queue_size > sample_bytes and self._sweep_idx < sweep_len:
-            for elem in range(sample_bytes):
-                sample_array.append(self._data_queue.get())
-            val = number_from_array(sample_array, sample_bits)
-            self._sweep[self._sweep_idx] = val
-            self._queue_size -= sample_bytes
-            self._sweep_idx += 1
-            sample_array = []
-
-        if self._sweep_idx == sweep_len:
-            return True
-        # We've read a partial sweep. Maintain sweep_idx to continue
-        # with the next read chunk.
-        return False
-
-    def _zero_sweep(self) -> None:
-        """
-        """
-        self._sweep_idx = 0
-        # if not self._sweep_idx == 0:
-        #     self._sweep = np.zeros(data_sweep_len(self._fpga_output))
-        #     self._sweep_idx = 0
-
-    def program(self):
-        """
-        """
-        if not self.fpga_output == Data.RAW:
-            raise RuntimeError("Only raw FPGA output currently supported.")
+def db_arr(indata, maxval, db_min, db_max):
+    arr = 20 * np.log10(indata / maxval)
+    return np.clip(arr, db_min, db_max)
 
 
 class PlotType(IntEnum):
@@ -391,25 +206,13 @@ class Plot:
     def ptype(self, newval: Data):
         """
         """
-        if self._output is None:
-            raise RuntimeError("Must set output type before plot type.")
+        # if self._output is None:
+        #     raise RuntimeError("Must set output type before plot type.")
 
-        if self._ptype is not None:
-            self._close_plot()
+        # if self._ptype is not None:
+        #     self._close_plot()
 
         self._ptype = newval
-
-        if self._ptype == PlotType.TIME:
-            self._data = np.zeros(data_sweep_len(self._output))
-            self._initialize_time_plot()
-        elif self._ptype == PlotType.SPECTRUM:
-            self._data = np.zeros(spectrum_len(self._output))
-            self._initialize_spectrum_plot()
-        elif self._ptype == PlotType.HIST:
-            self._data = np.zeros((HIST_RANGE, spectrum_len(self._output)))
-            self._initialize_hist_plot()
-        else:
-            raise ValueError("Invalid plot type.")
 
     @property
     def output(self) -> Data:
@@ -437,6 +240,21 @@ class Plot:
         else:
             self._add_hist_sweep(sweep)
 
+    def initialize_plot(self) -> None:
+        """
+        """
+        if self._ptype == PlotType.TIME:
+            self._data = np.zeros(data_sweep_len(self._output))
+            self._initialize_time_plot()
+        elif self._ptype == PlotType.SPECTRUM:
+            self._data = np.zeros(spectrum_len(self._output))
+            self._initialize_spectrum_plot()
+        elif self._ptype == PlotType.HIST:
+            self._data = np.zeros((HIST_RANGE, spectrum_len(self._output)))
+            self._initialize_hist_plot()
+        else:
+            raise ValueError("Invalid plot type.")
+
     def _initialize_time_plot(self) -> None:
         """
         """
@@ -463,7 +281,9 @@ class Plot:
         self._imv = pg.ImageView(view=pg.PlotItem())
         self._img_view = self._imv.getView()
         self._img_view.invertY(False)
-        self._img_view.setLimits(yMin=0, yMax=self._data.shape[1])
+        self._img_view.setLimits(
+            yMin=0, yMax=self._data.shape[1], xMin=0, xMax=self._data.shape[0]
+        )
         self._img_view.getAxis("left").setScale(0.5)
         self._imv.setLevels(self.db_min, self.db_max)
         self._win.setCentralWidget(self._imv)
@@ -526,7 +346,12 @@ class Plot:
     def _save_hist(self) -> None:
         """
         """
-        self._imv.export(self.plot_path.as_posix() + str(self._fname) + ".png")
+        pixmap = QtGui.QPixmap(self._win.size())
+        self._win.render(pixmap)
+        plot_dir = self.plot_path.as_posix()
+        if not plot_dir[-1] == "/":
+            plot_dir += "/"
+        pixmap.save(plot_dir + str(self._fname) + ".png")
 
     def _save_plotsp(self) -> bool:
         """
@@ -575,10 +400,9 @@ class Configuration:
     """
     """
 
-    def __init__(self, radar: Radar, plot: Plot, proc: Proc):
+    def __init__(self, plot: Plot, proc: Proc):
         """
         """
-        self.radar = radar
         self.plot = plot
         self.proc = proc
         self._param_ctr = 0
@@ -592,6 +416,7 @@ class Configuration:
         self.db_min = None
         self.db_max = None
         self.plot_dir = None
+        self.sub_last = None
         self.params = [
             Parameter(
                 name="FPGA output",
@@ -657,6 +482,14 @@ class Configuration:
                 possible=self._plot_dir_possible,
                 init="",
             ),
+            Parameter(
+                name="subtract last",
+                number=self._get_inc_ctr(),
+                getter=self._get_sub_last,
+                setter=self._set_sub_last,
+                possible=self._sub_last_possible,
+                init="true",
+            ),
         ]
         self._param_name_width = self._max_param_name_width()
 
@@ -719,7 +552,6 @@ class Configuration:
         else:
             self._fpga_output = newdata
 
-        self.radar.fpga_output = self._fpga_output
         self.proc.indata = self._fpga_output
 
     def _get_fpga_output(self, strval: bool = False):
@@ -737,7 +569,7 @@ class Configuration:
     def _check_fpga_output(self) -> bool:
         """
         """
-        if self.fpga_output > self.display_output:
+        if self._fpga_output > self._display_output:
             write(
                 "Display data cannot be from a processing stage that "
                 "preceeds FPGA output data."
@@ -846,7 +678,7 @@ class Configuration:
         ptype = plot_type_from_str(newval)
         self.ptype = ptype
         self.plot.ptype = self.ptype
-        if self.ptype == PlotType.SPECTRUM:
+        if self.ptype == PlotType.SPECTRUM or self.ptype == PlotType.HIST:
             self.proc.spectrum = True
 
     def _plot_type_possible(self) -> str:
@@ -878,6 +710,7 @@ class Configuration:
         else:
             self.db_min = float(newval)
         self.plot.db_min = self.db_min
+        self.proc.db_min = self.db_min
 
     def _db_min_possible(self) -> str:
         """
@@ -905,6 +738,7 @@ class Configuration:
             self.db_max = DB_MAX
         self.db_max = float(newval)
         self.plot.db_max = self.db_max
+        self.proc.db_max = self.db_max
 
     def _db_max_possible(self) -> str:
         """
@@ -957,6 +791,37 @@ class Configuration:
         self.plot_dir.mkdir(parents=True)
         return True
 
+    def _get_sub_last(self, strval: bool = False):
+        """
+        """
+        if strval:
+            if self.sub_last:
+                return "True"
+            return False
+        return self.sub_last
+
+    def _set_sub_last(self, newval: str):
+        """
+        """
+        if newval.lower() == "true":
+            self.sub_last = True
+        elif newval.lower() == "false":
+            self.sub_last = False
+        else:
+            raise ValueError("Invalid value for subtract last.")
+
+        self.proc.sub_last = self.sub_last
+
+    def _sub_last_possible(self) -> str:
+        """
+        """
+        return "True or false (case-insensitive)"
+
+    def _check_sub_last(self) -> bool:
+        """
+        """
+        return True
+
     def _check_parameters(self) -> bool:
         """
         """
@@ -969,6 +834,7 @@ class Configuration:
         valid &= self._check_db_min()
         valid &= self._check_db_max()
         valid &= self._check_plot_dir()
+        valid &= self._check_sub_last()
 
         return valid
 
@@ -997,6 +863,8 @@ class Proc:
         self.spectrum = None
         self._sub_last = None
         self.last_seq = None
+        self.db_min = None
+        self.db_max = None
 
     @property
     def output(self) -> Data:
@@ -1026,7 +894,7 @@ class Proc:
         """
         self._sub_last = newval
         if self._sub_last:
-            self.last_seq = np.zeros(data_sweep_len(self.output))
+            self.last_seq = np.zeros(data_sweep_len(self.indata))
 
     def _init_fir(self):
         """
@@ -1055,23 +923,22 @@ class Proc:
             seq = new_seq
 
         i = self.indata.value
+        # print("i=", i)
         proc_func = [
             self.perform_fir,
             self.perform_decimate,
             self.perform_window,
             self.perform_fft,
         ]
-        while i < self.output.value - 1:
+        while i < self.output.value:
             seq = proc_func[i](seq)
             i += 1
 
         if self.output == Data.FFT:
-            # TODO what should maxval be?
-            seq = db_arr(seq, len(seq))
+            seq = db_arr(seq, 2 ** (ADC_BITS - 1), self.db_min, self.db_max)
         elif self.spectrum:
             seq = np.abs(np.fft.rfft(seq))
-            # TODO what should maxval be?
-            seq = db_arr(seq, len(seq))
+            seq = db_arr(seq, 2 ** (ADC_BITS - 1), self.db_min, self.db_max)
 
         return seq
 
@@ -1098,6 +965,7 @@ class Proc:
         """
         fft = np.fft.rfft(seq)
         return np.abs(fft)
+        # return np.divide(np.abs(fft), fft.shape[0])
 
 
 class Shell:
@@ -1107,10 +975,9 @@ class Shell:
     def __init__(self):
         """
         """
-        self.radar = Radar()
         self.plot = Plot()
         self.proc = Proc()
-        self.configuration = Configuration(self.radar, self.plot, self.proc)
+        self.configuration = Configuration(self.plot, self.proc)
         self.help()
         self.prompt()
 
@@ -1152,7 +1019,9 @@ class Shell:
             write(self.configuration.display_number_menu(), newline=True)
             self.set_prompt()
         elif uinput == "run":
-            self.radar.program()
+            if not self.configuration._check_parameters():
+                raise RuntimeError("Invalid configuration. Exiting.")
+            self.plot.initialize_plot()
             self.run()
         else:
             write("Unrecognized input. Try again.")
@@ -1184,38 +1053,27 @@ class Shell:
     def run(self) -> None:
         """
         """
-        logging = False
-        if self.configuration.logp():
-            logging = True
-            log_pipe, child_conn = Pipe()
-            log_proc = Process(
-                target=log, args=(self.configuration.log_file, child_conn)
-            )
-            log_proc.start()
-
         nseq = 0
         current_time = clock_gettime(CLOCK_MONOTONIC)
         start_time = current_time
         end_time = start_time + self.configuration.time
-        f = open("log.txt", "w")
+        sweep_len = data_sweep_len(self.configuration._fpga_output)
+        sample_bits = data_nbits(self.configuration._fpga_output)
+        if self.configuration.logp():
+            log_file = self.configuration.log_file.as_posix()
+        else:
+            log_file = None
+        fmcw_open()
+        fmcw_start_acquisition(log_file, sample_bits, sweep_len)
         while current_time < end_time:
-            full_data = self.radar.read()
-            sweep = self.radar.read_sweep()
-            while not sweep is None:
+            sweep = fmcw_read_sweep(sweep_len)
+            if sweep is not None:
                 proc_sweep = self.proc.process_sequence(sweep)
                 self.plot.add_sweep(proc_sweep)
-                sweep = self.radar.read_sweep()
-            if logging:
-                log_pipe.send(full_data)
-            nseq += 1
+                nseq += 1
             current_time = clock_gettime(CLOCK_MONOTONIC)
 
-        f.close()
-
-        if logging:
-            log_pipe.send(False)
-            log_proc.join()
-
+        fmcw_close()
         write(
             self._bandwidth(nseq * CHUNKSIZE, current_time - start_time),
             newline=True,

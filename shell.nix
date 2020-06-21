@@ -14,8 +14,8 @@ let
       pyclipper
       simplejson
       nmigen
-      migen
-      pylibftdi
+      cython
+      # migen
     ]) ++ (with custompkgs; [
       # skidl
       pyems
@@ -28,6 +28,7 @@ in
 pkgs.mkShell {
   buildInputs = with pkgs; [
     pythonEnv
+    pkg-config
 
     # fpga
     yosys
@@ -54,7 +55,8 @@ pkgs.mkShell {
 
     # 3d printing
     openscad
-    freecad
+    # TODO fix
+    # freecad
     # TODO fix
     # (cura.override { plugins = [ pkgs.curaPlugins.octoprint ]; })
     # curaengine

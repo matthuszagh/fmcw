@@ -8,7 +8,7 @@ SOFTWARE_DIR	= software
 
 .PHONY: run
 run: prog
-	./$(SOFTWARE_DIR)/fmcw.py
+	$(MAKE) -C $(SOFTWARE_DIR) run
 
 # .PHONY: run
 # run: pc prog
