@@ -3,7 +3,7 @@ from __future__ import annotations
 from time import clock_gettime, CLOCK_MONOTONIC
 import sys
 from enum import IntEnum, auto
-from typing import Union, Optional, Callable, List
+from typing import Union, Optional, Callable, List, Tuple
 from pathlib import Path
 from shutil import rmtree
 from multiprocessing import Process, Pipe
@@ -195,6 +195,9 @@ class Plot:
         self.db_min = DB_MIN
         self.db_max = DB_MAX
         self.plot_path = None
+        self.tstart = None
+        self.tplot_start = None
+        self.tcurrent = None
 
     @property
     def ptype(self) -> PlotType:
@@ -255,6 +258,8 @@ class Plot:
         else:
             raise ValueError("Invalid plot type.")
 
+        self.tstart = clock_gettime(CLOCK_MONOTONIC)
+
     def _initialize_time_plot(self) -> None:
         """
         """
@@ -277,13 +282,12 @@ class Plot:
         """
         self._fname = 0
         self._xval = 0
+        self._tvals = []
         self._win = QtGui.QMainWindow()
         self._imv = pg.ImageView(view=pg.PlotItem())
         self._img_view = self._imv.getView()
         self._img_view.invertY(False)
-        self._img_view.setLimits(
-            yMin=0, yMax=self._data.shape[1], xMin=0, xMax=self._data.shape[0]
-        )
+        self._img_view.setLimits(yMin=0, yMax=self._data.shape[1])
         self._img_view.getAxis("left").setScale(0.5)
         self._imv.setLevels(self.db_min, self.db_max)
         self._win.setCentralWidget(self._imv)
@@ -330,6 +334,8 @@ class Plot:
         """
         """
         self._data[self._xval] = sweep
+        self._tvals.append(clock_gettime(CLOCK_MONOTONIC) - self.tstart)
+        self._img_view.getAxis("bottom").setTicks(self._x_ticks())
         xrg = self._data.shape[0]
         self._imv.setImage(self._data, xvals=[i for i in range(xrg)])
 
@@ -342,6 +348,16 @@ class Plot:
                 self._fname += 1
             self._data = np.zeros(np.shape(self._data))
             self._xval = 0
+            self._tvals = []
+
+    def _x_ticks(self) -> List[List[Tuple[int, float]]]:
+        """
+        """
+        ret = []
+        for i, tval in enumerate(self._tvals):
+            if i % 100 == 0:
+                ret.append((i, "{:.0f}".format(tval)))
+        return [ret]
 
     def _save_hist(self) -> None:
         """
