@@ -11,7 +11,7 @@ device.so: libdevice device.c
 	$(CC) -shared -pthread -fPIC -O3 -Isrc/ \
 		$(FTDI_CFLAGS) \
 		$(shell pkg-config --cflags python) \
-		-o device.so device.c src/device.c src/queue.c \
+		-o device.so device.c src/device.c \
 		$(LINKER_FLAGS)
 
 device.c: device.pyx cdevice.pxd
