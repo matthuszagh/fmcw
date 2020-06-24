@@ -397,7 +397,7 @@ module top #(
 
    wire                               fft_ft245_fifo_full;
    reg                                fft_fifo_rden;
-   reg [$clog2(FFT_N)-1:0]                  fft_ft245_ctr;
+   reg [$clog2(FFT_N)-1:0]            fft_ft245_ctr;
    always @(posedge clk_i) begin
       if (!rst_n) begin
          fft_fifo_rden <= 1'b0;

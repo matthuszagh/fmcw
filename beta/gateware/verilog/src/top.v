@@ -12,6 +12,7 @@
 `define START_FLAG 8'hFF
 `define STOP_FLAG 8'h8F
 `define LSB_INIT 1'b1
+`define FLAG_WIDTH 2
 
 `include "fifo.v"
 `include "ltc2292.v"
@@ -250,16 +251,14 @@ module top (
    );
 
    // ==================== FT clock state machine ====================
-   localparam FTCLK_NUM_STATES = 9;
-   localparam FTCLK_IDLE   = 0,
-              FTCLK_STARTA = 1,
-              FTCLK_STARTB = 2,
-              FTCLK_CONS   = 3,
-              FTCLK_TXE    = 4,
-              FTCLK_LAST   = 5,
-              FTCLK_STOPA  = 6,
-              FTCLK_STOPB  = 7,
-              FTCLK_WAIT   = 8;
+   localparam FTCLK_NUM_STATES = 7;
+   localparam FTCLK_IDLE  = 0,
+              FTCLK_START = 1,
+              FTCLK_CONS  = 2,
+              FTCLK_TXE   = 3,
+              FTCLK_LAST  = 4,
+              FTCLK_STOP  = 5,
+              FTCLK_WAIT  = 6;
    reg [FTCLK_NUM_STATES-1:0] ftclk_state = FTCLK_IDLE,
                               ftclk_next = FTCLK_IDLE;
 
@@ -270,43 +269,43 @@ module top (
    always @(*) begin
       ftclk_next = {FTCLK_NUM_STATES{1'b0}};
       case (1'b1)
-      ftclk_state[FTCLK_IDLE]   : if (state_ftclk_domain[CONS] == 1'b1) ftclk_next[FTCLK_STARTA] = 1'b1;
-                                  else                                  ftclk_next[FTCLK_IDLE]   = 1'b1;
-      ftclk_state[FTCLK_STARTA] : if (~ft_txe_n_i)                      ftclk_next[FTCLK_STARTB] = 1'b1;
-                                  else                                  ftclk_next[FTCLK_STARTA] = 1'b1;
-      ftclk_state[FTCLK_STARTB] : if (~ft_txe_n_i)                      ftclk_next[FTCLK_CONS]   = 1'b1;
-                                  else                                  ftclk_next[FTCLK_STARTB] = 1'b1;
-      ftclk_state[FTCLK_CONS]   : if (fifo_empty)                       ftclk_next[FTCLK_LAST]   = 1'b1;
-                                  else if (ft_txe_n_i)                  ftclk_next[FTCLK_TXE]    = 1'b1;
-                                  else                                  ftclk_next[FTCLK_CONS]   = 1'b1;
-      ftclk_state[FTCLK_TXE]    : if (~ft_txe_n_i)                      ftclk_next[FTCLK_CONS]   = 1'b1;
-                                  else                                  ftclk_next[FTCLK_TXE]    = 1'b1;
-      ftclk_state[FTCLK_LAST]   : if (~ft_txe_n_i)                      ftclk_next[FTCLK_STOPA]  = 1'b1;
-                                  else                                  ftclk_next[FTCLK_LAST]   = 1'b1;
-      ftclk_state[FTCLK_STOPA]  : if (~ft_txe_n_i)                      ftclk_next[FTCLK_STOPB]  = 1'b1;
-                                  else                                  ftclk_next[FTCLK_STOPA]  = 1'b1;
-      ftclk_state[FTCLK_STOPB]  : if (~ft_txe_n_i)                      ftclk_next[FTCLK_WAIT]   = 1'b1;
-                                  else                                  ftclk_next[FTCLK_STOPB]  = 1'b1;
-      ftclk_state[FTCLK_WAIT]   : if (state_ftclk_domain[PROD] == 1'b1) ftclk_next[FTCLK_IDLE]   = 1'b1;
-                                  else                                  ftclk_next[FTCLK_WAIT]   = 1'b1;
-      default                   :                                       ftclk_next[FTCLK_IDLE]   = 1'b1;
+      ftclk_state[FTCLK_IDLE]  : if (state_ftclk_domain[CONS] == 1'b1) ftclk_next[FTCLK_START] = 1'b1;
+                                 else                                  ftclk_next[FTCLK_IDLE]  = 1'b1;
+      ftclk_state[FTCLK_START] : if (flag_ctr == max_flag_ctr)         ftclk_next[FTCLK_CONS]  = 1'b1;
+                                 else                                  ftclk_next[FTCLK_START] = 1'b1;
+      ftclk_state[FTCLK_CONS]  : if (fifo_empty)                       ftclk_next[FTCLK_LAST]  = 1'b1;
+                                 else if (ft_txe_n_i)                  ftclk_next[FTCLK_TXE]   = 1'b1;
+                                 else                                  ftclk_next[FTCLK_CONS]  = 1'b1;
+      ftclk_state[FTCLK_TXE]   : if (~ft_txe_n_i)                      ftclk_next[FTCLK_CONS]  = 1'b1;
+                                 else                                  ftclk_next[FTCLK_TXE]   = 1'b1;
+      ftclk_state[FTCLK_LAST]  : if (~ft_txe_n_i)                      ftclk_next[FTCLK_STOP]  = 1'b1;
+                                 else                                  ftclk_next[FTCLK_LAST]  = 1'b1;
+      ftclk_state[FTCLK_STOP]  : if (flag_ctr == max_flag_ctr)         ftclk_next[FTCLK_WAIT]  = 1'b1;
+                                 else                                  ftclk_next[FTCLK_STOP]  = 1'b1;
+      ftclk_state[FTCLK_WAIT]  : if (state_ftclk_domain[PROD] == 1'b1) ftclk_next[FTCLK_IDLE]  = 1'b1;
+                                 else                                  ftclk_next[FTCLK_WAIT]  = 1'b1;
+      default                  :                                       ftclk_next[FTCLK_IDLE]  = 1'b1;
       endcase
    end
 
    reg [`USB_DATA_WIDTH-1:0] ft_wr_data      = `USB_DATA_WIDTH'd0;
    reg [`USB_DATA_WIDTH-1:0] fifo_rdata_last = `USB_DATA_WIDTH'd0;
-   reg                       ft_txe_last = 1'b0;
+   reg                       ft_txe_last     = 1'b0;
+   reg [`FLAG_WIDTH-1:0]     flag_ctr        = `FLAG_WIDTH'd0;
+   reg [`FLAG_WIDTH-1:0]     max_flag_ctr    = `FLAG_WIDTH'd2;
    always @(posedge ft_clkout_i) begin
-      ft_wr_data <= `USB_DATA_WIDTH'd0;
-      ft_wr_n_o       <= 1'b1;
-      cons_done       <= 1'b0;
-      ft_txe_last     <= ft_txe_n_i;
+      ft_wr_data  <= `USB_DATA_WIDTH'd0;
+      ft_wr_n_o   <= 1'b1;
+      cons_done   <= 1'b0;
+      ft_txe_last <= ft_txe_n_i;
+      flag_ctr    <= `FLAG_WIDTH'd0;
 
       case (1'b1)
-      ftclk_next[FTCLK_STARTA] | ftclk_next[FTCLK_STARTB]:
+      ftclk_next[FTCLK_START]:
         begin
            ft_wr_data <= `START_FLAG;
            ft_wr_n_o  <= 1'b0;
+           if (~ft_txe_n_i) flag_ctr <= flag_ctr + 1'b1;
         end
       ftclk_next[FTCLK_CONS] & ftclk_state[FTCLK_TXE]:
         begin
@@ -315,15 +314,16 @@ module top (
         end
       (ftclk_next[FTCLK_CONS] | ftclk_next[FTCLK_LAST]) & ~ftclk_state[FTCLK_TXE]:
         begin
-           ft_wr_data <= fifo_rdata;
-           ft_wr_n_o  <= 1'b0;
+           ft_wr_data      <= fifo_rdata;
+           ft_wr_n_o       <= 1'b0;
            fifo_rdata_last <= fifo_rdata;
         end
-      ftclk_next[FTCLK_STOPA] | ftclk_next[FTCLK_STOPB]:
+      ftclk_next[FTCLK_STOP]:
         begin
            ft_wr_data <= `STOP_FLAG;
            ft_wr_n_o  <= 1'b0;
            cons_done  <= 1'b1;
+           if (~ft_txe_n_i) flag_ctr <= flag_ctr + 1'b1;
         end
       ftclk_next[FTCLK_WAIT]:
         begin
@@ -336,9 +336,9 @@ module top (
    always @(*) begin
       fifo_ren = 1'b0;
       case (1'b1)
-      ftclk_next[FTCLK_STARTB]                            : fifo_ren = ~ft_txe_last;
-      ftclk_next[FTCLK_CONS]                              : fifo_ren = ~ft_txe_last;
-      ftclk_next[FTCLK_STOPA] | ftclk_next[FTCLK_STOPB]   : fifo_ren = 1'b0;
+      ftclk_next[FTCLK_START] & (flag_ctr + 1'b1 == max_flag_ctr) : fifo_ren = ~ft_txe_last;
+      ftclk_next[FTCLK_CONS]                                      : fifo_ren = ~ft_txe_last;
+      ftclk_next[FTCLK_STOP]                                      : fifo_ren = 1'b0;
       endcase
    end
    // ================================================================
@@ -479,3 +479,4 @@ endmodule
 `undef START_FLAG
 `undef STOP_FLAG
 `undef LSB_INIT
+`undef FLAG_WIDTH
