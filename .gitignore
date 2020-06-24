@@ -76,3 +76,5 @@ simulations/openems/sim
 /software/stream_test/test
 beta/software/read
 **/plots
+**/*.o
+**/*.a
