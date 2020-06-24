@@ -22,6 +22,8 @@ START_FLAG = 0xFF
 STOP_FLAG = 0x8F
 RAW_LEN = 20480
 FS = 40e6
+TSWEEP = 1e-3
+BANDWIDTH = 300e6
 PASS_DB = 0.5
 STOP_DB = -40
 NUMTAPS = 120
@@ -31,7 +33,7 @@ DECIMATE = 20
 DECIMATED_LEN = RAW_LEN // DECIMATE
 BYTE_BITS = 8
 ADC_BITS = 12
-HIST_RANGE = 2000
+HIST_RANGE = 1000
 # TODO might need to be set programmatically
 DECIMATE_BITS = 14
 WINDOW_BITS = 14
@@ -39,6 +41,7 @@ FFT_BITS = 25
 # dB min and max if no other value is set
 DB_MIN = -120
 DB_MAX = 0
+DIST_MAX = 235
 
 
 HORIZONTAL_LINES = "----------\n"
@@ -100,6 +103,16 @@ def data_nbits(data: Data) -> int:
     raise ValueError("Invalid Data value.")
 
 
+def data_nbytes(data: Data) -> int:
+    """
+    """
+    bits = data_nbits(data)
+    bytes = bits // BYTE_BITS
+    if not bits % BYTE_BITS == 0:
+        bytes += 1
+    return bytes
+
+
 def num_flags(num_bits: int) -> int:
     """
     The number of start and stop flag bytes for a payload with a given
@@ -159,6 +172,20 @@ def subdivide_range(rg: int, divider: int) -> List[Tuple[int, int]]:
 def db_arr(indata, maxval, db_min, db_max):
     arr = 20 * np.log10(indata / maxval)
     return np.clip(arr, db_min, db_max)
+
+
+def dbin(fs: float, tsweep: float, nsample: int, bandwidth: float) -> float:
+    """
+    """
+    fbin = fs / nsample
+    d = 299792458 * tsweep * fbin / (2 * bandwidth)
+    return d
+
+
+def max_bin(fs: float, tsweep: float, nsample: int, bandwidth: float) -> int:
+    """
+    """
+    return int(DIST_MAX / dbin(fs, tsweep, nsample, bandwidth))
 
 
 class PlotType(IntEnum):
@@ -287,8 +314,12 @@ class Plot:
         self._imv = pg.ImageView(view=pg.PlotItem())
         self._img_view = self._imv.getView()
         self._img_view.invertY(False)
-        self._img_view.setLimits(yMin=0, yMax=self._data.shape[1])
-        self._img_view.getAxis("left").setScale(0.5)
+        self.max_bin = max_bin(
+            FS // DECIMATE, TSWEEP, DECIMATED_LEN, BANDWIDTH
+        )
+        self._img_view.setLimits(yMin=0, yMax=self.max_bin)
+        self._img_view.getAxis("left").setTicks(self._y_ticks())
+        # self._img_view.getAxis("left").setScale(0.5)
         self._imv.setLevels(self.db_min, self.db_max)
         self._win.setCentralWidget(self._imv)
         self._win.show()
@@ -354,14 +385,31 @@ class Plot:
         """
         """
         ret = []
-        for i, tval in enumerate(self._tvals):
-            if i % 100 == 0:
-                ret.append((i, "{:.0f}".format(tval)))
+        tval_len = len(self._tvals)
+        i = 0
+        while i < tval_len:
+            ret.append((i, "{:.0f}".format(self._tvals[i])))
+            i += 100
+        return [ret]
+
+    def _y_ticks(self) -> List[List[Tuple[int, float]]]:
+        """
+        """
+        ret = []
+        last_dist = None
+        for i in range(self.max_bin):
+            dist = int(DIST_MAX / self.max_bin * i)
+            if dist % 10 == 0 and not dist == last_dist:
+                ret.append((i, str(dist)))
+                last_dist = dist
         return [ret]
 
     def _save_hist(self) -> None:
         """
         """
+        # diffs = np.diff(self._tvals)
+        # for diff in diffs:
+        #     print(diff)
         pixmap = QtGui.QPixmap(self._win.size())
         self._win.render(pixmap)
         plot_dir = self.plot_path.as_posix()
@@ -464,7 +512,7 @@ class Configuration:
                 getter=self._get_time,
                 setter=self._set_time,
                 possible=self._time_possible,
-                init="30",
+                init="90",
             ),
             Parameter(
                 name="plot type",
@@ -480,7 +528,7 @@ class Configuration:
                 getter=self._get_db_min,
                 setter=self._set_db_min,
                 possible=self._db_min_possible,
-                init="-80",
+                init="-50",
             ),
             Parameter(
                 name="dB max",
@@ -496,7 +544,7 @@ class Configuration:
                 getter=self._get_plot_dir,
                 setter=self._set_plot_dir,
                 possible=self._plot_dir_possible,
-                init="",
+                init="plots",
             ),
             Parameter(
                 name="subtract last",
@@ -1091,7 +1139,10 @@ class Shell:
 
         fmcw_close()
         write(
-            self._bandwidth(nseq * CHUNKSIZE, current_time - start_time),
+            self._bandwidth(
+                nseq * RAW_LEN * data_nbytes(self.configuration._fpga_output),
+                current_time - start_time,
+            ),
             newline=True,
         )
 

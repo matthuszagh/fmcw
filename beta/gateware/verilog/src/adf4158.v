@@ -25,7 +25,7 @@
 //
 // (2) RF_OUT = f_PFD x (INT + (FRAC / 2^25))
 //     RF_OUT is the external VCO output frequency.
-//     default params: 5.3GHz
+//     default params: 5.6GHz
 //
 // (3) Timer = CLK1_DIV x CLK2_DIV x (1 / f_PFD)
 //     Timer is the time between each frequency step in a ramp.
@@ -33,7 +33,7 @@
 //
 // (4) f_DEV = (f_PFD / 2^25) x (DEV x 2^DEV_OFFSET)
 //     f_DEV determines the frequency increment in each ramp step.
-//     default params: 300kHz
+//     default params: 150kHz
 //
 // (5) Delay = (1 / f_PFD) x CLK1_DIV x DELAY_STEPS
 //     The delay between ramps (this version uses CLK1_DIV for an
@@ -83,7 +83,7 @@ module adf4158 #(
    parameter [3:0] MUXOUT           = 4'b1111,
    // parameter [3:0] MUXOUT           = 4'b0110,
    // Frequency multiplier for VCO output frequency. See eqn (2).
-   parameter [11:0] INT             = 12'd265,
+   parameter [11:0] INT             = 12'd280,
    // Fractional value used in determining the VCO output
    // frequency. See eqn (2).
    parameter [24:0] FRAC            = 25'd0,
@@ -180,7 +180,7 @@ module adf4158 #(
    // for details.
    parameter [3:0] DEV_OFFSET       = 4'd4,
    // Determines the frequency ramp step. See eqn (4) for details.
-   parameter [15:0] DEV             = 16'd31457,
+   parameter [15:0] DEV             = 16'd15729,
    // Sets the number of steps in a ramp. Each step has frequency
    // increment f_DEV (eqn 4) and time step timer (eqn 3).
    parameter RAMP_STEPS             = 20'd2000,

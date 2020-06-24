@@ -1,4 +1,3 @@
-#include "queue.h"
 #include <fcntl.h>
 #include <ftdi.h>
 #include <math.h>
@@ -18,19 +17,16 @@
 #define LATENCY 2
 #define FALSE 0
 #define TRUE 1
-#define NUM_SWEEPS 10
 #define BYTE_BITS 8
 #define START_FLAG 0xFF
 #define STOP_FLAG 0x8F
+#define NS_TO_S 1e-9
 #define sample_t int
 
 static struct ftdi_context *ftdi = NULL;
 static pthread_t producer_thread;
 static pthread_t consumer_thread;
-struct Queue *queue = NULL;
 pthread_mutex_t *mutex = NULL;
-pthread_cond_t *more = NULL;
-/* pthread_cond_t *less = NULL; */
 struct ProducerData *prod_data = NULL;
 struct ConsumerData *cons_data = NULL;
 static int _sample_bits;
@@ -40,6 +36,7 @@ static int _sweep_len;
 static int _start_flags;
 static int _stop_flags;
 static int _sweep_idx;
+static int _sweep_valid = 0;
 static FILE *_log_file = NULL;
 static sample_t *sweep = NULL;
 static sample_t _last_sample;
@@ -159,23 +156,16 @@ void fmcw_close()
 	}
 	/* ftdi_free(ftdi); */
 	/* ftdi = NULL; */
-	queue_free(queue);
-	queue = NULL;
 	free(mutex);
 	mutex = NULL;
-	free(more);
-	more = NULL;
 	free(sweep);
 	sweep = NULL;
 }
 
 int fmcw_start_acquisition(char *log_path, int sample_bits, int sweep_len)
 {
-	queue = queue_new(NUM_SWEEPS * sweep_len);
 	mutex = malloc(sizeof(pthread_mutex_t));
 	pthread_mutex_init(mutex, NULL);
-	more = malloc(sizeof(pthread_cond_t));
-	pthread_cond_init(more, NULL);
 	_sample_bits = sample_bits;
 	_sample_bytes = sample_bytes(_sample_bits);
 	_nflags = num_flags(_sample_bits);
@@ -196,13 +186,12 @@ int fmcw_read_sweep(int *arr)
 {
 	int ret = FALSE;
 	pthread_mutex_lock(mutex);
-	if (queue->size >= _sweep_len) {
+	if (_sweep_valid) {
 		ret = TRUE;
 		for (int i = 0; i < _sweep_len; ++i) {
-			arr[i] = queue_pop(queue);
+			arr[i] = sweep[i];
 		}
-	} else {
-		pthread_cond_signal(more);
+		_sweep_valid = 0;
 	}
 	pthread_mutex_unlock(mutex);
 	return ret;
@@ -210,21 +199,15 @@ int fmcw_read_sweep(int *arr)
 
 void *producer(void *arg)
 {
-	pthread_mutex_lock(mutex);
 	ftdi_readstream(ftdi, &callback, NULL, PACKETS_PER_TRANSFER, TRANSFERS_PER_CALLBACK);
-	pthread_mutex_unlock(mutex);
 	return NULL;
 }
 
 int callback(uint8_t *buffer, int length, FTDIProgressInfo *progress, void *userdata)
 {
-	if (length == 0) {
-		return 0;
-	}
-	/* Drop reads if the queue is full. This is preferrable to
-	 * storing and later displaying stale data. */
-	if (queue_space(queue) < _sweep_len - _sweep_idx) {
-		pthread_cond_wait(more, mutex);
+	pthread_mutex_lock(mutex);
+	if (length == 0 || _sweep_valid) {
+		pthread_mutex_unlock(mutex);
 		return 0;
 	}
 
@@ -233,19 +216,15 @@ int callback(uint8_t *buffer, int length, FTDIProgressInfo *progress, void *user
 	/* break out if we read the full buffer. */
 	while (1) {
 		if (_stop_flags) {
-			if (!(read_idx = read_stop_seq(buffer, length, read_idx))) {
-				goto log;
-			}
-			continue;
+			read_idx = read_stop_seq(buffer, length, read_idx);
+			goto log;
 		}
 		if (_sweep_idx) {
 			if (!(read_idx = read_sample_seq(buffer, length, read_idx))) {
 				goto log;
 			}
-			if (!(read_idx = read_stop_seq(buffer, length, read_idx))) {
-				goto log;
-			}
-			continue;
+			read_idx = read_stop_seq(buffer, length, read_idx);
+			goto log;
 		}
 
 		if (!(read_idx = read_start_seq(buffer, length, read_idx))) {
@@ -254,15 +233,19 @@ int callback(uint8_t *buffer, int length, FTDIProgressInfo *progress, void *user
 		if (!(read_idx = read_sample_seq(buffer, length, read_idx))) {
 			goto log;
 		}
-		if (!(read_idx = read_stop_seq(buffer, length, read_idx))) {
-			goto log;
-		}
+		read_idx = read_stop_seq(buffer, length, read_idx);
+		goto log;
 	}
 
 log:
 	if (_log_file) {
-		fwrite(buffer, sizeof(uint8_t), length, _log_file);
+		if (!read_idx) {
+			fwrite(buffer, sizeof(uint8_t), length, _log_file);
+		} else {
+			fwrite(buffer, sizeof(uint8_t), read_idx, _log_file);
+		}
 	}
+	pthread_mutex_unlock(mutex);
 	return 0;
 }
 
@@ -272,15 +255,17 @@ int read_stop_seq(uint8_t *buffer, int length, int read_idx)
 		if (buffer[read_idx] == STOP_FLAG) {
 			++_stop_flags;
 		} else {
-			queue_jump_back(queue, _sweep_idx);
 			read_idx = inc_check_idx(read_idx, length);
 			goto cleanup;
 		}
-		if (!(read_idx = inc_check_idx(read_idx, length))) {
+		/* first check must occur first, otherwise read_idx
+		 * might get a 0 value when it shouldn't. */
+		if (_stop_flags < _nflags && !(read_idx = inc_check_idx(read_idx, length))) {
 			return FALSE;
 		}
 	}
-	queue_push(queue, _last_sample);
+	_sweep_valid = 1;
+	sweep[_sweep_idx] = _last_sample;
 cleanup:
 	_sweep_idx = 0;
 	_start_flags = 0;
@@ -305,11 +290,12 @@ int read_sample_seq(uint8_t *buffer, int length, int read_idx)
 		 * the full stop sequence (see
 		 * read_stop_seq). Otherwise, there is a small
 		 * possibility that an invalid sweep could be read. */
-		if (_sweep_idx++ < _sweep_len - 1) {
-			queue_push(queue, sample_val(_uval));
+		if (_sweep_idx < _sweep_len - 1) {
+			sweep[_sweep_idx] = sample_val(_uval);
 		} else {
 			_last_sample = sample_val(_uval);
 		}
+		++_sweep_idx;
 		_uval = 0;
 	}
 	return read_idx;
@@ -355,38 +341,38 @@ sample_t sample_val(uint uval)
 	return (sample_t)(-(uval & mask) + (uval & ~mask));
 }
 
-double tsec(struct timespec tspec) { return tspec.tv_sec + (1e-9) * tspec.tv_nsec; }
+double tsec(struct timespec tspec) { return tspec.tv_sec + NS_TO_S * tspec.tv_nsec; }
 
-int main()
-{
-	if (!fmcw_open()) {
-		return EXIT_FAILURE;
-	}
+/* int main() */
+/* { */
+/* 	if (!fmcw_open()) { */
+/* 		return EXIT_FAILURE; */
+/* 	} */
 
-	if (!fmcw_start_acquisition("log.bin", 12, 20480)) {
-		return EXIT_FAILURE;
-	}
+/* 	if (!fmcw_start_acquisition("log.bin", 12, 20480)) { */
+/* 		return EXIT_FAILURE; */
+/* 	} */
 
-	struct timespec tspec;
-	double tstart;
-	double tcur;
-	int ctr;
-	int *arr = malloc(20480 * sizeof(int));
-	clock_gettime(CLOCK_MONOTONIC, &tspec);
-	tstart = tsec(tspec);
-	tcur = tstart;
-	while (tcur - tstart < 2) {
-		if ((fmcw_read_sweep(arr))) {
-			++ctr;
-			/* for (int i = 0; i < 20480; ++i) { */
-			/* 	printf("%d\n", arr[i]); */
-			/* } */
-		}
-		clock_gettime(CLOCK_MONOTONIC, &tspec);
-		tcur = tsec(tspec);
-	}
-	printf("samples acquired: %d\n", ctr);
-	printf("bandwidth: %e\n", ctr * 20480 / (tcur - tstart));
-	free(arr);
-	fmcw_close();
-}
+/* 	struct timespec tspec; */
+/* 	double tstart; */
+/* 	double tcur; */
+/* 	int ctr; */
+/* 	int *arr = malloc(20480 * sizeof(int)); */
+/* 	clock_gettime(CLOCK_MONOTONIC, &tspec); */
+/* 	tstart = tsec(tspec); */
+/* 	tcur = tstart; */
+/* 	while (tcur - tstart < 2) { */
+/* 		if ((fmcw_read_sweep(arr))) { */
+/* 			++ctr; */
+/* 			/\* for (int i = 0; i < 20480; ++i) { *\/ */
+/* 			/\* 	printf("%d\n", arr[i]); *\/ */
+/* 			/\* } *\/ */
+/* 		} */
+/* 		clock_gettime(CLOCK_MONOTONIC, &tspec); */
+/* 		tcur = tsec(tspec); */
+/* 	} */
+/* 	printf("samples acquired: %d\n", ctr); */
+/* 	printf("bandwidth: %e\n", ctr * 20480 * 2 / (tcur - tstart)); */
+/* 	free(arr); */
+/* 	fmcw_close(); */
+/* } */
