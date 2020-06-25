@@ -151,7 +151,7 @@ module top (
 
    wire [`USB_DATA_WIDTH-1:0]      adc_data = clk80_40_phase_ctr ? adc_chan_a_lsb : adc_chan_a_msb;
 
-   // =============== Write clock (80MHz) state machine ==============
+   // ============== System clock (40MHz) state machine ==============
    localparam NUM_STATES = 4;
    localparam CONFIG     = 0,
               IDLE       = 1,
@@ -161,15 +161,15 @@ module top (
                                    next  = CONFIG;
    wire [NUM_STATES-1:0]           state_ftclk_domain;
    reg                             cons_done = 1'b0;
-   wire                            cons_done_clk80_domain;
+   wire                            cons_done_clk40_domain;
 
    ff_sync #(
       .WIDTH  (1),
       .STAGES (2)
    ) cons_done_sync (
-      .dest_clk (clk80                  ),
+      .dest_clk (clk_i                  ),
       .d        (cons_done              ),
-      .q        (cons_done_clk80_domain )
+      .q        (cons_done_clk40_domain )
    );
 
    ff_sync #(
@@ -208,7 +208,7 @@ module top (
         end
       state[CONS]:
         begin
-           if (cons_done_clk80_domain) next[IDLE] = 1'b1;
+           if (cons_done_clk40_domain) next[IDLE] = 1'b1;
            else                        next[CONS] = 1'b1;
         end
       default: next[IDLE] = 1'b1;
