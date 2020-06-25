@@ -719,9 +719,9 @@ class Configuration:
         """
         """
         return (
-            "Integer representing time (defaults to seconds). \n"
-            "s, m, h, d can be appended for seconds, minutes, hours \n"
-            "or days if desired. Therefore, using `s` will have no effect."
+            "Integer representing time. s, m, h, d can be appended \n"
+            "for seconds, minutes, hours or days if desired \n "
+            "(defaults to seconds if omitted)."
         )
 
     def _check_time(self) -> bool:
