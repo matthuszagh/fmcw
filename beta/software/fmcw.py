@@ -744,6 +744,8 @@ class Configuration:
         self.plot.ptype = self.ptype
         if self.ptype == PlotType.SPECTRUM or self.ptype == PlotType.HIST:
             self.proc.spectrum = True
+        else:
+            self.proc.spectrum = False
 
     def _plot_type_possible(self) -> str:
         """
