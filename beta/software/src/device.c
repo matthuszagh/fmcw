@@ -42,6 +42,7 @@ static sample_t *sweep = NULL;
 static sample_t _last_sample;
 static int _byte_idx;
 static uint _uval;
+static int _cancel;
 
 /**
  * Asynchronous read callback.
@@ -149,13 +150,19 @@ int fmcw_open()
 
 void fmcw_close()
 {
-	pthread_cancel(producer_thread);
+	pthread_mutex_lock(mutex);
+	_cancel = 1;
+	pthread_mutex_unlock(mutex);
+	pthread_join(producer_thread, NULL);
+	_cancel = 0;
 	if (_log_file) {
 		fclose(_log_file);
 		_log_file = NULL;
 	}
-	/* ftdi_free(ftdi); */
-	/* ftdi = NULL; */
+	ftdi_usb_purge_buffers(ftdi);
+	ftdi_usb_close(ftdi);
+	ftdi_free(ftdi);
+	ftdi = NULL;
 	free(mutex);
 	mutex = NULL;
 	free(sweep);
@@ -206,6 +213,11 @@ void *producer(void *arg)
 int callback(uint8_t *buffer, int length, FTDIProgressInfo *progress, void *userdata)
 {
 	pthread_mutex_lock(mutex);
+	if (_cancel) {
+		pthread_mutex_unlock(mutex);
+		return 1;
+	}
+
 	if (length == 0 || _sweep_valid) {
 		pthread_mutex_unlock(mutex);
 		return 0;
