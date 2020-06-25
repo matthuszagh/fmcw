@@ -861,7 +861,7 @@ class Configuration:
         if strval:
             if self.sub_last:
                 return "True"
-            return False
+            return "False"
         return self.sub_last
 
     def _set_sub_last(self, newval: str):
