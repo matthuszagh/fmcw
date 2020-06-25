@@ -11,13 +11,13 @@
 `define FIFO_DEPTH 65536
 `define START_FLAG 8'hFF
 `define STOP_FLAG 8'h8F
-`define LSB_INIT 1'b1
 `define FLAG_WIDTH 2
 
 `include "fifo.v"
 `include "ltc2292.v"
 `include "ff_sync.v"
 `include "adf4158.v"
+`include "pll_sync_ctr.v"
 
 module top (
 `ifdef TOP_SIMULATE
@@ -109,6 +109,16 @@ module top (
    reg                             pll_lock = 1'b1;
 `endif
 
+   wire                           clk80_40_phase_ctr;
+   pll_sync_ctr #(
+      .RATIO (2)
+   ) pll_sync_ctr (
+      .fst_clk (clk80              ),
+      .slw_clk (clk_i              ),
+      .rst_n   (pll_lock           ),
+      .ctr     (clk80_40_phase_ctr )
+   );
+
    wire                            adf_config_done;
    wire                            adf_ramp_start;
    adf4158 adf4158 (
@@ -125,7 +135,6 @@ module top (
       .data        (adf_data_o                  )
    );
 
-   reg                             lsb = `LSB_INIT;
    wire signed [`ADC_DATA_WIDTH-1:0] adc_chan_a;
    wire [`USB_DATA_WIDTH-1:0]      adc_chan_a_msb;
    wire [`USB_DATA_WIDTH-1:0]      adc_chan_a_lsb;
@@ -137,13 +146,12 @@ module top (
       .dao (adc_chan_a ),
       .dbo (adc_chan_b )
    );
-   wire signed [`ADC_DATA_WIDTH-1:0] single_chan = adc_chan_a + adc_chan_b;
-
    assign adc_chan_a_msb = {4'd0, adc_chan_b[`ADC_DATA_WIDTH-1:8]};
    assign adc_chan_a_lsb = adc_chan_b[7:0];
 
-   wire [`USB_DATA_WIDTH-1:0]      adc_data = lsb ? adc_chan_a_lsb : adc_chan_a_msb;
+   wire [`USB_DATA_WIDTH-1:0]      adc_data = clk80_40_phase_ctr ? adc_chan_a_lsb : adc_chan_a_msb;
 
+   // =============== Write clock (80MHz) state machine ==============
    localparam NUM_STATES = 4;
    localparam CONFIG     = 0,
               IDLE       = 1,
@@ -173,11 +181,10 @@ module top (
       .q        (state_ftclk_domain )
    );
 
-   // =============== Write clock (80MHz) state machine ==============
    localparam [$clog2(`RAW_SAMPLES)-1:0] RAW_SAMPLES_MAX = `RAW_SAMPLES-1;
    reg [$clog2(`RAW_SAMPLES)-1:0] raw_sample_ctr = `RAW_SAMPLES'd0;
 
-   always @(posedge clk80) begin
+   always @(posedge clk_i) begin
       state <= next;
    end
 
@@ -191,13 +198,13 @@ module top (
         end
       state[IDLE]:
         begin
-           if (adf_ramp_start & lsb == `LSB_INIT) next[PROD] = 1'b1;
-           else                                   next[IDLE] = 1'b1;
+           if (adf_ramp_start) next[PROD] = 1'b1;
+           else                next[IDLE] = 1'b1;
         end
       state[PROD]:
         begin
-           if (raw_sample_ctr == RAW_SAMPLES_MAX & lsb == `LSB_INIT) next[CONS] = 1'b1;
-           else                                                      next[PROD] = 1'b1;
+           if (raw_sample_ctr == RAW_SAMPLES_MAX) next[CONS] = 1'b1;
+           else                                   next[PROD] = 1'b1;
         end
       state[CONS]:
         begin
@@ -208,15 +215,10 @@ module top (
       endcase
    end
 
-   always @(posedge clk80) begin
+   always @(posedge clk_i) begin
       raw_sample_ctr <= `RAW_SAMPLES'd0;
-      lsb            <= ~lsb;
       case (1'b1)
-      state[PROD]:
-        begin
-           if (lsb == `LSB_INIT) raw_sample_ctr <= raw_sample_ctr + 1'b1;
-           else                  raw_sample_ctr <= raw_sample_ctr;
-        end
+      state[PROD]: raw_sample_ctr <= raw_sample_ctr + 1'b1;
       endcase
 
       fifo_wen <= 1'b0;
@@ -478,5 +480,4 @@ endmodule
 `undef DELAY_BITS
 `undef START_FLAG
 `undef STOP_FLAG
-`undef LSB_INIT
 `undef FLAG_WIDTH
