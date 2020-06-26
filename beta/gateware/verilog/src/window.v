@@ -10,12 +10,11 @@ module window #(
    parameter COEFF_WIDTH = 16
 ) (
    input wire                         clk,
-   input wire                         rst_n,
    input wire                         en,
    input wire                         clk_en,
    input wire signed [DATA_WIDTH-1:0] di,
-   output reg                         dvalid = 1'b0,
-   output reg signed [DATA_WIDTH-1:0] dout = {DATA_WIDTH{1'b0}}
+   output reg                         dvalid,
+   output reg signed [DATA_WIDTH-1:0] dout
 );
 
    localparam INTERNAL_WIDTH = DATA_WIDTH + COEFF_WIDTH;
@@ -33,7 +32,7 @@ module window #(
       trunc_to_out = expr[INTERNAL_WIDTH-1:INTERNAL_WIDTH-DATA_WIDTH];
    endfunction
 
-   reg signed [INTERNAL_WIDTH-1:0]    internal = {INTERNAL_WIDTH{1'b0}};
+   reg signed [INTERNAL_WIDTH-1:0]    internal;
    reg [COEFF_WIDTH-1:0]              coeffs [0:N-1];
    reg [$clog2(N)-1:0]                ctr = {$clog2(N){1'b0}};
 
@@ -42,19 +41,14 @@ module window #(
       $readmemh("/home/matt/src/fmcw/beta/gateware/verilog/src/roms/window/coeffs.hex", coeffs);
    end
 
-   reg en_buf = 1'b0;
+   reg en_buf;
    always @(posedge clk) begin
-      if (!rst_n) begin
-         ctr <= {$clog2(N){1'b0}};
-         {dvalid, en_buf} <= {1'b0, 1'b0};
-      end else if (clk_en) begin
+      if (clk_en) begin
          {dvalid, en_buf} <= {en_buf, en};
          internal         <= di * $signed({1'b0, coeffs[ctr]});
          dout             <= trunc_to_out(round_convergent(internal));
          if (ctr == {$clog2(N){1'b0}}) begin
-            if (en) begin
-               ctr <= {{$clog2(N)-1{1'b0}}, 1'b1};
-            end
+            if (en) ctr <= {{$clog2(N)-1{1'b0}}, 1'b1};
          end else begin
             if (ctr == N_CMP) begin
                ctr <= {$clog2(N){1'b0}};
