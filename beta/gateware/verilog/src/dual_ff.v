@@ -7,29 +7,22 @@
 // Dual-edge triggered flip flop.
 
 module dual_ff #(
-   parameter DATA_WIDTH = 1
+   parameter WIDTH = 1
 ) (
-   input wire                   clk,
-   input wire                   rst_n,
-   input wire [DATA_WIDTH-1:0]  dp,
-   input wire [DATA_WIDTH-1:0]  dn,
-   output wire [DATA_WIDTH-1:0] q
+   input wire              clk,
+   input wire [WIDTH-1:0]  dp,
+   input wire [WIDTH-1:0]  dn,
+   output wire [WIDTH-1:0] q
 );
-   reg [DATA_WIDTH-1:0] p = {DATA_WIDTH{1'b0}};
-   reg [DATA_WIDTH-1:0] n = {DATA_WIDTH{1'b0}};
+   reg [WIDTH-1:0] p = {WIDTH{1'b0}};
+   reg [WIDTH-1:0] n = {WIDTH{1'b0}};
 
    always @(posedge clk) begin
-      if (!rst_n)
-        p <= {DATA_WIDTH{1'b0}};
-      else
-        p <= dp ^ n;
+      p <= dp ^ n;
    end
 
    always @(negedge clk) begin
-      if (!rst_n)
-        n <= {DATA_WIDTH{1'b0}};
-      else
-        n <= dn ^ p;
+      n <= dn ^ p;
    end
 
    assign q = p ^ n;
@@ -45,7 +38,7 @@ module dual_ff #(
    reg     past_valid = 0;
    always @(posedge gclk) begin
       past_valid <= 1;
-      if ($past(rst_n) && past_valid) begin
+      if (past_valid) begin
          if ($rose(clk)) begin
             assert (q == $past(dp));
          end else if ($fell(clk)) begin

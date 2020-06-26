@@ -26,12 +26,10 @@ module pll_sync_ctr #(
    wire                           slw_clk_tmp;
    reg                            last_slw_clk = 1'b0;
 
-   // Dual edge-triggered flip-flop.
    dual_ff #(
-      .DATA_WIDTH (1)
+      .WIDTH (1)
    ) dual_ff (
       .clk   (slw_clk     ),
-      .rst_n (rst_n       ),
       .dp    (1'b1        ),
       .dn    (1'b0        ),
       .q     (slw_clk_tmp )
