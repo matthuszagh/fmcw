@@ -17,8 +17,7 @@ module pll_sync_ctr #(
 ) (
    input wire                     fst_clk,
    input wire                     slw_clk,
-   input wire                     rst_n,
-   output reg [$clog2(RATIO)-1:0] ctr = 0
+   output reg [$clog2(RATIO)-1:0] ctr = {$clog2(RATIO){1'b0}}
 );
 
    localparam [$clog2(RATIO)-1:0] RATIO_MAX = RATIO-1;
@@ -36,18 +35,14 @@ module pll_sync_ctr #(
    );
 
    always @(posedge fst_clk) begin
-      if (!rst_n) begin
-         ctr <= {$clog2(RATIO){1'b0}};
+      last_slw_clk <= slw_clk_tmp;
+      if (~last_slw_clk & slw_clk_tmp) begin
+         ctr <= {{$clog2(RATIO)-1{1'b0}}, 1'b1};
       end else begin
-         last_slw_clk <= slw_clk_tmp;
-         if (~last_slw_clk & slw_clk_tmp) begin
-            ctr <= {{$clog2(RATIO)-1{1'b0}}, 1'b1};
-         end else begin
-            if (ctr == RATIO_MAX)
-              ctr <= {$clog2(RATIO){1'b0}};
-            else
-              ctr <= ctr + 1'b1;
-         end
+         if (ctr == RATIO_MAX)
+           ctr <= {$clog2(RATIO){1'b0}};
+         else
+           ctr <= ctr + 1'b1;
       end
    end
 
@@ -76,7 +71,7 @@ module pll_sync_ctr #(
       end
 
       if (past_valid) begin
-         if ($past(out_ctr) == 7 && $past(rst_n) && $rose(fst_clk)) begin
+         if ($past(out_ctr) == 7 & $rose(fst_clk)) begin
             `ASSUME ($changed(slw_clk));
          end else begin
             `ASSUME ($stable(slw_clk));
@@ -87,21 +82,13 @@ module pll_sync_ctr #(
          end
       end
 
-      if (!past_valid) begin
-         `ASSUME (rst_n == 1'b0);
-      end else begin
-         `ASSUME (rst_n == 1'b1);
-      end
-
       if (past_valid) begin
          assert (out_ctr == ctr);
       end
    end
 
    always @(posedge fst_clk) begin
-      if (rst_n) begin
-         out_ctr <= out_ctr + 1'b1;
-      end
+      out_ctr <= out_ctr + 1'b1;
    end
 
 `endif
