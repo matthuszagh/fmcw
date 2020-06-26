@@ -208,7 +208,6 @@ module top #(
       out[FFT]    = 1'b0;
    end
 
-   reg                                fir_en = 1'b0;
    wire signed [FIR_OUTPUT_WIDTH-1:0] fir_out;
    wire                               fir_dvalid;
    fir #(
@@ -217,12 +216,12 @@ module top #(
       .NORM_SHIFT     (FIR_NORM_SHIFT   ),
       .OUTPUT_WIDTH   (FIR_OUTPUT_WIDTH )
    ) fir (
-      .clk         (clk_i           ),
-      .rst_n       (fir_en          ),
-      .clk2_pos_en (clk2_pos_en     ),
-      .din         (adc_single_chan ),
-      .dout        (fir_out         ),
-      .dvalid      (fir_dvalid      )
+      .clk        (clk_i           ),
+      .en         (state[SAMPLE]   ),
+      .clk_pos_en (clk2_pos_en     ),
+      .din        (adc_single_chan ),
+      .dout       (fir_out         ),
+      .dvalid     (fir_dvalid      )
    );
 
    wire                            fir_fifo_empty;
@@ -428,16 +427,6 @@ module top #(
       next[SAMPLE]   : ft_fifo_wen     <= 1'b1;
       next[PROC_FFT] : window_fifo_ren <= 1'b1;
       endcase
-
-      fir_en <= 1'b0;
-      if (fir_en) begin
-         if (fir_en == FFT_N_MAX)
-           fir_en <= 1'b0;
-         else
-           fir_en <= 1'b1;
-      end else if (next[SAMPLE]) begin
-         fir_en <= 1'b1;
-      end
    end
    // ================================================================
 

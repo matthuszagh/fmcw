@@ -1,6 +1,8 @@
 `ifndef _FIR_POLY_V_
 `define _FIR_POLY_V_
+
 `default_nettype none
+`timescale 1ns/1ps
 
 `include "fir_bank.v"
 
@@ -8,19 +10,27 @@
 `define M 20
 `define BANK_LEN 6
 
-`timescale 1ns/1ps
+// Polyphase FIR filter
+//
+// This polyphase FIR filter currently requires a fixed decimation of
+// 20 and length of 120.
+//
+// Ports:
+// en : Treats the data input port as valid. After this has been
+//      asserted, dvalid will be asserted after an appropriate delay.
+
 module fir #(
-   parameter INPUT_WIDTH    = 12,
-   parameter TAP_WIDTH      = 16,
-   parameter NORM_SHIFT     = 4,
-   parameter OUTPUT_WIDTH   = 13
+   parameter INPUT_WIDTH  = 12,
+   parameter TAP_WIDTH    = 16,
+   parameter NORM_SHIFT   = 4,
+   parameter OUTPUT_WIDTH = 13
 ) (
    input wire                           clk,
-   input wire                           rst_n,
-   input wire                           clk2_pos_en,
+   input wire                           en,
+   input wire                           clk_pos_en,
    input wire signed [INPUT_WIDTH-1:0]  din,
-   output reg signed [OUTPUT_WIDTH-1:0] dout = {OUTPUT_WIDTH{1'b0}},
-   output reg                           dvalid = 1'b0
+   output reg signed [OUTPUT_WIDTH-1:0] dout,
+   output reg                           dvalid
 );
 
    localparam N_TAPS         = `N_TAPS;
@@ -41,14 +51,9 @@ module fir #(
    end
 
    always @(posedge clk) begin
-      if (!rst_n) begin
-         for (i=0; i<M-1; i=i+1)
-           shift_reg[i] <= {INPUT_WIDTH{1'b0}};
-      end else begin
-         shift_reg[0] <= din;
-         for (i=1; i<M-1; i=i+1)
-           shift_reg[i] <= shift_reg[i-1];
-      end
+      shift_reg[0] <= din;
+      for (i=1; i<M-1; i=i+1)
+        shift_reg[i] <= shift_reg[i-1];
    end
 
    // Decimate the input signal by the downsampling factor. We can get
@@ -63,10 +68,7 @@ module fir #(
    end
 
    always @(posedge clk) begin
-      if (!rst_n) begin
-         for (i=0; i<M; i=i+1)
-           bank_decimated_in[i] <= {INPUT_WIDTH{1'b0}};
-      end else if (tap_addr == 5'd0) begin
+      if (tap_addr == 5'd0) begin
          bank_decimated_in[0] <= din;
          for (i=1; i<M; i=i+1)
            bank_decimated_in[i] <= shift_reg[i-1];
@@ -77,15 +79,10 @@ module fir #(
    reg [M_LOG2-1:0]     tap_addr_pipe = {M_LOG2{1'b0}};
 
    always @(posedge clk) begin
-      if (!rst_n) begin
+      tap_addr      <= tap_addr + 1'b1;
+      tap_addr_pipe <= tap_addr;
+      if (clk_pos_en) begin
          tap_addr <= {M_LOG2{1'b0}};
-         tap_addr_pipe <= {M_LOG2{1'b0}};
-      end else begin
-         tap_addr_pipe <= tap_addr;
-         tap_addr <= tap_addr + 1'b1;
-         if (clk2_pos_en) begin
-            tap_addr <= {M_LOG2{1'b0}};
-         end
       end
    end
 
@@ -172,7 +169,6 @@ module fir #(
       .OUTPUT_WIDTH   (INTERNAL_WIDTH)
    ) bank0 (
       .clk             (clk),
-      .rst_n           (rst_n),
       .din             (bank_decimated_in[0]),
       .dout            (bank_dout[0]),
       .tap_addr        (tap_addr_pipe),
@@ -196,7 +192,6 @@ module fir #(
       .OUTPUT_WIDTH   (INTERNAL_WIDTH)
    ) bank1 (
       .clk             (clk),
-      .rst_n           (rst_n),
       .din             (bank_decimated_in[1]),
       .dout            (bank_dout[1]),
       .tap_addr        (tap_addr2),
@@ -233,7 +228,6 @@ module fir #(
       .OUTPUT_WIDTH   (INTERNAL_WIDTH)
    ) bank2 (
       .clk             (clk),
-      .rst_n           (rst_n),
       .din             (bank_decimated_in[2]),
       .dout            (bank_dout[2]),
       .tap_addr        (tap_addr_pipe),
@@ -257,7 +251,6 @@ module fir #(
       .OUTPUT_WIDTH   (INTERNAL_WIDTH)
    ) bank3 (
       .clk             (clk),
-      .rst_n           (rst_n),
       .din             (bank_decimated_in[3]),
       .dout            (bank_dout[3]),
       .tap_addr        (tap_addr2),
@@ -294,7 +287,6 @@ module fir #(
       .OUTPUT_WIDTH   (INTERNAL_WIDTH)
    ) bank4 (
       .clk             (clk),
-      .rst_n           (rst_n),
       .din             (bank_decimated_in[4]),
       .dout            (bank_dout[4]),
       .tap_addr        (tap_addr_pipe),
@@ -318,7 +310,6 @@ module fir #(
       .OUTPUT_WIDTH   (INTERNAL_WIDTH)
    ) bank5 (
       .clk             (clk),
-      .rst_n           (rst_n),
       .din             (bank_decimated_in[5]),
       .dout            (bank_dout[5]),
       .tap_addr        (tap_addr2),
@@ -355,7 +346,6 @@ module fir #(
       .OUTPUT_WIDTH   (INTERNAL_WIDTH)
    ) bank6 (
       .clk             (clk),
-      .rst_n           (rst_n),
       .din             (bank_decimated_in[6]),
       .dout            (bank_dout[6]),
       .tap_addr        (tap_addr_pipe),
@@ -379,7 +369,6 @@ module fir #(
       .OUTPUT_WIDTH   (INTERNAL_WIDTH)
    ) bank7 (
       .clk             (clk),
-      .rst_n           (rst_n),
       .din             (bank_decimated_in[7]),
       .dout            (bank_dout[7]),
       .tap_addr        (tap_addr2),
@@ -416,7 +405,6 @@ module fir #(
       .OUTPUT_WIDTH   (INTERNAL_WIDTH)
    ) bank8 (
       .clk             (clk),
-      .rst_n           (rst_n),
       .din             (bank_decimated_in[8]),
       .dout            (bank_dout[8]),
       .tap_addr        (tap_addr_pipe),
@@ -440,7 +428,6 @@ module fir #(
       .OUTPUT_WIDTH   (INTERNAL_WIDTH)
    ) bank9 (
       .clk             (clk),
-      .rst_n           (rst_n),
       .din             (bank_decimated_in[9]),
       .dout            (bank_dout[9]),
       .tap_addr        (tap_addr2),
@@ -477,7 +464,6 @@ module fir #(
       .OUTPUT_WIDTH   (INTERNAL_WIDTH)
    ) bank10 (
       .clk             (clk),
-      .rst_n           (rst_n),
       .din             (bank_decimated_in[10]),
       .dout            (bank_dout[10]),
       .tap_addr        (tap_addr_pipe),
@@ -501,7 +487,6 @@ module fir #(
       .OUTPUT_WIDTH   (INTERNAL_WIDTH)
    ) bank11 (
       .clk             (clk),
-      .rst_n           (rst_n),
       .din             (bank_decimated_in[11]),
       .dout            (bank_dout[11]),
       .tap_addr        (tap_addr2),
@@ -538,7 +523,6 @@ module fir #(
       .OUTPUT_WIDTH   (INTERNAL_WIDTH)
    ) bank12 (
       .clk             (clk),
-      .rst_n           (rst_n),
       .din             (bank_decimated_in[12]),
       .dout            (bank_dout[12]),
       .tap_addr        (tap_addr_pipe),
@@ -562,7 +546,6 @@ module fir #(
       .OUTPUT_WIDTH   (INTERNAL_WIDTH)
    ) bank13 (
       .clk             (clk),
-      .rst_n           (rst_n),
       .din             (bank_decimated_in[13]),
       .dout            (bank_dout[13]),
       .tap_addr        (tap_addr2),
@@ -599,7 +582,6 @@ module fir #(
       .OUTPUT_WIDTH   (INTERNAL_WIDTH)
    ) bank14 (
       .clk             (clk),
-      .rst_n           (rst_n),
       .din             (bank_decimated_in[14]),
       .dout            (bank_dout[14]),
       .tap_addr        (tap_addr_pipe),
@@ -623,7 +605,6 @@ module fir #(
       .OUTPUT_WIDTH   (INTERNAL_WIDTH)
    ) bank15 (
       .clk             (clk),
-      .rst_n           (rst_n),
       .din             (bank_decimated_in[15]),
       .dout            (bank_dout[15]),
       .tap_addr        (tap_addr2),
@@ -660,7 +641,6 @@ module fir #(
       .OUTPUT_WIDTH   (INTERNAL_WIDTH)
    ) bank16 (
       .clk             (clk),
-      .rst_n           (rst_n),
       .din             (bank_decimated_in[16]),
       .dout            (bank_dout[16]),
       .tap_addr        (tap_addr_pipe),
@@ -684,7 +664,6 @@ module fir #(
       .OUTPUT_WIDTH   (INTERNAL_WIDTH)
    ) bank17 (
       .clk             (clk),
-      .rst_n           (rst_n),
       .din             (bank_decimated_in[17]),
       .dout            (bank_dout[17]),
       .tap_addr        (tap_addr2),
@@ -721,7 +700,6 @@ module fir #(
       .OUTPUT_WIDTH   (INTERNAL_WIDTH)
    ) bank18 (
       .clk             (clk),
-      .rst_n           (rst_n),
       .din             (bank_decimated_in[18]),
       .dout            (bank_dout[18]),
       .tap_addr        (tap_addr_pipe),
@@ -745,7 +723,6 @@ module fir #(
       .OUTPUT_WIDTH   (INTERNAL_WIDTH)
    ) bank19 (
       .clk             (clk),
-      .rst_n           (rst_n),
       .din             (bank_decimated_in[19]),
       .dout            (bank_dout[19]),
       .tap_addr        (tap_addr2),
@@ -769,7 +746,8 @@ module fir #(
         bank18_19_dsp_p <= bank18_19_dsp_a * bank18_19_dsp_b;
    end
 
-   // TODO pipeline if latency is too high.
+   // TODO convert to adder chain and adjust LATENCY localparam if
+   // timing is too slow.
    wire signed [INTERNAL_WIDTH-1:0] out_tmp = bank_dout[0]
         + bank_dout[1]
         + bank_dout[2]
@@ -796,7 +774,7 @@ module fir #(
    localparam DROP_LSB_BITS = TAP_WIDTH - 1 + NORM_SHIFT;
    // since we compute the maximum value that an output can take, we
    // can drop bits at the top.
-   localparam DROP_MSB_BITS = INTERNAL_WIDTH - OUTPUT_WIDTH - DROP_LSB_BITS;
+   localparam DROP_MSB_BITS    = INTERNAL_WIDTH - OUTPUT_WIDTH - DROP_LSB_BITS;
    localparam INTERNAL_MIN_MSB = INTERNAL_WIDTH-DROP_MSB_BITS;
 
    function [INTERNAL_MIN_MSB-1:0] drop_msb_bits(input [INTERNAL_WIDTH-1:0] expr);
@@ -813,23 +791,21 @@ module fir #(
       trunc_to_out = expr[INTERNAL_MIN_MSB-1:INTERNAL_MIN_MSB-OUTPUT_WIDTH];
    endfunction
 
-   reg                              dvalid_delay = 1'b0;
+   localparam LATENCY = 1;
+   reg                              dvalid_sync [0:LATENCY-1];
    // compute the sum of all bank outputs
    always @(posedge clk) begin
-      if (!rst_n) begin
-         dvalid <= 1'b0;
-         dvalid_delay <= 1'b0;
-      end else begin
-         if (clk2_pos_en) begin
-            dvalid_delay <= 1'b1;
-            if (dvalid_delay)
-              dvalid <= 1'b1;
-
-            dout <= trunc_to_out(round_convergent(drop_msb_bits(out_tmp)));
-            // Simple truncation. Can be used to test effect of
-            // convergent rounding.
-            // dout <= out_tmp[INTERNAL_MIN_MSB-1:INTERNAL_MIN_MSB-OUTPUT_WIDTH];
+      if (clk_pos_en) begin
+         dvalid_sync[0] <= en;
+         for (i=1; i<LATENCY; i=i+1) begin
+            dvalid_sync[i] <= dvalid_sync[i-1];
          end
+         dvalid <= dvalid_sync[LATENCY-1];
+
+         dout <= trunc_to_out(round_convergent(drop_msb_bits(out_tmp)));
+         // Simple truncation. Can be used to test effect of
+         // convergent rounding.
+         // dout <= out_tmp[INTERNAL_MIN_MSB-1:INTERNAL_MIN_MSB-OUTPUT_WIDTH];
       end
    end
 

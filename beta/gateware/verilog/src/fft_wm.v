@@ -68,7 +68,6 @@ module fft_wm #(
    ) sync_ctr (
       .fst_clk (clk_3x_i  ),
       .slw_clk (clk_i     ),
-      .rst_n   (rst_n     ),
       .ctr     (mul_state )
    );
 
