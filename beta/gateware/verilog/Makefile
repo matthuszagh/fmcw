@@ -33,6 +33,10 @@ sim:
 sim_adf4158:
 	iverilog -DADF4158_SIMULATE=1 -s adf4158_tb src/adf4158.v && ./a.out
 
+.PHONY: sim_ff_sync
+sim_ff_sync:
+	iverilog -DFF_SYNC_SIMULATE=1 -s ff_sync_tb src/ff_sync.v && ./a.out
+
 .PHONY: formal_dual_ff
 formal_dual_ff:
 	$(eval TOP_MODULE = dual_ff)
