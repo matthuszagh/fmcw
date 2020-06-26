@@ -164,17 +164,17 @@ module top #(
    wire                            adf_config_done;
    wire                            adf_ramp_start;
    adf4158 adf4158 (
-      .clk         (clk_i                       ),
-      .clk20       (clk20                       ),
-      .clk_o       (adf_clk_o                   ),
-      .configure   (pll_lock & ~adf_config_done ),
-      .muxout      (adf_muxout_i                ),
-      .ramp_start  (adf_ramp_start              ),
-      .config_done (adf_config_done             ),
-      .le          (adf_le_o                    ),
-      .ce          (adf_ce_o                    ),
-      .txdata      (adf_txdata_o                ),
-      .data        (adf_data_o                  )
+      .clk         (clk_i                             ),
+      .clk20       (clk20                             ),
+      .clk_o       (adf_clk_o                         ),
+      .configure   (pll_lock_clk40 & ~adf_config_done ),
+      .muxout      (adf_muxout_i                      ),
+      .ramp_start  (adf_ramp_start                    ),
+      .config_done (adf_config_done                   ),
+      .le          (adf_le_o                          ),
+      .ce          (adf_ce_o                          ),
+      .txdata      (adf_txdata_o                      ),
+      .data        (adf_data_o                        )
    );
 
    wire signed [`ADC_DATA_WIDTH-1:0] adc_chan_a;
@@ -250,13 +250,13 @@ module top #(
       .DATA_WIDTH  (FIR_OUTPUT_WIDTH ),
       .COEFF_WIDTH (FIR_TAP_WIDTH    )
    ) window (
-      .clk    (clk_i         ),
-      .rst_n  (pll_lock      ),
-      .en     (fir_dvalid    ),
-      .clk_en (clk2_pos_en   ),
-      .di     (fir_out       ),
-      .dvalid (window_dvalid ),
-      .dout   (window_out    )
+      .clk    (clk_i          ),
+      .rst_n  (pll_lock_clk40 ),
+      .en     (fir_dvalid     ),
+      .clk_en (clk2_pos_en    ),
+      .di     (fir_out        ),
+      .dvalid (window_dvalid  ),
+      .dout   (window_out     )
    );
 
    wire                            window_fifo_empty;
