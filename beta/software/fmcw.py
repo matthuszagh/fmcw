@@ -76,7 +76,7 @@ def data_from_str(strval: str) -> Data:
 def data_sweep_len(data: Data) -> int:
     """
     """
-    if data < Data.FIR:
+    if data <= Data.FIR:
         return RAW_LEN
     else:
         return DECIMATED_LEN
@@ -720,7 +720,7 @@ class Configuration:
         """
         return (
             "Integer representing time. s, m, h, d can be appended \n"
-            "for seconds, minutes, hours or days if desired \n "
+            "for seconds, minutes, hours or days if desired "
             "(defaults to seconds if omitted)."
         )
 
@@ -989,7 +989,6 @@ class Proc:
             seq = new_seq
 
         i = self.indata.value
-        # print("i=", i)
         proc_func = [
             self.perform_fir,
             self.perform_decimate,
