@@ -262,14 +262,14 @@ module adf4158 #(
    always @(*) begin
       next = {NUM_STATES{1'b0}};
       case (1'b1)
-      state[IDLE]       : if (configure)                      next[CONFIG_LE]  = 1'b1;
-                          else                                next[IDLE]       = 1'b1;
-      state[CONFIG_LE]  : if (config_done)                    next[ACTIVE]     = 1'b1;
-                          else                                next[CONFIG_DAT] = 1'b1;
-      state[CONFIG_DAT] : if (bit_ctr == 5'd0)                next[CONFIG_LE]  = 1'b1;
-                          else                                next[CONFIG_DAT] = 1'b1;
-      state[ACTIVE]     :                                     next[ACTIVE]     = 1'b1;
-      default           :                                     next[IDLE]       = 1'b1;
+      state[IDLE]       : if (configure)       next[CONFIG_LE]  = 1'b1;
+                          else                 next[IDLE]       = 1'b1;
+      state[CONFIG_LE]  : if (config_done)     next[ACTIVE]     = 1'b1;
+                          else                 next[CONFIG_DAT] = 1'b1;
+      state[CONFIG_DAT] : if (bit_ctr == 5'd0) next[CONFIG_LE]  = 1'b1;
+                          else                 next[CONFIG_DAT] = 1'b1;
+      state[ACTIVE]     :                      next[ACTIVE]     = 1'b1;
+      default           :                      next[IDLE]       = 1'b1;
       endcase
    end
 
@@ -300,9 +300,9 @@ module adf4158 #(
       next[CONFIG_DAT]:
         begin
            if (~state[CONFIG_LE]) bit_ctr <= bit_ctr - 1'b1;
-           le   <= 1'b0;
+           le          <= 1'b0;
            config_done <= 1'b0;
-           data <= r[reg_ctr][bit_ctr-1'b1];
+           data        <= r[reg_ctr][bit_ctr-1'b1];
            ramp_en     <= 1'b1;
         end
 
@@ -315,7 +315,6 @@ module adf4158 #(
            data        <= 1'b0;
            ramp_en     <= 1'b1;
         end
-
       endcase
    end
 
