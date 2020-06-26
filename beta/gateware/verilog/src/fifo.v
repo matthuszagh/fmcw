@@ -72,23 +72,23 @@ module fifo #(
    gray_ctr #(
       .WIDTH (ADDR_WIDTH+1)
    ) wgray_ctr (
-      .inc       (wen && !full ),
-      .clk       (wclk         ),
-      .rst_n     (wrst_n       ),
-      .gray      (wgray        ),
-      .gray_next (wgray_next   ),
-      .bin       (waddr        )
+      .inc       (wen & ~full ),
+      .clk       (wclk        ),
+      .rst_n     (wrst_n      ),
+      .gray      (wgray       ),
+      .gray_next (wgray_next  ),
+      .bin       (waddr       )
    );
 
    gray_ctr #(
       .WIDTH (ADDR_WIDTH+1)
    ) rgray_ctr (
-      .inc       (ren && !empty ),
-      .rst_n     (rrst_n        ),
-      .clk       (rclk          ),
-      .gray      (rgray         ),
-      .gray_next (rgray_next    ),
-      .bin       (raddr         )
+      .inc       (ren & ~empty ),
+      .rst_n     (rrst_n       ),
+      .clk       (rclk         ),
+      .gray      (rgray        ),
+      .gray_next (rgray_next   ),
+      .bin       (raddr        )
    );
 
    ff_sync #(
@@ -133,14 +133,14 @@ module fifo #(
       .WIDTH (WIDTH ),
       .SIZE  (DEPTH )
    ) ram (
-      .rdclk  (rclk          ),
-      .rden   (ren && !empty ),
-      .rdaddr (raddr         ),
-      .rddata (rdata         ),
-      .wrclk  (wclk          ),
-      .wren   (wen && !full  ),
-      .wraddr (waddr         ),
-      .wrdata (wdata         )
+      .rdclk  (rclk         ),
+      .rden   (ren & ~empty ),
+      .rdaddr (raddr        ),
+      .rddata (rdata        ),
+      .wrclk  (wclk         ),
+      .wren   (wen & ~full  ),
+      .wraddr (waddr        ),
+      .wrdata (wdata        )
    );
 
 endmodule
