@@ -144,7 +144,7 @@ module top #(
       .q        (pll_lock_clk40 )
    );
 
-   wire                           clk80_40_phase_ctr;
+   wire                            clk80_40_phase_ctr;
    pll_sync_ctr #(
       .RATIO (2)
    ) pll_sync_ctr (
@@ -193,7 +193,7 @@ module top #(
    assign adc_single_chan_msb = {4'd0, adc_single_chan[`ADC_DATA_WIDTH-1:8]};
    assign adc_single_chan_lsb = adc_single_chan[7:0];
 
-   wire [`USB_DATA_WIDTH-1:0]      ft_raw_data = clk80_40_phase_ctr ? adc_single_chan_lsb : adc_single_chan_msb;
+   wire [`USB_DATA_WIDTH-1:0] ft_raw_data = clk80_40_phase_ctr ? adc_single_chan_lsb : adc_single_chan_msb;
 
    localparam NUM_OUTPUT = 4;
    localparam RAW    = 0,
@@ -202,10 +202,8 @@ module top #(
               FFT    = 3;
    reg [NUM_OUTPUT-1:0] out;
    initial begin
-      out[RAW]    = 1'b1;
-      out[FIR]    = 1'b0;
-      out[WINDOW] = 1'b0;
-      out[FFT]    = 1'b0;
+      out      = {NUM_OUTPUT{1'b0}};
+      out[RAW] = 1'b1;
    end
 
    wire signed [FIR_OUTPUT_WIDTH-1:0] fir_out;
@@ -224,10 +222,10 @@ module top #(
       .dvalid     (fir_dvalid      )
    );
 
-   wire                            fir_fifo_empty;
-   reg                             fir_fifo_ren = 1'b0;
-   wire [FIR_OUTPUT_WIDTH-1:0]     fir_fifo_rdata;
-   wire                            fir_fifo_wen = fir_dvalid;
+   wire                        fir_fifo_empty;
+   reg                         fir_fifo_ren = 1'b0;
+   wire [FIR_OUTPUT_WIDTH-1:0] fir_fifo_rdata;
+   wire                        fir_fifo_wen = fir_dvalid;
    fifo #(
       .WIDTH (FIR_OUTPUT_WIDTH ),
       .DEPTH (`FFT_N           )
