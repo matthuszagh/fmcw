@@ -214,7 +214,7 @@ module adf4158 #(
 
    assign clk_o = clk20;
 
-   reg        ramp_en = 1'b0;
+   reg         ramp_en = 1'b0;
 
    /* Configuration registers.
     * Initialization sequence: r7, r6_0, r6_1, r5_0, r5_1, r4, r3, r2, r1, r0
@@ -237,7 +237,7 @@ module adf4158 #(
    reg muxout_last = 1'b0;
    always @(posedge clk) begin
       muxout_last <= muxout;
-      ramp_start <= ~muxout & muxout_last;
+      ramp_start  <= ~muxout & muxout_last;
    end
 
    always @(negedge clk20) begin
@@ -249,8 +249,14 @@ module adf4158 #(
               CONFIG_LE  = 1,
               CONFIG_DAT = 2,
               ACTIVE     = 3;
-   reg [NUM_STATES-1:0] state = IDLE,
-                        next  = IDLE;
+   reg [NUM_STATES-1:0] state, next;
+   initial begin
+      state       = {NUM_STATES{1'b0}};
+      state[IDLE] = 1'b1;
+
+      next       = {NUM_STATES{1'b0}};
+      next[IDLE] = 1'b1;
+   end
 
    always @(negedge clk20) begin
       state <= next;
@@ -339,9 +345,7 @@ module adf4158_tb;
       $dumpvars(0, adf4158_tb);
       // $dumpvars(0, dut.r[0]);
 
-      // #10 rst_n = 1'b1;
       #100 configure = 1'b1;
-
       #100000 $finish;
    end
 
