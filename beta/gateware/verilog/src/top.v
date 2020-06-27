@@ -328,19 +328,11 @@ module top #(
               TX          = 5;
    reg [NUM_STATES-1:0] state, next;
    initial begin
-      state[CONFIG]      = 1'b1;
-      state[IDLE]        = 1'b0;
-      state[SAMPLE]      = 1'b0;
-      state[PROC_FILTER] = 1'b0;
-      state[PROC_FFT]    = 1'b0;
-      state[TX]          = 1'b0;
+      state         = {NUM_STATES{1'b0}};
+      state[CONFIG] = 1'b1;
 
-      next[CONFIG]      = 1'b1;
-      next[IDLE]        = 1'b0;
-      next[SAMPLE]      = 1'b0;
-      next[PROC_FILTER] = 1'b0;
-      next[PROC_FFT]    = 1'b0;
-      next[TX]          = 1'b0;
+      next         = {NUM_STATES{1'b0}};
+      next[CONFIG] = 1'b1;
    end
 
    wire [NUM_STATES-1:0]           state_ftclk_domain;
@@ -454,23 +446,11 @@ module top #(
               FTCLK_READ  = 7;
    reg [FTCLK_NUM_STATES-1:0] ftclk_state, ftclk_next;
    initial begin
-      ftclk_state[FTCLK_IDLE]  = 1'b1;
-      ftclk_state[FTCLK_START] = 1'b0;
-      ftclk_state[FTCLK_TX]    = 1'b0;
-      ftclk_state[FTCLK_TXE]   = 1'b0;
-      ftclk_state[FTCLK_LAST]  = 1'b0;
-      ftclk_state[FTCLK_STOP]  = 1'b0;
-      ftclk_state[FTCLK_WAIT]  = 1'b0;
-      ftclk_state[FTCLK_READ]  = 1'b0;
+      ftclk_state             = {FTCLK_NUM_STATES{1'b0}};
+      ftclk_state[FTCLK_IDLE] = 1'b1;
 
-      ftclk_next[FTCLK_IDLE]  = 1'b1;
-      ftclk_next[FTCLK_START] = 1'b0;
-      ftclk_next[FTCLK_TX]    = 1'b0;
-      ftclk_next[FTCLK_TXE]   = 1'b0;
-      ftclk_next[FTCLK_LAST]  = 1'b0;
-      ftclk_next[FTCLK_STOP]  = 1'b0;
-      ftclk_next[FTCLK_WAIT]  = 1'b0;
-      ftclk_next[FTCLK_READ]  = 1'b0;
+      ftclk_next             = {FTCLK_NUM_STATES{1'b0}};
+      ftclk_next[FTCLK_IDLE] = 1'b1;
    end
 
    always @(posedge ft_clkout_i) begin
