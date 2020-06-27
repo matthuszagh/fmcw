@@ -11,8 +11,11 @@
 // The design for this FIFO is based on the design in Clifford
 // Cummings paper "Simulation and Synthesis Techniques for
 // Asynchronous FIFO Design".
+//
+// The full and empty flags are set exactly on time, but cleared
+// late. Therefore, the FIFO can be set to exactly the size needed.
 
-module fifo #(
+module async_fifo #(
    parameter WIDTH = 64,
    parameter DEPTH = 1024
 ) (
@@ -145,8 +148,8 @@ module fifo #(
 
 endmodule
 
-`ifdef SIMULATE
-module fifo_tb;
+`ifdef FIFO_SIMULATE
+module async_fifo_tb;
 
    reg clk40 = 1'b0;
    reg clk80 = 1'b0;
@@ -198,7 +201,7 @@ module fifo_tb;
    end
 
    wire [7:0] out_ctr;
-   fifo # (
+   async_fifo # (
       .WIDTH (8    ),
       .DEPTH (1024 )
    ) dut (

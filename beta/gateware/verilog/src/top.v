@@ -6,7 +6,7 @@
 `define ADC_DATA_WIDTH 12
 `define SD_DATA_WIDTH 4
 
-`include "fifo.v"
+`include "async_fifo.v"
 `include "ltc2292.v"
 `include "ff_sync.v"
 `include "adf4158.v"
@@ -223,7 +223,7 @@ module top #(
    reg                         fir_fifo_ren = 1'b0;
    wire [FIR_OUTPUT_WIDTH-1:0] fir_fifo_rdata;
    wire                        fir_fifo_wen = fir_dvalid;
-   fifo #(
+   async_fifo #(
       .WIDTH (FIR_OUTPUT_WIDTH ),
       .DEPTH (FFT_N            )
    ) fir_fifo (
@@ -257,7 +257,7 @@ module top #(
    reg                             window_fifo_ren = 1'b0;
    wire [FIR_OUTPUT_WIDTH-1:0]     window_fifo_rdata;
    wire                            window_fifo_wen = window_dvalid;
-   fifo #(
+   async_fifo #(
       .WIDTH (FIR_OUTPUT_WIDTH ),
       .DEPTH (FFT_N            )
    ) window_fifo (
@@ -298,7 +298,7 @@ module top #(
    wire                            fft_fifo_full;
    reg                             fft_fifo_ren = 1'b0;
    wire [2*FFT_OUTPUT_WIDTH-1:0]   fft_fifo_rdata;
-   fifo #(
+   async_fifo #(
       .WIDTH (2*FFT_OUTPUT_WIDTH ),
       .DEPTH (FFT_N              )
    ) fft_fifo (
@@ -415,7 +415,7 @@ module top #(
    reg                             ft_fifo_ren = 1'b0;
    wire [`USB_DATA_WIDTH-1:0]      ft_fifo_rdata;
    reg                             ft_fifo_wen = 1'b0;
-   fifo #(
+   async_fifo #(
       .WIDTH (`USB_DATA_WIDTH ),
       .DEPTH (FT_FIFO_DEPTH   )
    ) ft_fifo (

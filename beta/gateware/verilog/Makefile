@@ -63,6 +63,10 @@ sim_adf4158:
 sim_ff_sync:
 	iverilog -DFF_SYNC_SIMULATE=1 -s ff_sync_tb src/ff_sync.v && ./a.out
 
+.PHONY: sim_async_fifo
+sim_async_fifo:
+	iverilog -DFIFO_SIMULATE=1 -s async_fifo_tb src/async_fifo.v -Isrc && ./a.out
+
 # formal verification
 .PHONY: formal_dual_ff
 formal_dual_ff:
