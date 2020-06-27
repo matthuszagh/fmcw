@@ -48,7 +48,7 @@ module ram #(
       /* verilator lint_on WIDTH */
    endgenerate
 
-   wire                   conflict = (rden && wren) ? (rdaddr == wraddr) : 1'b0;
+   wire                   conflict = (rden & wren) ? (rdaddr == wraddr) : 1'b0;
 
    always @(posedge rdclk) begin
       if (rden) begin
@@ -58,7 +58,7 @@ module ram #(
 
    // Prioritize reads when read/write conflicts occur.
    always @(posedge wrclk) begin
-      if (wren && !conflict) begin
+      if (wren & ~conflict) begin
          mem[wraddr] <= wrdata;
       end
    end
