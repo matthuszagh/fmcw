@@ -5,15 +5,6 @@
 `define USB_DATA_WIDTH 8
 `define ADC_DATA_WIDTH 12
 `define SD_DATA_WIDTH 4
-`define FFT_N 1024
-`define FIR_TAPS 120
-`define DECIMATE 20
-`define FIR_BANK_LEN `FIR_TAPS / `DECIMATE
-`define RAW_SAMPLES `DECIMATE * `FFT_N
-`define FT_FIFO_DEPTH 65536
-`define START_FLAG 8'hFF
-`define STOP_FLAG 8'h8F
-`define FLAG_WIDTH 2
 
 `include "fifo.v"
 `include "ltc2292.v"
@@ -92,8 +83,14 @@ module top #(
    // input wire                             adf_done_i,
 );
 
-   localparam FFT_OUTPUT_WIDTH               = FIR_OUTPUT_WIDTH + 1 + $clog2(`FFT_N);
-   localparam [$clog2(`FFT_N)-1:0] FFT_N_MAX = `FFT_N-1;
+   localparam FFT_N            = 1024;
+   localparam DECIMATE         = 20;
+   localparam RAW_SAMPLES      = DECIMATE * FFT_N;
+   localparam FT_FIFO_DEPTH    = 65536;
+   localparam START_FLAG       = 8'hFF;
+   localparam STOP_FLAG        = 8'h8F;
+   localparam FLAG_WIDTH       = 2;
+   localparam FFT_OUTPUT_WIDTH = FIR_OUTPUT_WIDTH + 1 + $clog2(FFT_N);
 
    // never flush tx/rx buffers
    assign ft_siwua_n_o = 1'b1;
@@ -155,7 +152,7 @@ module top #(
 
    wire                            clk2_pos_en;
    clk_enable #(
-      .DIVIDE (`DECIMATE)
+      .DIVIDE (DECIMATE)
    ) clk_enable (
       .clk_base (clk_i       ),
       .clk_en   (clk2_pos_en )
@@ -228,7 +225,7 @@ module top #(
    wire                        fir_fifo_wen = fir_dvalid;
    fifo #(
       .WIDTH (FIR_OUTPUT_WIDTH ),
-      .DEPTH (`FFT_N           )
+      .DEPTH (FFT_N            )
    ) fir_fifo (
       .wclk         (clk_i                      ),
       .rst_n        (1'b1                       ),
@@ -243,7 +240,7 @@ module top #(
    wire                               window_dvalid;
    wire signed [FIR_OUTPUT_WIDTH-1:0] window_out;
    window #(
-      .N           (`FFT_N           ),
+      .N           (FFT_N            ),
       .DATA_WIDTH  (FIR_OUTPUT_WIDTH ),
       .COEFF_WIDTH (FIR_TAP_WIDTH    )
    ) window (
@@ -262,7 +259,7 @@ module top #(
    wire                            window_fifo_wen = window_dvalid;
    fifo #(
       .WIDTH (FIR_OUTPUT_WIDTH ),
-      .DEPTH (`FFT_N           )
+      .DEPTH (FFT_N            )
    ) window_fifo (
       .wclk         (clk_i                         ),
       .rst_n        (1'b1                          ),
@@ -276,12 +273,12 @@ module top #(
    );
 
    wire                               fft_valid;
-   wire [$clog2(`FFT_N)-1:0]          fft_ctr;
+   wire [$clog2(FFT_N)-1:0]           fft_ctr;
    wire signed [FFT_OUTPUT_WIDTH-1:0] fft_re_o;
    wire signed [FFT_OUTPUT_WIDTH-1:0] fft_im_o;
 
    fft #(
-      .N             (`FFT_N            ),
+      .N             (FFT_N             ),
       .INPUT_WIDTH   (FIR_OUTPUT_WIDTH  ),
       .TWIDDLE_WIDTH (FFT_TWIDDLE_WIDTH ),
       .OUTPUT_WIDTH  (FFT_OUTPUT_WIDTH  )
@@ -303,7 +300,7 @@ module top #(
    wire [2*FFT_OUTPUT_WIDTH-1:0]   fft_fifo_rdata;
    fifo #(
       .WIDTH (2*FFT_OUTPUT_WIDTH ),
-      .DEPTH (`FFT_N             )
+      .DEPTH (FFT_N              )
    ) fft_fifo (
       .wclk         (clk_i                ),
       .rst_n        (1'b1                 ),
@@ -355,8 +352,8 @@ module top #(
       .q        (state_ftclk_domain )
    );
 
-   localparam [$clog2(`RAW_SAMPLES)-1:0] RAW_SAMPLES_MAX = `RAW_SAMPLES-1;
-   reg [$clog2(`RAW_SAMPLES)-1:0] raw_sample_ctr = `RAW_SAMPLES'd0;
+   localparam [$clog2(RAW_SAMPLES)-1:0] RAW_SAMPLES_MAX = RAW_SAMPLES-1;
+   reg [$clog2(RAW_SAMPLES)-1:0] raw_sample_ctr = {RAW_SAMPLES{1'b0}};
 
    always @(posedge clk_i) begin
       state <= next;
@@ -400,7 +397,7 @@ module top #(
    end
 
    always @(posedge clk_i) begin
-      raw_sample_ctr <= `RAW_SAMPLES'd0;
+      raw_sample_ctr <= {RAW_SAMPLES{1'b0}};
       case (1'b1)
       state[SAMPLE] : raw_sample_ctr <= raw_sample_ctr + 1'b1;
       endcase
@@ -420,7 +417,7 @@ module top #(
    reg                             ft_fifo_wen = 1'b0;
    fifo #(
       .WIDTH (`USB_DATA_WIDTH ),
-      .DEPTH (`FT_FIFO_DEPTH  )
+      .DEPTH (FT_FIFO_DEPTH   )
    ) ft_fifo (
       .wclk         (clk80         ),
       .rst_n        (1'b1          ),
@@ -480,21 +477,21 @@ module top #(
    reg [`USB_DATA_WIDTH-1:0] ft_wr_data         = `USB_DATA_WIDTH'd0;
    reg [`USB_DATA_WIDTH-1:0] ft_fifo_rdata_last = `USB_DATA_WIDTH'd0;
    reg                       ft_txe_last        = 1'b0;
-   reg [`FLAG_WIDTH-1:0]     flag_ctr           = `FLAG_WIDTH'd0;
-   reg [`FLAG_WIDTH-1:0]     max_flag_ctr       = `FLAG_WIDTH'd2;
+   reg [FLAG_WIDTH-1:0]      flag_ctr           = {FLAG_WIDTH{1'b0}};
+   reg [FLAG_WIDTH-1:0]      max_flag_ctr       = 2;
    always @(posedge ft_clkout_i) begin
       ft_wr_data  <= `USB_DATA_WIDTH'd0;
       ft_wr_n_o   <= 1'b1;
       tx_done     <= 1'b0;
       ft_txe_last <= ft_txe_n_i;
-      flag_ctr    <= `FLAG_WIDTH'd0;
+      flag_ctr    <= {FLAG_WIDTH{1'b0}};
       ft_oe_n_o   <= 1'b1;
       ft_rd_n_o   <= 1'b1;
 
       case (1'b1)
       ftclk_next[FTCLK_START]:
         begin
-           ft_wr_data <= `START_FLAG;
+           ft_wr_data <= START_FLAG;
            ft_wr_n_o  <= 1'b0;
            if (~ft_txe_n_i) flag_ctr <= flag_ctr + 1'b1;
         end
@@ -511,7 +508,7 @@ module top #(
         end
       ftclk_next[FTCLK_STOP]:
         begin
-           ft_wr_data <= `STOP_FLAG;
+           ft_wr_data <= STOP_FLAG;
            ft_wr_n_o  <= 1'b0;
            tx_done    <= 1'b1;
            if (~ft_txe_n_i) flag_ctr <= flag_ctr + 1'b1;
@@ -676,20 +673,9 @@ module top_tb;
    end
 
 endmodule
-
 `endif
 
 `undef GPIO_WIDTH
 `undef USB_DATA_WIDTH
 `undef ADC_DATA_WIDTH
 `undef SD_DATA_WIDTH
-`undef FFT_N
-`undef FIR_TAPS
-`undef DECIMATE
-`undef FIR_BANK_LEN
-`undef RAW_SAMPLES
-`undef FT_FIFO_DEPTH
-`undef DELAY_BITS
-`undef START_FLAG
-`undef STOP_FLAG
-`undef FLAG_WIDTH
