@@ -2,6 +2,7 @@
 `define _RAM_V_
 
 `default_nettype none
+`timescale 1ns/1ps
 
 // General-purpose RAM module with one read and one write port and
 // allows (but does not require) independent read and write clocks. It
