@@ -11,6 +11,7 @@ module fft_bfi #(
    parameter SHIFT_REG_LEN = 512
 ) (
    input wire                    clk,
+   input wire                    srst_n,
    input wire                    carry_in,
    output wire                   carry_out,
    input wire                    sel_i,
@@ -46,11 +47,13 @@ module fft_bfi #(
       end
    end
 
+
    // TODO it may be better to always use the shift_reg module since
    // the underlying ram module uses behavioral verilog to instantiate
    // the underlying storage. By using the shift_reg module then, we
    // can allow the synthesis tool to infer the most efficient use of
    // resources.
+   integer                       i;
    generate
       if (SHIFT_REG_LEN > 32) begin
          shift_reg #(
@@ -70,39 +73,36 @@ module fft_bfi #(
             .di     (zsr_im ),
             .data_o (sr_im  )
          );
-
-         shift_reg #(
-            .WIDTH (1             ),
-            .LEN   (SHIFT_REG_LEN )
-         ) shift_reg_carry (
-            .clk    (clk       ),
-            .di     (carry_in  ),
-            .data_o (carry_out )
-         );
       end else begin
          reg signed [WIDTH-1:0]        sr_re_reg [0:SHIFT_REG_LEN-1];
          reg signed [WIDTH-1:0]        sr_im_reg [0:SHIFT_REG_LEN-1];
-         reg                           carry [0:SHIFT_REG_LEN-1];
-         integer                       i;
-         initial begin
-            for (i=0; i<SHIFT_REG_LEN; i=i+1) carry[i] <= 1'b0;
-         end
 
          always @(posedge clk) begin
             sr_re_reg[0] <= zsr_re;
             sr_im_reg[0] <= zsr_im;
-            carry[0]     <= carry_in;
             for (i=1; i<SHIFT_REG_LEN; i=i+1) begin
                sr_re_reg[i] <= sr_re_reg[i-1];
                sr_im_reg[i] <= sr_im_reg[i-1];
-               carry[i]     <= carry[i-1];
             end
          end
          assign sr_re     = sr_re_reg[SHIFT_REG_LEN-1];
          assign sr_im     = sr_im_reg[SHIFT_REG_LEN-1];
-         assign carry_out = carry[SHIFT_REG_LEN-1];
       end
    endgenerate
+
+   reg                           carry [0:SHIFT_REG_LEN-1];
+   initial begin
+      for (i=0; i<SHIFT_REG_LEN; i=i+1) carry[i] <= 1'b0;
+   end
+   always @(posedge clk) begin
+      if (~srst_n) begin
+         for (i=0; i<SHIFT_REG_LEN; i=i+1) carry[i] <= 1'b0;
+      end else begin
+         carry[0] <= carry_in;
+         for (i=1; i<SHIFT_REG_LEN; i=i+1) carry[i] <= carry[i-1];
+      end
+   end
+   assign carry_out = carry[SHIFT_REG_LEN-1];
 
 endmodule
 `endif

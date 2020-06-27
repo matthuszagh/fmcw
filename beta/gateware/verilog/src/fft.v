@@ -1,9 +1,12 @@
 `ifndef _FFT_V_
 `define _FFT_V_
+
 `default_nettype none
+`timescale 1ns/1ps
 
 `include "fft_bf.v"
 `include "fft_wm.v"
+`include "ff_sync.v"
 
 // Radix-2^2 SDF FFT implementation.
 //
@@ -19,7 +22,6 @@
 // TODO last rom file doesn't appear to be needed. Verify and remove
 // from generation script.
 
-`timescale 1ns/1ps
 module fft #(
    parameter N              = 1024, /* FFT length */
    parameter INPUT_WIDTH    = 14,
@@ -29,6 +31,7 @@ module fft #(
 ) (
    input wire                           clk,
    input wire                           clk_3x,
+   input wire                           arst_n,
    input wire                           en,
    output reg                           valid = 1'b0,
    output wire [$clog2(N)-1:0]          data_ctr_o,
@@ -39,6 +42,16 @@ module fft #(
 );
 
    localparam N_STAGES = $clog2(N) / 2;
+
+   wire                                 srst_n;
+   ff_sync #(
+      .WIDTH  (1),
+      .STAGES (2)
+   ) rst_sync (
+      .dest_clk (clk    ),
+      .d        (arst_n ),
+      .q        (srst_n )
+   );
 
    // non bit-reversed output data count
    reg [$clog2(N)-1:0]                  data_ctr_bit_nrml = {$clog2(N){1'b0}};
@@ -210,6 +223,7 @@ module fft #(
       .STAGE (0            )
    ) stage0_bf (
       .clk       (clk                          ),
+      .srst_n    (srst_n                       ),
       .carry_in  (en                           ),
       .carry_out (carry_0                      ),
       .ctr_i     (stage0_ctr                   ),
@@ -237,6 +251,7 @@ module fft #(
          ) stage0_wm (
             .clk       (clk           ),
             .clk_3x    (clk_3x        ),
+            .srst_n    (srst_n        ),
             .carry_in  (carry_0       ),
             .carry_out (carry_11      ),
             .ctr_i     (stage1_ctr_wm ),
@@ -255,6 +270,7 @@ module fft #(
             .STAGE (1            )
          ) stage1_bf (
             .clk       (clk           ),
+            .srst_n    (srst_n        ),
             .carry_in  (carry_11      ),
             .carry_out (carry_12      ),
             .ctr_i     (stage1_ctr    ),
@@ -284,6 +300,7 @@ module fft #(
          ) stage1_wm (
             .clk       (clk           ),
             .clk_3x    (clk_3x        ),
+            .srst_n    (srst_n        ),
             .carry_in  (carry_12      ),
             .carry_out (carry_21      ),
             .ctr_i     (stage2_ctr_wm ),
@@ -302,6 +319,7 @@ module fft #(
             .STAGE (2            )
          ) stage2_bf (
             .clk       (clk           ),
+            .srst_n    (srst_n        ),
             .carry_in  (carry_21      ),
             .carry_out (carry_22      ),
             .ctr_i     (stage2_ctr    ),
@@ -331,6 +349,7 @@ module fft #(
          ) stage2_wm (
             .clk       (clk           ),
             .clk_3x    (clk_3x        ),
+            .srst_n    (srst_n        ),
             .carry_in  (carry_22      ),
             .carry_out (carry_31      ),
             .ctr_i     (stage3_ctr_wm ),
@@ -349,6 +368,7 @@ module fft #(
             .STAGE (3            )
          ) stage3_bf (
             .clk       (clk           ),
+            .srst_n    (srst_n        ),
             .carry_in  (carry_31      ),
             .carry_out (carry_32      ),
             .ctr_i     (stage3_ctr    ),
@@ -376,6 +396,7 @@ module fft #(
          ) stage3_wm (
             .clk       (clk           ),
             .clk_3x    (clk_3x        ),
+            .srst_n    (srst_n        ),
             .carry_in  (carry_32      ),
             .carry_out (carry_41      ),
             .ctr_i     (stage4_ctr_wm ),
@@ -395,6 +416,7 @@ module fft #(
             .STAGE (4            )
          ) stage4_bf (
             .clk       (clk        ),
+            .srst_n    (srst_n     ),
             .carry_in  (carry_41   ),
             .carry_out (carry_42   ),
             .ctr_i     (stage4_ctr ),

@@ -13,6 +13,7 @@ module fft_bf #(
    parameter STAGE  = 0
 ) (
    input wire                     clk,
+   input wire                     srst_n,
    input wire                     carry_in,
    output wire                    carry_out,
    input wire [$clog2(N)-1:0]     ctr_i,
@@ -44,6 +45,7 @@ module fft_bf #(
       .SHIFT_REG_LEN (2**(2*(STAGES-STAGE)-1) )
    ) bfi (
       .clk       (clk       ),
+      .srst_n    (srst_n    ),
       .carry_in  (carry_in  ),
       .carry_out (carry_int ),
       .sel_i     (sel1      ),
@@ -58,6 +60,7 @@ module fft_bf #(
       .SHIFT_REG_LEN (2**(2*(STAGES-STAGE)-2) )
    ) bfii (
       .clk       (clk       ),
+      .srst_n    (srst_n    ),
       .carry_in  (carry_int ),
       .carry_out (carry_out ),
       .sel_i     (sel2      ),

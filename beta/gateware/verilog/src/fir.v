@@ -5,6 +5,7 @@
 `timescale 1ns/1ps
 
 `include "fir_bank.v"
+`include "ff_sync.v"
 
 `define N_TAPS 120
 `define M 20
@@ -16,8 +17,16 @@
 // 20 and length of 120.
 //
 // Ports:
-// en : Treats the data input port as valid. After this has been
-//      asserted, dvalid will be asserted after an appropriate delay.
+// en         : Treats the data input port as valid. After this has
+//              been asserted, dvalid will be asserted after an
+//              appropriate delay.
+// arst_n     : Asynchronous, active-low reset. This simply clears the
+//              valid pipeline.
+// en         :
+// clk_pos_en :
+// din        :
+// dout       :
+// dvalid     :
 
 module fir #(
    parameter INPUT_WIDTH  = 12,
@@ -26,11 +35,12 @@ module fir #(
    parameter OUTPUT_WIDTH = 13
 ) (
    input wire                           clk,
+   input wire                           arst_n,
    input wire                           en,
    input wire                           clk_pos_en,
    input wire signed [INPUT_WIDTH-1:0]  din,
    output reg signed [OUTPUT_WIDTH-1:0] dout,
-   output reg                           dvalid
+   output wire                          dvalid
 );
 
    localparam N_TAPS         = `N_TAPS;
@@ -39,6 +49,16 @@ module fir #(
    localparam INTERNAL_WIDTH = INPUT_WIDTH + TAP_WIDTH + $clog2(N_TAPS);
    localparam M_LOG2         = $clog2(M);
    localparam BANK_LEN_LOG2  = $clog2(BANK_LEN);
+
+   wire                                 srst_n;
+   ff_sync #(
+      .WIDTH  (1),
+      .STAGES (2)
+   ) rst_sync (
+      .dest_clk (clk    ),
+      .d        (arst_n ),
+      .q        (srst_n )
+   );
 
    // Data is first passed through a shift register at the base clock
    // rate. The first polyphase bank gets its data directly from the
@@ -791,17 +811,27 @@ module fir #(
       trunc_to_out = expr[INTERNAL_MIN_MSB-1:INTERNAL_MIN_MSB-OUTPUT_WIDTH];
    endfunction
 
-   localparam LATENCY = 1;
+   localparam LATENCY = 2;
    reg                              dvalid_sync [0:LATENCY-1];
+   always @(posedge clk) begin
+      if (~srst_n) begin
+         for (i=0; i<LATENCY; i=i+1) begin
+            dvalid_sync[i] <= 1'b0;
+         end
+      end else begin
+         if (clk_pos_en) begin
+            dvalid_sync[0] <= en;
+            for (i=1; i<LATENCY; i=i+1) begin
+               dvalid_sync[i] <= dvalid_sync[i-1];
+            end
+         end
+      end
+   end
+   assign dvalid = dvalid_sync[LATENCY-1];
+
    // compute the sum of all bank outputs
    always @(posedge clk) begin
       if (clk_pos_en) begin
-         dvalid_sync[0] <= en;
-         for (i=1; i<LATENCY; i=i+1) begin
-            dvalid_sync[i] <= dvalid_sync[i-1];
-         end
-         dvalid <= dvalid_sync[LATENCY-1];
-
          dout <= trunc_to_out(round_convergent(drop_msb_bits(out_tmp)));
          // Simple truncation. Can be used to test effect of
          // convergent rounding.

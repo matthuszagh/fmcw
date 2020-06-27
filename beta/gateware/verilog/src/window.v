@@ -4,16 +4,19 @@
 `default_nettype none
 `timescale 1ns/1ps
 
+`include "ff_sync.v"
+
 module window #(
    parameter N           = 1024,
    parameter DATA_WIDTH  = 14,
    parameter COEFF_WIDTH = 16
 ) (
    input wire                         clk,
+   input wire                         arst_n,
    input wire                         en,
    input wire                         clk_en,
    input wire signed [DATA_WIDTH-1:0] di,
-   output reg                         dvalid,
+   output wire                        dvalid,
    output reg signed [DATA_WIDTH-1:0] dout
 );
 
@@ -21,6 +24,16 @@ module window #(
    /* verilator lint_off WIDTH */
    localparam [$clog2(N)-1:0] N_CMP = N - 1;
    /* verilator lint_on WIDTH */
+
+   wire                               srst_n;
+   ff_sync #(
+      .WIDTH  (1),
+      .STAGES (2)
+   ) rst_sync (
+      .dest_clk (clk    ),
+      .d        (arst_n ),
+      .q        (srst_n )
+   );
 
    function [INTERNAL_WIDTH-1:0] round_convergent(input [INTERNAL_WIDTH-1:0] expr);
       round_convergent = expr + {{DATA_WIDTH{1'b0}},
@@ -41,10 +54,23 @@ module window #(
       $readmemh("/home/matt/src/fmcw/beta/gateware/verilog/src/roms/window/coeffs.hex", coeffs);
    end
 
-   reg en_buf;
+   localparam LATENCY = 2;
+   integer i;
+   reg valid_sync [0:LATENCY-1];
+   always @(posedge clk) begin
+      if (~srst_n) begin
+         for (i=0; i<LATENCY; i=i+1) valid_sync[i] <= 1'b0;
+      end else begin
+         if (clk_en) begin
+            valid_sync[0] <= en;
+            for (i=1; i<LATENCY; i=i+1) valid_sync[i] <= valid_sync[i-1];
+         end
+      end
+   end
+   assign dvalid = valid_sync[LATENCY-1];
+
    always @(posedge clk) begin
       if (clk_en) begin
-         {dvalid, en_buf} <= {en_buf, en};
          internal         <= di * $signed({1'b0, coeffs[ctr]});
          dout             <= trunc_to_out(round_convergent(internal));
          if (ctr == {$clog2(N){1'b0}}) begin

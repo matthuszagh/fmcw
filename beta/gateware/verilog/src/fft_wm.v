@@ -12,6 +12,7 @@ module fft_wm #(
    parameter N             = 1024
 ) (
    input wire                            clk,
+   input wire                            srst_n,
    input wire                            carry_in,
    output wire                           carry_out,
    input wire                            clk_3x,
@@ -167,14 +168,19 @@ module fft_wm #(
    initial begin
       for (i=0; i<LATENCY; i=i+1) carry_shift_reg[i] <= {$clog2(N){1'b0}};
    end
+   always @(posedge clk) begin
+      if (~srst_n) begin
+         for (i=0; i<LATENCY; i=i+1) carry_shift_reg[i] <= {$clog2(N){1'b0}};
+      end else begin
+         carry_shift_reg[0] <= carry_in;
+         for (i=0; i<LATENCY-1; i=i+1) carry_shift_reg[i+1] <= carry_shift_reg[i];
+      end
+   end
+   assign carry_out = carry_shift_reg[LATENCY-1];
 
    always @(posedge clk) begin
-      ctr_shift_reg[0]   <= ctr_i;
-      carry_shift_reg[0] <= carry_in;
-      for (i=0; i<LATENCY-1; i=i+1) begin
-         ctr_shift_reg[i+1]   <= ctr_shift_reg[i];
-         carry_shift_reg[i+1] <= carry_shift_reg[i];
-      end
+      ctr_shift_reg[0] <= ctr_i;
+      for (i=0; i<LATENCY-1; i=i+1) ctr_shift_reg[i+1] <= ctr_shift_reg[i];
 
       // safe to ignore the msb since the greatest possible
       // absolute twiddle value is 2^(TWIDDLE_WIDTH-1)
@@ -185,8 +191,7 @@ module fft_wm #(
       // z_re_o   <= kar_r[WIDTH+TWIDDLE_WIDTH-2:TWIDDLE_WIDTH-1];
       // z_im_o   <= kar_i[WIDTH+TWIDDLE_WIDTH-2:TWIDDLE_WIDTH-1];
    end
-   assign ctr_o     = ctr_shift_reg[LATENCY-1];
-   assign carry_out = carry_shift_reg[LATENCY-1];
+   assign ctr_o = ctr_shift_reg[LATENCY-1];
 
 endmodule
 `endif

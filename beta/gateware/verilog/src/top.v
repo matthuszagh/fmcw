@@ -212,6 +212,7 @@ module top #(
       .OUTPUT_WIDTH   (FIR_OUTPUT_WIDTH )
    ) fir (
       .clk        (clk_i           ),
+      .arst_n     (1'b1            ),
       .en         (state[SAMPLE]   ),
       .clk_pos_en (clk2_pos_en     ),
       .din        (adc_single_chan ),
@@ -245,6 +246,7 @@ module top #(
       .COEFF_WIDTH (FIR_TAP_WIDTH    )
    ) window (
       .clk    (clk_i          ),
+      .arst_n (1'b1           ),
       .en     (fir_dvalid     ),
       .clk_en (clk2_pos_en    ),
       .di     (fir_out        ),
@@ -257,6 +259,7 @@ module top #(
    reg                             window_fifo_ren = 1'b0;
    wire [FIR_OUTPUT_WIDTH-1:0]     window_fifo_rdata;
    wire                            window_fifo_wen = window_dvalid;
+   // TODO: use a synchronous fifo
    async_fifo #(
       .WIDTH (FIR_OUTPUT_WIDTH ),
       .DEPTH (FFT_N            )
@@ -285,6 +288,7 @@ module top #(
    ) fft (
       .clk        (clk_i                    ),
       .clk_3x     (clk120                   ),
+      .arst_n     (1'b1                     ),
       .en         (state[PROC_FFT]          ),
       .valid      (fft_valid                ),
       .data_ctr_o (fft_ctr                  ),
