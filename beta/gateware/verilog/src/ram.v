@@ -20,7 +20,7 @@ module ram #(
    input wire             rdclk,
    input wire             rden,
    input wire [ABITS-1:0] rdaddr,
-   output reg [WIDTH-1:0] rddata,
+   output reg [WIDTH-1:0] rddata = {WIDTH{1'b0}},
    input wire             wrclk,
    input wire             wren,
    input wire [ABITS-1:0] wraddr,

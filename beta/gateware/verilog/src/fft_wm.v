@@ -1,36 +1,38 @@
 `ifndef _FFT_WM_V_
 `define _FFT_WM_V_
+
 `default_nettype none
+`timescale 1ns/1ps
 
 `include "pll_sync_ctr.v"
 
 module fft_wm #(
-   parameter DATA_WIDTH    = 25,
+   parameter WIDTH         = 25,
    parameter TWIDDLE_WIDTH = 10,
-   parameter FFT_N         = 1024,
-   parameter NLOG2         = 10
+   parameter N             = 1024
 ) (
-   input wire                            clk_i,
-   input wire                            rst_n,
-   input wire                            clk_3x_i,
-   input wire [NLOG2-1:0]                ctr_i,
-   output reg [NLOG2-1:0]                ctr_o,
-   input wire signed [DATA_WIDTH-1:0]    x_re_i,
-   input wire signed [DATA_WIDTH-1:0]    x_im_i,
+   input wire                            clk,
+   input wire                            carry_in,
+   output wire                           carry_out,
+   input wire                            clk_3x,
+   input wire [$clog2(N)-1:0]            ctr_i,
+   output wire [$clog2(N)-1:0]           ctr_o,
+   input wire signed [WIDTH-1:0]         x_re_i,
+   input wire signed [WIDTH-1:0]         x_im_i,
    input wire signed [TWIDDLE_WIDTH-1:0] w_re_i,
    input wire signed [TWIDDLE_WIDTH-1:0] w_im_i,
-   output reg signed [DATA_WIDTH-1:0]    z_re_o,
-   output reg signed [DATA_WIDTH-1:0]    z_im_o
+   output reg signed [WIDTH-1:0]         z_re_o,
+   output reg signed [WIDTH-1:0]         z_im_o
 );
 
-   localparam A_DATA_WIDTH = DATA_WIDTH;
-   localparam B_DATA_WIDTH = TWIDDLE_WIDTH + 1;
-   localparam C_DATA_WIDTH = DATA_WIDTH + TWIDDLE_WIDTH + 1;
-   localparam P_DATA_WIDTH = DATA_WIDTH + TWIDDLE_WIDTH + 1;
+   localparam A_WIDTH = WIDTH;
+   localparam B_WIDTH = TWIDDLE_WIDTH + 1;
+   localparam C_WIDTH = WIDTH + TWIDDLE_WIDTH + 1;
+   localparam P_WIDTH = WIDTH + TWIDDLE_WIDTH + 1;
 
-   function [B_DATA_WIDTH-1:0] sign_extend_b(input [TWIDDLE_WIDTH-1:0] expr);
-      sign_extend_b = (expr[TWIDDLE_WIDTH-1] == 1'b1) ? {{B_DATA_WIDTH-TWIDDLE_WIDTH{1'b1}}, expr}
-                      : {{B_DATA_WIDTH-TWIDDLE_WIDTH{1'b0}}, expr};
+   function [B_WIDTH-1:0] sign_extend_b(input [TWIDDLE_WIDTH-1:0] expr);
+      sign_extend_b = (expr[TWIDDLE_WIDTH-1] == 1'b1) ? {{B_WIDTH-TWIDDLE_WIDTH{1'b1}}, expr}
+                      : {{B_WIDTH-TWIDDLE_WIDTH{1'b0}}, expr};
    endfunction
 
    /**
@@ -44,38 +46,38 @@ module fft_wm #(
     * I = a(c+d)-f
     */
    // compute multiplies in stages to share DSP.
-   reg signed [DATA_WIDTH+TWIDDLE_WIDTH:0] kar_f;
-   reg signed [DATA_WIDTH+TWIDDLE_WIDTH:0] kar_r;
-   reg signed [DATA_WIDTH+TWIDDLE_WIDTH:0] kar_i;
+   reg signed [WIDTH+TWIDDLE_WIDTH:0] kar_f;
+   reg signed [WIDTH+TWIDDLE_WIDTH:0] kar_r;
+   reg signed [WIDTH+TWIDDLE_WIDTH:0] kar_i;
 
-   reg signed [DATA_WIDTH-1:0] x_re_reg;
-   reg signed [DATA_WIDTH-1:0] x_im_reg;
-   reg signed [DATA_WIDTH-1:0] x_re_reg2;
-   reg signed [DATA_WIDTH-1:0] x_im_reg2;
-   reg signed [TWIDDLE_WIDTH-1:0] w_re_reg;
-   reg signed [TWIDDLE_WIDTH-1:0] w_im_reg;
+   reg signed [WIDTH-1:0]             x_re_reg;
+   reg signed [WIDTH-1:0]             x_im_reg;
+   reg signed [WIDTH-1:0]             x_re_reg2;
+   reg signed [WIDTH-1:0]             x_im_reg2;
+   reg signed [TWIDDLE_WIDTH-1:0]     w_re_reg;
+   reg signed [TWIDDLE_WIDTH-1:0]     w_im_reg;
 
-   reg signed [DATA_WIDTH-1:0] a0_reg;
-   reg signed [TWIDDLE_WIDTH:0] b0_reg;
-   reg signed [DATA_WIDTH-1:0] a1_reg;
-   reg signed [TWIDDLE_WIDTH:0] b1_reg;
-   reg signed [DATA_WIDTH-1:0] a2_reg;
-   reg signed [TWIDDLE_WIDTH:0] b2_reg;
+   reg signed [WIDTH-1:0]             a0_reg;
+   reg signed [TWIDDLE_WIDTH:0]       b0_reg;
+   reg signed [WIDTH-1:0]             a1_reg;
+   reg signed [TWIDDLE_WIDTH:0]       b1_reg;
+   reg signed [WIDTH-1:0]             a2_reg;
+   reg signed [TWIDDLE_WIDTH:0]       b2_reg;
 
-   wire [1:0]                   mul_state;
+   wire [1:0]                         mul_state;
    pll_sync_ctr #(
       .RATIO (3)
    ) sync_ctr (
-      .fst_clk (clk_3x_i  ),
-      .slw_clk (clk_i     ),
+      .fst_clk (clk_3x    ),
+      .slw_clk (clk       ),
       .ctr     (mul_state )
    );
 
-   always @(posedge clk_3x_i) begin
+   always @(posedge clk_3x) begin
       case (mul_state)
       2'd0:
         begin
-           kar_r     <= p_dsp;
+           kar_r  <= p_dsp;
            a0_reg <= x_im_reg2;
            b0_reg <= w_re_reg - w_im_reg;
         end
@@ -96,7 +98,7 @@ module fft_wm #(
         end
       2'd2:
         begin
-           kar_f     <= p_dsp;
+           kar_f  <= p_dsp;
            a2_reg <= x_re_reg2 - x_im_reg2;
            b2_reg <= sign_extend_b(w_re_reg);
         end
@@ -104,10 +106,10 @@ module fft_wm #(
       endcase
    end
 
-   reg signed [DATA_WIDTH-1:0] a_dsp;
-   reg signed [TWIDDLE_WIDTH:0] b_dsp;
-   reg signed [DATA_WIDTH+TWIDDLE_WIDTH:0] c_dsp;
-   wire signed [DATA_WIDTH+TWIDDLE_WIDTH:0] p_dsp;
+   reg signed [WIDTH-1:0]              a_dsp;
+   reg signed [TWIDDLE_WIDTH:0]        b_dsp;
+   reg signed [WIDTH+TWIDDLE_WIDTH:0]  c_dsp;
+   wire signed [WIDTH+TWIDDLE_WIDTH:0] p_dsp;
 
    always @(*) begin
       case (mul_state)
@@ -127,20 +129,20 @@ module fft_wm #(
         begin
            a_dsp = a2_reg;
            b_dsp = b2_reg;
-           c_dsp = {DATA_WIDTH+TWIDDLE_WIDTH+1{1'b0}};
+           c_dsp = {WIDTH+TWIDDLE_WIDTH+1{1'b0}};
         end
       default:
         begin
-           a_dsp = {DATA_WIDTH{1'b0}};
+           a_dsp = {WIDTH{1'b0}};
            b_dsp = {TWIDDLE_WIDTH+1{1'b0}};
-           c_dsp = {DATA_WIDTH+TWIDDLE_WIDTH+1{1'b0}};
+           c_dsp = {WIDTH+TWIDDLE_WIDTH+1{1'b0}};
         end
       endcase
    end
 
    assign p_dsp = (a_dsp * b_dsp) + c_dsp;
 
-   parameter INTERNAL_WIDTH = DATA_WIDTH+TWIDDLE_WIDTH;
+   parameter INTERNAL_WIDTH = WIDTH+TWIDDLE_WIDTH;
    parameter INTERNAL_MIN_MSB = INTERNAL_WIDTH - 1;
 
    function [INTERNAL_MIN_MSB-1:0] drop_msb_bits(input [INTERNAL_WIDTH:0] expr);
@@ -148,40 +150,43 @@ module fft_wm #(
    endfunction
 
    function [INTERNAL_MIN_MSB-1:0] round_convergent(input [INTERNAL_MIN_MSB-1:0] expr);
-      round_convergent = expr + {{DATA_WIDTH{1'b0}},
-                                 expr[INTERNAL_MIN_MSB-DATA_WIDTH],
-                                 {INTERNAL_MIN_MSB-DATA_WIDTH-1{!expr[INTERNAL_MIN_MSB-DATA_WIDTH]}}};
+      round_convergent = expr + {{WIDTH{1'b0}},
+                                 expr[INTERNAL_MIN_MSB-WIDTH],
+                                 {INTERNAL_MIN_MSB-WIDTH-1{!expr[INTERNAL_MIN_MSB-WIDTH]}}};
    endfunction
 
-   function [DATA_WIDTH-1:0] trunc_to_out(input [INTERNAL_MIN_MSB-1:0] expr);
-      trunc_to_out = expr[INTERNAL_MIN_MSB-1:INTERNAL_MIN_MSB-DATA_WIDTH];
+   function [WIDTH-1:0] trunc_to_out(input [INTERNAL_MIN_MSB-1:0] expr);
+      trunc_to_out = expr[INTERNAL_MIN_MSB-1:INTERNAL_MIN_MSB-WIDTH];
    endfunction
 
-   reg [NLOG2-1:0] ctr_reg;
-   reg [NLOG2-1:0] ctr_reg2;
-   reg [NLOG2-1:0] ctr_reg3;
-   always @(posedge clk_i) begin
-      if (!rst_n) begin
-         ctr_reg  <= {NLOG2{1'b0}};
-         ctr_reg2 <= {NLOG2{1'b0}};
-         ctr_reg3 <= {NLOG2{1'b0}};
-         ctr_o    <= {NLOG2{1'b0}};
-      end else begin
-         ctr_reg  <= ctr_i;
-         ctr_reg2 <= ctr_reg;
-         ctr_reg3 <= ctr_reg2;
-         ctr_o    <= ctr_reg3;
+   localparam LATENCY = 4;
+   integer i;
+   reg [$clog2(N)-1:0] ctr_shift_reg [0:LATENCY-1];
+   reg [$clog2(N)-1:0] carry_shift_reg [0:LATENCY-1];
 
-         // safe to ignore the msb since the greatest possible
-         // absolute twiddle value is 2^(TWIDDLE_WIDTH-1)
-         z_re_o   <= trunc_to_out(round_convergent(drop_msb_bits(kar_r)));
-         z_im_o   <= trunc_to_out(round_convergent(drop_msb_bits(kar_i)));
-
-         // simple truncation for comparison
-         // z_re_o   <= kar_r[DATA_WIDTH+TWIDDLE_WIDTH-2:TWIDDLE_WIDTH-1];
-         // z_im_o   <= kar_i[DATA_WIDTH+TWIDDLE_WIDTH-2:TWIDDLE_WIDTH-1];
-      end
+   initial begin
+      for (i=0; i<LATENCY; i=i+1) carry_shift_reg[i] <= {$clog2(N){1'b0}};
    end
+
+   always @(posedge clk) begin
+      ctr_shift_reg[0]   <= ctr_i;
+      carry_shift_reg[0] <= carry_in;
+      for (i=0; i<LATENCY-1; i=i+1) begin
+         ctr_shift_reg[i+1]   <= ctr_shift_reg[i];
+         carry_shift_reg[i+1] <= carry_shift_reg[i];
+      end
+
+      // safe to ignore the msb since the greatest possible
+      // absolute twiddle value is 2^(TWIDDLE_WIDTH-1)
+      z_re_o   <= trunc_to_out(round_convergent(drop_msb_bits(kar_r)));
+      z_im_o   <= trunc_to_out(round_convergent(drop_msb_bits(kar_i)));
+
+      // simple truncation for comparison
+      // z_re_o   <= kar_r[WIDTH+TWIDDLE_WIDTH-2:TWIDDLE_WIDTH-1];
+      // z_im_o   <= kar_i[WIDTH+TWIDDLE_WIDTH-2:TWIDDLE_WIDTH-1];
+   end
+   assign ctr_o     = ctr_shift_reg[LATENCY-1];
+   assign carry_out = carry_shift_reg[LATENCY-1];
 
 endmodule
 `endif

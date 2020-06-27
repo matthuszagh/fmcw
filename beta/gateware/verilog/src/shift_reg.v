@@ -6,41 +6,34 @@
 `include "ram.v"
 
 // Note that this module only supports reading from the end of the
-// shift register due to the fact that it's based on dual-port RAM. If
-// you need to read from more than just the last register, implement
-// the shift register with flip-flops.
+// shift register due to the fact that it's designed to support
+// dual-port RAM. If you need to read from more than just the last
+// register, implement the shift register with flip-flops.
 
 module shift_reg #(
-   parameter DATA_WIDTH = 25,
-   parameter LEN        = 512
+   parameter WIDTH = 25,
+   parameter LEN   = 512
 ) (
-   input wire                   clk,
-   input wire                   rst_n,
-   input wire                   ce,
-   input wire [DATA_WIDTH-1:0]  di,
-   output wire [DATA_WIDTH-1:0] data_o
+   input wire              clk,
+   input wire [WIDTH-1:0]  di,
+   output wire [WIDTH-1:0] data_o
 );
 
-   localparam [$clog2(LEN)-1:0] LEN_CMP = LEN-1;
+   localparam [$clog2(LEN)-1:0] LEN_MAX = LEN-1;
 
-   reg [$clog2(LEN)-1:0]           addr;
-   reg [$clog2(LEN)-1:0]           rdaddr;
+   reg [$clog2(LEN)-1:0]        addr   = {$clog2(LEN){1'b0}};
+   reg [$clog2(LEN)-1:0]        rdaddr = {{$clog2(LEN)-1{1'b0}}, 1'b1};
    always @(posedge clk) begin
-      if (!rst_n) begin
+      if (addr == LEN_MAX) begin
          addr <= {$clog2(LEN){1'b0}};
-         rdaddr <= {{$clog2(LEN)-1{1'b0}}, 1'b1};
-      end else if (ce) begin
-         if (addr == LEN_CMP) begin
-            addr <= {$clog2(LEN){1'b0}};
-         end else begin
-            addr <= addr + 1'b1;
-         end
+      end else begin
+         addr <= addr + 1'b1;
+      end
 
-         if (rdaddr == LEN_CMP) begin
-            rdaddr <= {$clog2(LEN){1'b0}};
-         end else begin
-            rdaddr <= rdaddr + 1'b1;
-         end
+      if (rdaddr == LEN_MAX) begin
+         rdaddr <= {$clog2(LEN){1'b0}};
+      end else begin
+         rdaddr <= rdaddr + 1'b1;
       end
    end
 
@@ -48,15 +41,15 @@ module shift_reg #(
    // simultaneously because the read and write addresses will always
    // be different.
    ram #(
-      .WIDTH (DATA_WIDTH ),
-      .SIZE  (LEN        )
+      .WIDTH (WIDTH ),
+      .SIZE  (LEN   )
    ) ram (
       .rdclk  (clk       ),
-      .rden   (ce        ),
+      .rden   (1'b1      ),
       .rdaddr (rdaddr    ),
       .rddata (data_o    ),
       .wrclk  (clk       ),
-      .wren   (ce        ),
+      .wren   (1'b1      ),
       .wraddr (addr      ),
       .wrdata (di        )
    );

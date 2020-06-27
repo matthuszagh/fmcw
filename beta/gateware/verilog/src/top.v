@@ -288,10 +288,10 @@ module top #(
       .TWIDDLE_WIDTH (FFT_TWIDDLE_WIDTH ),
       .OUTPUT_WIDTH  (FFT_OUTPUT_WIDTH  )
    ) fft (
-      .clk_i      (clk_i                    ),
-      .clk_3x_i   (clk120                   ),
-      .rst_n      (state[PROC_FFT]          ),
-      .sync_o     (fft_valid                ),
+      .clk        (clk_i                    ),
+      .clk_3x     (clk120                   ),
+      .en         (state[PROC_FFT]          ),
+      .valid      (fft_valid                ),
       .data_ctr_o (fft_ctr                  ),
       .data_re_i  (window_fifo_rdata        ),
       .data_im_i  ({FIR_OUTPUT_WIDTH{1'b0}} ),
