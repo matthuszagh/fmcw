@@ -4,6 +4,8 @@
 `timescale 1ns/1ps
 `default_nettype none
 
+`include "ff_sync.v"
+
 // `adf4158' can be used to configure and control an ADF4158 frequency
 // synthesizer.
 
@@ -40,14 +42,16 @@
 //     additional delay).
 //     default params: 2ms
 
+// TODO some ports are missing or wrong
 // Ports:
 // clk        : A 40MHz input reference clock.
-// clk_20mhz  : 20MHz clock used to synchronize configuration data.
-// rst_n      : Active low reset. After performing a reset, the device
-//              must be fully reconfigured.
-// enable     : 1 activates the frequency ramp and 0 disables it. You
-//              must wait for `config_done' to go high before the ramp
-//              is active.
+// clk20      : 20MHz clock used to synchronize configuration data.
+// arst_n     : Active low asynchronous reset. This is not a typical
+//              reset in the sense that it does not simply clear some
+//              register values. Instead, it disables the ramp and
+//              places the synthesizer into an initial state. Note
+//              this only has an effect when the synthesizer is
+//              active. This is in a way the opposite of configure.
 // le         : Low when writing data to ADF4158 and high to flush the
 //              data. This should be connected directly to the
 //              corresponding pin on the device.
@@ -60,6 +64,10 @@
 //              we've scheduled a delay between ramps of 2ms.
 // ramp_start : Pulses high for one clk period to signal the start of the
 //              ramp period.
+// configure  : When the synthesizer is in an inactive state, this
+//              loads the register values into the synthesizer and
+//              enables the ramp. This is sort of the opposite of
+//              arst_n.
 // txdata     : TODO
 // data       : Serial configuration data for ADF4158 internal
 //              registers. Connect directly to corresponding device pin.
@@ -199,40 +207,87 @@ module adf4158 #(
    // Sets the number of steps in a delay.
    parameter [11:0] DELAY_STEPS     = 12'd4000
 ) (
-   input wire  clk,
-   input wire  clk20,
-   output wire clk_o,
-   input wire  configure,
-   input wire  muxout,
-   output reg  config_done = 1'b0,
-   output reg  le = 1'b1,
-   output reg  ramp_start = 1'b0,
-   output reg  ce = 1'b0,
-   output reg  txdata = 1'b0,
-   output reg  data = 1'b0
+   input wire        clk,
+   input wire        clk20,
+   input wire        arst_n,
+   output wire       clk_o,
+   input wire        configure,
+   input wire        muxout,
+   input wire [2:0]  reg_num,
+   input wire        load_reg,
+   input wire [31:0] reg_val,
+   output reg        active = 1'b0,
+   output reg        le = 1'b1,
+   output reg        ramp_start = 1'b0,
+   output reg        ce = 1'b0,
+   output reg        txdata = 1'b0,
+   output reg        data = 1'b0
 );
 
    assign clk_o = clk20;
 
-   reg         ramp_en = 1'b0;
+   wire              srst_n;
+   ff_sync #(
+      .WIDTH  (1),
+      .STAGES (2)
+   ) rst_sync (
+      .dest_clk (clk    ),
+      .d        (arst_n ),
+      .q        (srst_n )
+   );
 
    /* Configuration registers.
     * Initialization sequence: r7, r6_0, r6_1, r5_0, r5_1, r4, r3, r2, r1, r0
     */
-   reg [31:0] r [0:9];
-
-   initial begin
-      r[0] = {RAMP_EN_INIT, MUXOUT, INT, FRAC[24:13], 3'd0};
-      r[1] = {4'd0, FRAC[12:0], 12'd0, 3'd1};
-      r[2] = {3'd0, CSR_EN, CP_CURRENT, 1'd0, PRESCALER, RDIV2, DOUBLER, R_COUNTER, CLK1_DIV, 3'd2};
-      r[3] = {16'd0, N_SEL, SD_RESET, 2'd0, RAMP_MODE, PSK_EN, FSK_EN, LDP, PD, PWR_DWN_INIT, CP3, COUNTER_RST_INIT, 3'd3};
-      r[4] = {LE_SEL, DELTA_SIGMA, 1'd0, BLEED_CURRENT, READBACK_MUXOUT, CLK_DIV_MODE, CLK2_DIV, 4'd0, 3'd4};
-      r[5] = {2'd0, TX_RAMP_CLK, PAR_RAMP, INTERRUPT, FSK_RAMP_EN, RAMP2_EN, 1'd1, DEV_OFFSET, DEV, 3'd5}; /* reg 5 part 2 */
-      r[6] = {2'd0, TX_RAMP_CLK, PAR_RAMP, INTERRUPT, FSK_RAMP_EN, RAMP2_EN, 1'd0, DEV_OFFSET, DEV, 3'd5}; /* reg 5 part 1 */
-      r[7] = {8'd0, 1'd1, RAMP_STEPS, 3'd6}; /* reg 6 part 2 */
-      r[8] = {8'd0, 1'd0, RAMP_STEPS, 3'd6}; /* reg 6 part 1 */
-      r[9] = {13'd0, RAMP_DEL_FST_LCK, RAMP_DELAY, DELAY_CLK_SEL, DELAY_START_EN, DELAY_STEPS, 3'd7}; /* reg 7 */
+   reg [31:0]        r [0:9];
+   reg               ramp_en = 1'b0;
+   always @(posedge clk) begin
+      if (load_reg) begin
+         case (reg_num)
+         3'd0: r[0][30:0] <= reg_val[30:0];
+         3'd1: r[1]       <= reg_val;
+         3'd2: r[2]       <= reg_val;
+         3'd3: r[3]       <= reg_val;
+         3'd4: r[4]       <= reg_val;
+         3'd5:
+           begin
+              r[5][31:24] <= reg_val[31:24];
+              r[5][23]    <= 1'b1;
+              r[5][22:0]  <= reg_val[22:0];
+           end
+         3'd6:
+           begin
+              r[7][31:24] <= reg_val[31:24];
+              r[7][23]    <= 1'b1;
+              r[7][22:0]  <= reg_val[22:0];
+           end
+         3'd7: r[9] <= reg_val;
+         endcase
+      end
    end
+
+   always @(*) begin
+      r[0][31] = ramp_en;
+
+      r[6]     = r[5];
+      r[6][23] = 1'b0;
+
+      r[8]     = r[7];
+      r[8][23] = 1'b0;
+   end
+
+   // initial begin
+   //    r[0] = {RAMP_EN_INIT, MUXOUT, INT, FRAC[24:13], 3'd0};
+   //    r[1] = {4'd0, FRAC[12:0], 12'd0, 3'd1};
+   //    r[2] = {3'd0, CSR_EN, CP_CURRENT, 1'd0, PRESCALER, RDIV2, DOUBLER, R_COUNTER, CLK1_DIV, 3'd2};
+   //    r[3] = {16'd0, N_SEL, SD_RESET, 2'd0, RAMP_MODE, PSK_EN, FSK_EN, LDP, PD, PWR_DWN_INIT, CP3, COUNTER_RST_INIT, 3'd3};
+   //    r[4] = {LE_SEL, DELTA_SIGMA, 1'd0, BLEED_CURRENT, READBACK_MUXOUT, CLK_DIV_MODE, CLK2_DIV, 4'd0, 3'd4};
+   //    r[5] = {2'd0, TX_RAMP_CLK, PAR_RAMP, INTERRUPT, FSK_RAMP_EN, RAMP2_EN, 1'd1, DEV_OFFSET, DEV, 3'd5}; /* reg 5 part 2 */
+   //    r[6] = {2'd0, TX_RAMP_CLK, PAR_RAMP, INTERRUPT, FSK_RAMP_EN, RAMP2_EN, 1'd0, DEV_OFFSET, DEV, 3'd5}; /* reg 5 part 1 */
+   //    r[7] = {8'd0, 1'd1, RAMP_STEPS, 3'd6}; /* reg 6 part 2 */
+   //    r[8] = {8'd0, 1'd0, RAMP_STEPS, 3'd6}; /* reg 6 part 1 */
+   //    r[9] = {13'd0, RAMP_DEL_FST_LCK, RAMP_DELAY, DELAY_CLK_SEL, DELAY_START_EN, DELAY_STEPS, 3'd7}; /* reg 7 */
+   // end
 
    reg muxout_last = 1'b0;
    always @(posedge clk) begin
@@ -240,86 +295,85 @@ module adf4158 #(
       ramp_start  <= ~muxout & muxout_last;
    end
 
-   always @(negedge clk20) begin
-      r[0] <= {ramp_en, r[0][30:0]};
-   end
-
    localparam NUM_STATES = 4;
-   localparam IDLE       = 0,
+   localparam INACTIVE   = 0,
               CONFIG_LE  = 1,
               CONFIG_DAT = 2,
               ACTIVE     = 3;
    reg [NUM_STATES-1:0] state, next;
    initial begin
-      state       = {NUM_STATES{1'b0}};
-      state[IDLE] = 1'b1;
+      state           = {NUM_STATES{1'b0}};
+      state[INACTIVE] = 1'b1;
 
-      next       = {NUM_STATES{1'b0}};
-      next[IDLE] = 1'b1;
+      next           = {NUM_STATES{1'b0}};
+      next[INACTIVE] = 1'b1;
    end
 
    always @(negedge clk20) begin
       state <= next;
    end
 
-   reg [3:0]  reg_ctr    = 4'd9;
-   reg [4:0]  bit_ctr    = 5'd31;
+   reg [3:0]  reg_ctr      = 4'd9;
+   reg [3:0]  reg_ctr_last = 4'd9;
+   reg [4:0]  bit_ctr      = 5'd31;
 
    always @(*) begin
       next = {NUM_STATES{1'b0}};
       case (1'b1)
-      state[IDLE]       : if (configure)       next[CONFIG_LE]  = 1'b1;
-                          else                 next[IDLE]       = 1'b1;
-      state[CONFIG_LE]  : if (config_done)     next[ACTIVE]     = 1'b1;
-                          else                 next[CONFIG_DAT] = 1'b1;
+      state[INACTIVE]   : if (configure)       next[CONFIG_LE]  = 1'b1;
+                          else                 next[INACTIVE]   = 1'b1;
+      state[CONFIG_LE]  :
+        if (reg_ctr_last == 4'd0) begin
+           if (ramp_en)                        next[ACTIVE]     = 1'b1;
+           else                                next[INACTIVE]   = 1'b1;
+        end
+        else                                   next[CONFIG_DAT] = 1'b1;
       state[CONFIG_DAT] : if (bit_ctr == 5'd0) next[CONFIG_LE]  = 1'b1;
                           else                 next[CONFIG_DAT] = 1'b1;
-      state[ACTIVE]     :                      next[ACTIVE]     = 1'b1;
-      default           :                      next[IDLE]       = 1'b1;
+      state[ACTIVE]     : if (~srst_n)         next[CONFIG_LE]  = 1'b1;
+                          else                 next[ACTIVE]     = 1'b1;
+      default           :                      next[INACTIVE]   = 1'b1;
       endcase
    end
 
    always @(negedge clk20) begin
       ce <= 1'b1;
       case (1'b1)
-      next[IDLE]:
+      next[INACTIVE]:
         begin
-           reg_ctr     <= 4'd9;
-           bit_ctr     <= 5'd31;
-           le          <= 1'b1;
-           config_done <= 1'b0;
-           data        <= 1'b0;
-           ramp_en     <= 1'b0;
+           reg_ctr_last <= 4'd9;
+           reg_ctr      <= 4'd9;
+           bit_ctr      <= 5'd31;
+           le           <= 1'b1;
+           active       <= 1'b0;
+           data         <= 1'b0;
+           ramp_en      <= 1'b1;
         end
-
       next[CONFIG_LE]:
         begin
-           if (~state[IDLE]) reg_ctr <= reg_ctr - 1'b1;
-           bit_ctr <= 5'd31;
-           le      <= 1'b1;
-           if (reg_ctr == 4'd0) config_done <= 1'b1;
-           else                 config_done <= 1'b0;
-           data        <= 1'b0;
-           ramp_en     <= 1'b1;
+           reg_ctr_last                  <= reg_ctr;
+           if (~state[INACTIVE]) reg_ctr <= reg_ctr - 1'b1;
+           bit_ctr                       <= 5'd31;
+           le                            <= 1'b1;
+           active                        <= 1'b0;
+           data                          <= 1'b0;
         end
-
       next[CONFIG_DAT]:
         begin
            if (~state[CONFIG_LE]) bit_ctr <= bit_ctr - 1'b1;
-           le          <= 1'b0;
-           config_done <= 1'b0;
-           data        <= r[reg_ctr][bit_ctr-1'b1];
-           ramp_en     <= 1'b1;
+           le                             <= 1'b0;
+           active                         <= 1'b0;
+           data                           <= r[reg_ctr][bit_ctr-1'b1];
         end
-
       next[ACTIVE]:
         begin
-           reg_ctr     <= 4'd9;
-           bit_ctr     <= 5'd31;
-           le          <= 1'b1;
-           config_done <= 1'b1;
-           data        <= 1'b0;
-           ramp_en     <= 1'b1;
+           reg_ctr_last <= 4'd9;
+           reg_ctr      <= 4'd9;
+           bit_ctr      <= 5'd31;
+           le           <= 1'b1;
+           active       <= 1'b1;
+           data         <= 1'b0;
+           ramp_en      <= 1'b0;
         end
       endcase
    end
@@ -368,16 +422,16 @@ module adf4158_tb;
       end
    end
 
-   wire      adf_config_done;
+   wire      adf_active;
 
    adf4158 dut (
-      .clk         (clk             ),
-      .clk20       (clk20           ),
-      .configure   (configure       ),
-      .config_done (adf_config_done ),
-      .le          (le              ),
-      .txdata      (txdata          ),
-      .data        (data            )
+      .clk       (clk        ),
+      .clk20     (clk20      ),
+      .configure (configure  ),
+      .active    (adf_active ),
+      .le        (le         ),
+      .txdata    (txdata     ),
+      .data      (data       )
    );
 
 endmodule
