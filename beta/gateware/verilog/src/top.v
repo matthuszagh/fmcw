@@ -957,10 +957,21 @@ module top_tb;
    //    end
    // end
 
+   reg ft_rxf_n = 1'b1;
+   reg [`USB_DATA_WIDTH-1:0] ft_data_i = 8'h00;
+   initial begin
+      #100;
+      ft_rxf_n = 1'b0;
+      #20;
+      ft_rxf_n = 1'b1;
+   end
+
    always #12.5 clk40 = ~clk40;
    always #8.33 clk60 = ~clk60;
 
    wire [`USB_DATA_WIDTH-1:0] ft_data_io;
+   wire                       ft_oe_n;
+   assign ft_data_io = ft_oe_n ? 8'hzz : ft_data_i;
    top #(
       .FIR_TAP_WIDTH     (16 ),
       .FIR_NORM_SHIFT    (4  ),
@@ -973,8 +984,9 @@ module top_tb;
       .clk120         (clk120                  ),
       .clk_i          (clk40                   ),
       .ft_data_io     (ft_data_io              ),
-      .ft_rxf_n_i     (1'b1                    ),
+      .ft_rxf_n_i     (ft_rxf_n                ),
       .ft_txe_n_i     (ft_txe_n                ),
+      .ft_oe_n_o      (ft_oe_n                 ),
       .ft_clkout_i    (clk60                   ),
       .ft_suspend_n_i (1'b1                    ),
       // send the least significant counter nibble with the full
