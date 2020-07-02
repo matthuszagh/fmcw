@@ -6,12 +6,8 @@
 
 `include "ff_sync.v"
 
-// `adf4158' can be used to configure and control an ADF4158 frequency
-// synthesizer.
-
-// TODO Currently, this module is limited in the fact that it's only
-// configurable at synthesis time. Future iterations should support
-// live reconfiguration.
+// This module can be used to configure and control an ADF4158
+// frequency synthesizer.
 
 // TODO disable and enable should be updated to use the soft
 // power-down facility. See parameter `PWR_DWN_INIT'. It's probably a
@@ -252,13 +248,13 @@ module adf4158 #(
          3'd5:
            begin
               r[5][31:24] <= reg_val[31:24];
-              r[5][23]    <= 1'b1;
+              r[5][23]    <= 1'b1;  // dev sel
               r[5][22:0]  <= reg_val[22:0];
            end
          3'd6:
            begin
               r[7][31:24] <= reg_val[31:24];
-              r[7][23]    <= 1'b1;
+              r[7][23]    <= 1'b1;  // step sel
               r[7][22:0]  <= reg_val[22:0];
            end
          3'd7: r[9] <= reg_val;
