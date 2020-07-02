@@ -680,7 +680,8 @@ module top #(
       ftclk_state[FTCLK_READ_ADF_SEND] :                                 ftclk_next[FTCLK_READ]          = 1'b1;
 
       // TX states
-      ftclk_state[FTCLK_TX_WAIT]       : if (state_ftclk_domain[TX])            ftclk_next[FTCLK_TX_LOAD]  = 1'b1;
+      ftclk_state[FTCLK_TX_WAIT]       : if (~ft_rxf_n_i)                       ftclk_next[FTCLK_READ_OE]  = 1'b1;
+                                         else if (state_ftclk_domain[TX])       ftclk_next[FTCLK_TX_LOAD]  = 1'b1;
                                          else                                   ftclk_next[FTCLK_TX_WAIT]  = 1'b1;
       ftclk_state[FTCLK_TX_LOAD]       : if (out_ftclk == RAW | out_fifo_empty) ftclk_next[FTCLK_TX_START] = 1'b1;
                                          else                                   ftclk_next[FTCLK_TX_LOAD]  = 1'b1;
