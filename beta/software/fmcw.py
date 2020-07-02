@@ -481,6 +481,11 @@ class Configuration:
         self.db_max = None
         self.plot_dir = None
         self.sub_last = None
+        self.channel = None
+        self.adf_fstart = None
+        self.adf_bandwidth = None
+        self.adf_tsweep = None
+        self.adf_tdelay = None
         self.params = [
             Parameter(
                 name="FPGA output",
@@ -512,7 +517,7 @@ class Configuration:
                 getter=self._get_time,
                 setter=self._set_time,
                 possible=self._time_possible,
-                init="90",
+                init="10",
             ),
             Parameter(
                 name="plot type",
@@ -544,7 +549,7 @@ class Configuration:
                 getter=self._get_plot_dir,
                 setter=self._set_plot_dir,
                 possible=self._plot_dir_possible,
-                init="plots",
+                init="",
             ),
             Parameter(
                 name="subtract last",
@@ -553,6 +558,46 @@ class Configuration:
                 setter=self._set_sub_last,
                 possible=self._sub_last_possible,
                 init="true",
+            ),
+            Parameter(
+                name="Receiver channel",
+                number=self._get_inc_ctr(),
+                getter=self._get_channel,
+                setter=self._set_channel,
+                possible=self._channel_possible,
+                init="B",
+            ),
+            Parameter(
+                name="ADF start frequency",
+                number=self._get_inc_ctr(),
+                getter=self._get_adf_fstart,
+                setter=self._set_adf_fstart,
+                possible=self._adf_fstart_possible,
+                init="5.6e9",
+            ),
+            Parameter(
+                name="ADF bandwidth",
+                number=self._get_inc_ctr(),
+                getter=self._get_adf_bandwidth,
+                setter=self._set_adf_bandwidth,
+                possible=self._adf_bandwidth_possible,
+                init="300e3",
+            ),
+            Parameter(
+                name="ADF sweep time",
+                number=self._get_inc_ctr(),
+                getter=self._get_adf_tsweep,
+                setter=self._set_adf_tsweep,
+                possible=self._adf_tsweep_possible,
+                init="1e-3",
+            ),
+            Parameter(
+                name="ADF delay time",
+                number=self._get_inc_ctr(),
+                getter=self._get_adf_tdelay,
+                setter=self._set_adf_tdelay,
+                possible=self._adf_tdelay_possible,
+                init="2e-3",
             ),
         ]
         self._param_name_width = self._max_param_name_width()
@@ -888,6 +933,135 @@ class Configuration:
         """
         return True
 
+    def _get_channel(self, strval: bool = False):
+        """
+        """
+        if strval:
+            if self.channel:
+                return self.channel
+            return "None"
+        return self.channel
+
+    def _set_channel(self, newval: str):
+        """
+        """
+        if newval.lower() == "a":
+            self.channel = "A"
+        elif newval.lower() == "b":
+            self.channel = "B"
+        else:
+            raise ValueError("Invalid channel.")
+
+    def _channel_possible(self) -> str:
+        """
+        """
+        return "A or B (case-insensitive)"
+
+    def _check_channel(self) -> bool:
+        """
+        """
+        return True
+
+    def _get_adf_fstart(self, strval: bool = False):
+        """
+        """
+        if strval:
+            if self.adf_fstart:
+                return str(self.adf_fstart)
+            else:
+                return "None"
+        return self.adf_fstart
+
+    def _set_adf_fstart(self, newval: str):
+        """
+        """
+        self.adf_fstart = float(newval)
+
+    def _adf_fstart_possible(self) -> str:
+        """
+        """
+        return "5.3-5.6GHz"
+
+    def _check_adf_fstart(self) -> bool:
+        """
+        """
+        return True
+
+    def _get_adf_bandwidth(self, strval: bool = False):
+        """
+        """
+        if strval:
+            if self.adf_bandwidth:
+                return str(self.adf_bandwidth)
+            else:
+                return "None"
+        return self.adf_bandwidth
+
+    def _set_adf_bandwidth(self, newval: str):
+        """
+        """
+        self.adf_bandwidth = float(newval)
+
+    def _adf_bandwidth_possible(self) -> str:
+        """
+        """
+        return "300-600MHz"
+
+    def _check_adf_bandwidth(self) -> bool:
+        """
+        """
+        return True
+
+    def _get_adf_tsweep(self, strval: bool = False):
+        """
+        """
+        if strval:
+            if self.adf_tsweep:
+                return str(self.adf_tsweep)
+            else:
+                return "None"
+        return self.adf_tsweep
+
+    def _set_adf_tsweep(self, newval: str):
+        """
+        """
+        self.adf_tsweep = float(newval)
+
+    def _adf_tsweep_possible(self) -> str:
+        """
+        """
+        return "1e-3"
+
+    def _check_adf_tsweep(self) -> bool:
+        """
+        """
+        return True
+
+    def _get_adf_tdelay(self, strval: bool = False):
+        """
+        """
+        if strval:
+            if self.adf_tdelay:
+                return str(self.adf_tdelay)
+            else:
+                return "None"
+        return self.adf_tdelay
+
+    def _set_adf_tdelay(self, newval: str):
+        """
+        """
+        self.adf_tdelay = float(newval)
+
+    def _adf_tdelay_possible(self) -> str:
+        """
+        """
+        return "2e-3"
+
+    def _check_adf_tdelay(self) -> bool:
+        """
+        """
+        return True
+
     def _check_parameters(self) -> bool:
         """
         """
@@ -901,6 +1075,11 @@ class Configuration:
         valid &= self._check_db_max()
         valid &= self._check_plot_dir()
         valid &= self._check_sub_last()
+        valid &= self._check_channel()
+        valid &= self._check_adf_fstart()
+        valid &= self._check_adf_bandwidth()
+        valid &= self._check_adf_tsweep()
+        valid &= self._check_adf_tdelay()
 
         return valid
 
