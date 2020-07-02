@@ -204,6 +204,18 @@ int fmcw_read_sweep(int *arr)
 	return ret;
 }
 
+int fmcw_write(uint32_t val, int nbytes)
+{
+	unsigned char buf[nbytes];
+	for (int i = 0; i < nbytes; ++i) {
+		buf[i] = (val >> (BYTE_BITS * i)) & 0xFF;
+	}
+	if (ftdi_write_data(ftdi, buf, nbytes) != nbytes) {
+		return FALSE;
+	}
+	return TRUE;
+}
+
 void *producer(void *arg)
 {
 	ftdi_readstream(ftdi, &callback, NULL, PACKETS_PER_TRANSFER, TRANSFERS_PER_CALLBACK);
