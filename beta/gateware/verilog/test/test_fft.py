@@ -21,8 +21,7 @@ class FFTTB:
 
     def __init__(self, dut, num_samples, input_width):
         clk = Clock(dut.clk, 40)
-        clk_3x = Clock(dut.clk_3x, 120)
-        self.multiclock = MultiClock([clk, clk_3x])
+        self.clk = clk
         self.dut = dut
         self.re_inputs = random_samples(input_width, num_samples)
         self.im_inputs = random_samples(input_width, num_samples)
@@ -30,18 +29,7 @@ class FFTTB:
 
     @cocotb.coroutine
     async def setup(self):
-        self.multiclock.start_all_clocks()
-
-    @cocotb.coroutine
-    async def await_all_clocks(self):
-        """
-        Wait for positive edge on both clocks before proceeding.
-        """
-        trigs = []
-        for clk in self.multiclock.clocks:
-            trigs.append(RisingEdge(clk.clk))
-
-        await Combine(*trigs)
+        cocotb.fork(self.clk.start())
 
     def check_outputs(self, tolerance):
         """

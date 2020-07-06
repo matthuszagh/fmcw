@@ -26,7 +26,6 @@ module top #(
    input wire clk10,
    input wire clk20,
    input wire clk80,
-   input wire clk120,
 `endif
    // =============== clocks, resets, LEDs, connectors ===============
    // 40MHz
@@ -103,7 +102,6 @@ module top #(
    wire clk80;
    wire clk20;
    wire clk10;
-   wire clk120;
    wire pll_lock;
    wire pll_fb;
    PLLE2_BASE #(
@@ -112,13 +110,11 @@ module top #(
       .CLKOUT0_DIVIDE (12 ),
       .CLKOUT1_DIVIDE (48 ),
       .CLKOUT2_DIVIDE (96 ),
-      .CLKOUT3_DIVIDE (8  ),
       .CLKIN1_PERIOD  (25 )
    ) main_pll (
       .CLKOUT0  (clk80      ),
       .CLKOUT1  (clk20      ),
       .CLKOUT2  (clk10      ),
-      .CLKOUT3  (clk120     ),
       .LOCKED   (pll_lock   ),
       .CLKIN1   (clk_i      ),
       .RST      (1'b0       ),
@@ -387,7 +383,6 @@ module top #(
       .OUTPUT_WIDTH  (FFT_OUTPUT_WIDTH  )
    ) fft (
       .clk        (clk_i                    ),
-      .clk_3x     (clk120                   ),
       .arst_n     (~stop_ftclk              ),
       .en         (state[PROC_FFT]          ),
       .valid      (fft_valid                ),
@@ -884,7 +879,6 @@ module top_tb;
    reg clk40  = 1'b0;
    reg clk60  = 1'b0;
    reg clk80  = 1'b0;
-   reg clk120 = 1'b0;
 
    reg muxout = 1'b0;
 
@@ -927,8 +921,6 @@ module top_tb;
 
    initial begin
       #12.5;
-      clk120 = ~clk120;
-      forever clk120 = #4.167 ~clk120;
    end
 
    initial begin
@@ -981,7 +973,6 @@ module top_tb;
       .clk10          (clk10                   ),
       .clk20          (clk20                   ),
       .clk80          (clk80                   ),
-      .clk120         (clk120                  ),
       .clk_i          (clk40                   ),
       .ft_data_io     (ft_data_io              ),
       .ft_rxf_n_i     (ft_rxf_n                ),

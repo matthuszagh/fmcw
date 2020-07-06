@@ -15,7 +15,6 @@ module fft_wm #(
    input wire                            srst_n,
    input wire                            carry_in,
    output wire                           carry_out,
-   input wire                            clk_3x,
    input wire [$clog2(N)-1:0]            ctr_i,
    output wire [$clog2(N)-1:0]           ctr_o,
    input wire signed [WIDTH-1:0]         x_re_i,
@@ -51,97 +50,33 @@ module fft_wm #(
    reg signed [WIDTH+TWIDDLE_WIDTH:0] kar_r;
    reg signed [WIDTH+TWIDDLE_WIDTH:0] kar_i;
 
-   reg signed [WIDTH-1:0]             x_re_reg;
-   reg signed [WIDTH-1:0]             x_im_reg;
-   reg signed [WIDTH-1:0]             x_re_reg2;
-   reg signed [WIDTH-1:0]             x_im_reg2;
-   reg signed [TWIDDLE_WIDTH-1:0]     w_re_reg;
-   reg signed [TWIDDLE_WIDTH-1:0]     w_im_reg;
+   localparam XSR_LEN = 2;
+   reg signed [WIDTH-1:0]             x_re_sr [0:XSR_LEN-1];
+   reg signed [WIDTH-1:0]             x_im_sr [0:XSR_LEN-1];
+   reg signed [WIDTH-1:0]             w_re_sr [0:XSR_LEN-2];
+   reg signed [WIDTH-1:0]             w_im_sr [0:XSR_LEN-2];
+   localparam LATENCY = 4;
+   integer i;
 
-   reg signed [WIDTH-1:0]             a0_reg;
-   reg signed [TWIDDLE_WIDTH:0]       b0_reg;
-   reg signed [WIDTH-1:0]             a1_reg;
-   reg signed [TWIDDLE_WIDTH:0]       b1_reg;
-   reg signed [WIDTH-1:0]             a2_reg;
-   reg signed [TWIDDLE_WIDTH:0]       b2_reg;
+   always @(posedge clk) begin
+      x_re_sr[0] <= x_re_i;
+      x_im_sr[0] <= x_im_i;
+      for (i=1; i<XSR_LEN; i=i+1) begin
+         x_re_sr[i] <= x_re_sr[i-1];
+         x_im_sr[i] <= x_im_sr[i-1];
+      end
 
-   wire [1:0]                         mul_state;
-   pll_sync_ctr #(
-      .RATIO (3)
-   ) sync_ctr (
-      .fst_clk (clk_3x    ),
-      .slw_clk (clk       ),
-      .ctr     (mul_state )
-   );
+      w_re_sr[0] <= w_re_i;
+      w_im_sr[0] <= w_im_i;
+      for (i=1; i<XSR_LEN-1; i=i+1) begin
+         w_re_sr[i] <= w_re_sr[i-1];
+         w_im_sr[i] <= w_im_sr[i-1];
+      end
 
-   always @(posedge clk_3x) begin
-      case (mul_state)
-      2'd0:
-        begin
-           kar_r  <= p_dsp;
-           a0_reg <= x_im_reg2;
-           b0_reg <= w_re_reg - w_im_reg;
-        end
-      2'd1:
-        begin
-           kar_i     <= p_dsp;
-           // updating the regs on `mul_state==2'd1' ensures that
-           // `kar_i' is not set before `kar_f'.
-           x_re_reg  <= x_re_i;
-           x_re_reg2 <= x_re_reg;
-           x_im_reg  <= x_im_i;
-           x_im_reg2 <= x_im_reg;
-           w_re_reg  <= w_re_i;
-           w_im_reg  <= w_im_i;
-
-           a1_reg <= x_re_reg2;
-           b1_reg <= w_re_reg + w_im_reg;
-        end
-      2'd2:
-        begin
-           kar_f  <= p_dsp;
-           a2_reg <= x_re_reg2 - x_im_reg2;
-           b2_reg <= sign_extend_b(w_re_reg);
-        end
-      // d'd3 is unreachable, as long as pll_sync_ctr works
-      endcase
+      kar_f <= w_re_i * (x_re_sr[0] - x_im_sr[0]);
+      kar_r <= x_im_sr[1] * (w_re_sr[0] - w_im_sr[0]) + kar_f;
+      kar_i <= x_re_sr[1] * (w_re_sr[0] + w_im_sr[0]) - kar_f;
    end
-
-   reg signed [WIDTH-1:0]              a_dsp;
-   reg signed [TWIDDLE_WIDTH:0]        b_dsp;
-   reg signed [WIDTH+TWIDDLE_WIDTH:0]  c_dsp;
-   wire signed [WIDTH+TWIDDLE_WIDTH:0] p_dsp;
-
-   always @(*) begin
-      case (mul_state)
-      2'd0:
-        begin
-           a_dsp = a0_reg;
-           b_dsp = b0_reg;
-           c_dsp = kar_f;
-        end
-      2'd1:
-        begin
-           a_dsp = a1_reg;
-           b_dsp = b1_reg;
-           c_dsp = -kar_f;
-        end
-      2'd2:
-        begin
-           a_dsp = a2_reg;
-           b_dsp = b2_reg;
-           c_dsp = {WIDTH+TWIDDLE_WIDTH+1{1'b0}};
-        end
-      default:
-        begin
-           a_dsp = {WIDTH{1'b0}};
-           b_dsp = {TWIDDLE_WIDTH+1{1'b0}};
-           c_dsp = {WIDTH+TWIDDLE_WIDTH+1{1'b0}};
-        end
-      endcase
-   end
-
-   assign p_dsp = (a_dsp * b_dsp) + c_dsp;
 
    parameter INTERNAL_WIDTH = WIDTH+TWIDDLE_WIDTH;
    parameter INTERNAL_MIN_MSB = INTERNAL_WIDTH - 1;
@@ -160,8 +95,6 @@ module fft_wm #(
       trunc_to_out = expr[INTERNAL_MIN_MSB-1:INTERNAL_MIN_MSB-WIDTH];
    endfunction
 
-   localparam LATENCY = 4;
-   integer i;
    reg [$clog2(N)-1:0] ctr_shift_reg [0:LATENCY-1];
    reg [$clog2(N)-1:0] carry_shift_reg [0:LATENCY-1];
 

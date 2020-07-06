@@ -30,7 +30,6 @@ module fft #(
    parameter OUTPUT_WIDTH   = 25   /* ceil(log_2(N)) + INPUT_WIDTH + 1 */
 ) (
    input wire                           clk,
-   input wire                           clk_3x,
    input wire                           arst_n,
    input wire                           en,
    output reg                           valid = 1'b0,
@@ -250,7 +249,6 @@ module fft #(
             .N             (N             )
          ) stage0_wm (
             .clk       (clk           ),
-            .clk_3x    (clk_3x        ),
             .srst_n    (srst_n        ),
             .carry_in  (carry_0       ),
             .carry_out (carry_11      ),
@@ -299,7 +297,6 @@ module fft #(
             .N             (N             )
          ) stage1_wm (
             .clk       (clk           ),
-            .clk_3x    (clk_3x        ),
             .srst_n    (srst_n        ),
             .carry_in  (carry_12      ),
             .carry_out (carry_21      ),
@@ -348,7 +345,6 @@ module fft #(
             .N             (N             )
          ) stage2_wm (
             .clk       (clk           ),
-            .clk_3x    (clk_3x        ),
             .srst_n    (srst_n        ),
             .carry_in  (carry_22      ),
             .carry_out (carry_31      ),
@@ -395,7 +391,6 @@ module fft #(
             .N             (N             )
          ) stage3_wm (
             .clk       (clk           ),
-            .clk_3x    (clk_3x        ),
             .srst_n    (srst_n        ),
             .carry_in  (carry_32      ),
             .carry_out (carry_41      ),
