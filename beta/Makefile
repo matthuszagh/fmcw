@@ -10,14 +10,6 @@ SOFTWARE_DIR	= software
 run: prog
 	$(MAKE) -C $(SOFTWARE_DIR) run
 
-# .PHONY: run
-# run: pc prog
-# ifeq ($(LOG), 1)
-# 	./$(SOFTWARE_DIR)/fmcw -t2 -l log.bin
-# else
-# 	./$(SOFTWARE_DIR)/fmcw -t360
-# endif
-
 .PHONY: pc
 pc:
 	$(MAKE) -C $(SOFTWARE_DIR) fmcw
