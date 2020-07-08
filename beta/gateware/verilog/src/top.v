@@ -17,9 +17,10 @@
 `include "fft.v"
 
 module top #(
+   // TODO these are not properly parameterized
    parameter FIR_TAP_WIDTH     = 16,
-   parameter FIR_NORM_SHIFT    = 2,
-   parameter FIR_OUTPUT_WIDTH  = 15,
+   parameter FIR_NORM_SHIFT    = 4,
+   parameter FIR_OUTPUT_WIDTH  = 13,
    parameter FFT_TWIDDLE_WIDTH = 10
 ) (
 `ifdef TOP_SIMULATE
