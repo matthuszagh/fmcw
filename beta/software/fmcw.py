@@ -13,7 +13,7 @@ import numpy as np
 from pyqtgraph.Qt import QtGui
 import pyqtgraph as pg
 from scipy import signal
-from device import *
+from device import Device
 
 BITMODE_SYNCFF = 0x40
 CHUNKSIZE = 0x10000
@@ -53,6 +53,19 @@ class Data(IntEnum):
     DECIMATE = 2
     WINDOW = 3
     FFT = 4
+
+
+def data_to_fpga_output(data: Data) -> str:
+    """
+    """
+    if data == Data.RAW:
+        return "RAW"
+    elif data == Data.DECIMATE:
+        return "FIR"
+    elif data == Data.WINDOW:
+        return "WINDOW"
+    else:
+        return "FFT"
 
 
 def data_from_str(strval: str) -> Data:
@@ -581,7 +594,7 @@ class Configuration:
                 getter=self._get_adf_bandwidth,
                 setter=self._set_adf_bandwidth,
                 possible=self._adf_bandwidth_possible,
-                init="300e3",
+                init="300e6",
             ),
             Parameter(
                 name="ADF sweep time",
@@ -1307,17 +1320,27 @@ class Shell:
             log_file = self.configuration.log_file.as_posix()
         else:
             log_file = None
-        fmcw_open()
-        fmcw_start_acquisition(log_file, sample_bits, sweep_len)
-        while current_time < end_time:
-            sweep = fmcw_read_sweep(sweep_len)
-            if sweep is not None:
-                proc_sweep = self.proc.process_sequence(sweep)
-                self.plot.add_sweep(proc_sweep)
-                nseq += 1
-            current_time = clock_gettime(CLOCK_MONOTONIC)
 
-        fmcw_close()
+        with Device() as radar:
+            radar.adf.fstart = self.configuration.adf_fstart
+            radar.adf.tsweep = self.configuration.adf_tsweep
+            radar.adf.tdelay = self.configuration.adf_tdelay
+            radar.adf.bandwidth = self.configuration.adf_bandwidth
+            radar.set_chan(self.configuration.channel)
+            radar.set_output(
+                data_to_fpga_output(self.configuration._fpga_output)
+            )
+            radar.set_adf_regs()
+
+            radar.start_acquisition(log_file, sample_bits, sweep_len)
+            while current_time < end_time:
+                sweep = radar.read_sweep(sweep_len)
+                if sweep is not None:
+                    proc_sweep = self.proc.process_sequence(sweep)
+                    self.plot.add_sweep(proc_sweep)
+                    nseq += 1
+                current_time = clock_gettime(CLOCK_MONOTONIC)
+
         write(
             self._bandwidth(
                 nseq * RAW_LEN * data_nbytes(self.configuration._fpga_output),

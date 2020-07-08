@@ -171,17 +171,17 @@ class ADF4158:
             # ====================== REGISTER 7 ======================
 
             # Setting this to 1 enables the ramp delay fast lock function.
-            "ramp_del_fl": {"num": 7, "msb": 18, "len": 1, "val": None},
+            "ramp_del_fl": {"num": 7, "msb": 18, "len": 1, "val": 0},
             # Setting this to 1 enables a delay between ramp bursts. Note that
             # this does not disable frequency output (use PWR_DWN_INIT for
             # that), it simply holds the frequency output at its RF_OUT value.
-            "ramp_del": {"num": 7, "msb": 17, "len": 1, "val": None},
+            "ramp_del": {"num": 7, "msb": 17, "len": 1, "val": 1},
             # Setting this to 0 selects the f_PFD clock as the delay
             # clock. Setting this 1 uses f_PFD / CLK1_DIV as delay clock
             # frequency.
-            "del_clk_sel": {"num": 7, "msb": 16, "len": 1, "val": None},
+            "del_clk_sel": {"num": 7, "msb": 16, "len": 1, "val": 1},
             # 1 enables a delayed start.
-            "del_start_en": {"num": 7, "msb": 15, "len": 1, "val": None},
+            "del_start_en": {"num": 7, "msb": 15, "len": 1, "val": 0},
             # Sets the number of steps in a delay.
             "del_steps": {"num": 7, "msb": 14, "len": 12, "val": None},
         }
@@ -275,14 +275,15 @@ class ADF4158:
         """
         """
         f_pfd = self.f_pfd
-        max_clk1 = self._max_param("clk1_div") / f_pfd
-        if newval <= max_clk1:
+        max_clk1 = self._max_param("clk1_div")
+        if newval <= max_clk1 / f_pfd:
             self.set_param("clk1_div", int(newval * f_pfd))
+            self.set_param("clk2_div", 1)
         else:
             self.set_param("clk1_div", max_clk1)
-            rem = newval - max_clk1
-            max_clk2 = self._max_param("clk2_div") / f_pfd
-            if rem > max_clk2:
+            rem = newval - max_clk1 / f_pfd
+            max_clk2 = self._max_param("clk2_div")
+            if rem > max_clk2 / f_pfd:
                 raise ValueError("Timer value {} is too long.".format(newval))
             self.set_param("clk2_div", int(rem * f_pfd))
 
@@ -359,14 +360,15 @@ class ADF4158:
         """
         regs = [0 for _ in range(8)]
         for k, v in self._params.items():
+            # TODO this check doesn't work
             if v["val"] is None:
                 raise RuntimeError("{} value not set.".format(k))
             mask = param_mask(v["len"])
             lsb = param_lsb(v["msb"], v["len"])
             regs[v["num"]] |= (mask & v["val"]) << lsb
 
-        # for i, reg in enumerate(regs):
-        #     reg |= i
+        for i, _ in enumerate(regs):
+            regs[i] |= i
 
         return regs
 
@@ -396,11 +398,10 @@ class Device:
         c_fmcw_close()
 
     def start_acquisition(self, log_path: str, sample_bits: int, sweep_len: int):
+        self._send_start()
         if log_path is None:
             return c_fmcw_start_acquisition(NULL, sample_bits, sweep_len)
-        ret = c_fmcw_start_acquisition(log_path, sample_bits, sweep_len)
-        self._send_start()
-        return ret
+        return c_fmcw_start_acquisition(log_path, sample_bits, sweep_len)
 
     def read_sweep(self, sweep_len: int):
         arr = np.empty(sweep_len, dtype=np.int32)
