@@ -486,28 +486,33 @@ module top #(
         end
       state[CONFIG]:
         begin
-           if (adf_active) next[WAIT]   = 1'b1;
-           else            next[CONFIG] = 1'b1;
+           if (stop)            next[IDLE]   = 1'b1;
+           else if (adf_active) next[WAIT]   = 1'b1;
+           else                 next[CONFIG] = 1'b1;
         end
       state[WAIT]:
         begin
-           if (adf_ramp_start) next[SAMPLE] = 1'b1;
-           else                next[WAIT]   = 1'b1;
+           if (stop)                next[IDLE]   = 1'b1;
+           else if (adf_ramp_start) next[SAMPLE] = 1'b1;
+           else                     next[WAIT]   = 1'b1;
         end
       state[SAMPLE]:
         begin
-           if (raw_sample_ctr == RAW_SAMPLES_MAX) next[PROC_FILTER] = 1'b1;
-           else                                   next[SAMPLE]      = 1'b1;
+           if (stop)                                   next[IDLE]        = 1'b1;
+           else if (raw_sample_ctr == RAW_SAMPLES_MAX) next[PROC_FILTER] = 1'b1;
+           else                                        next[SAMPLE]      = 1'b1;
         end
       state[PROC_FILTER]:
         begin
-           if (window_fifo_full) next[PROC_FFT]    = 1'b1;
-           else                  next[PROC_FILTER] = 1'b1;
+           if (stop)                  next[IDLE]        = 1'b1;
+           else if (window_fifo_full) next[PROC_FFT]    = 1'b1;
+           else                       next[PROC_FILTER] = 1'b1;
         end
       state[PROC_FFT]:
         begin
-           if (fft_fifo_full) next[TX]       = 1'b1;
-           else               next[PROC_FFT] = 1'b1;
+           if (stop)               next[IDLE]     = 1'b1;
+           else if (fft_fifo_full) next[TX]       = 1'b1;
+           else                    next[PROC_FFT] = 1'b1;
         end
       state[TX]:
         begin
