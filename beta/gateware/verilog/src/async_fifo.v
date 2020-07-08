@@ -51,10 +51,10 @@ module async_fifo #(
    wire [ADDR_WIDTH:0]     wgray_rdomain;
    wire [ADDR_WIDTH:0]     rgray_wdomain;
 
-   reg                     rrst_n;
-   reg                     wrst_n;
-   reg [1:0]               rrst_sync;
-   reg [1:0]               wrst_sync;
+   reg                     rrst_n = 1'b0;
+   reg                     wrst_n = 1'b0;
+   reg [1:0]               rrst_sync = 2'd0;
+   reg [1:0]               wrst_sync = 2'd0;
 
    always @(posedge wclk or negedge rst_n) begin
       if (!rst_n) begin
