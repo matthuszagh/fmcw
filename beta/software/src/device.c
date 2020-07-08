@@ -15,8 +15,8 @@
 #define PACKETS_PER_TRANSFER 8
 #define TRANSFERS_PER_CALLBACK 256
 #define LATENCY 2
-#define FALSE 0
 #define TRUE 1
+#define FALSE 0
 #define BYTE_BITS 8
 #define START_FLAG 0xFF
 #define STOP_FLAG 0x8F
@@ -134,7 +134,13 @@ int fmcw_open()
 	}
 
 	if (ftdi_read_data_set_chunksize(ftdi, CHUNKSIZE) < 0) {
-		fprintf(stderr, "Unable to set chunk size %s\n", ftdi_get_error_string(ftdi));
+		fprintf(stderr, "Unable to set read chunk size %s\n", ftdi_get_error_string(ftdi));
+		fmcw_close();
+		return FALSE;
+	}
+
+	if (ftdi_write_data_set_chunksize(ftdi, CHUNKSIZE) < 0) {
+		fprintf(stderr, "Unable to set write chunk size %s\n", ftdi_get_error_string(ftdi));
 		fmcw_close();
 		return FALSE;
 	}
