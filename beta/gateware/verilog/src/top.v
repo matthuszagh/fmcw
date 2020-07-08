@@ -42,15 +42,15 @@ module top #(
    // Low when there is room for transmission data in the FIFO.
    input wire                              ft_txe_n_i,
    // Drive low to load read data to ft_data_io each clock cycle.
-   output reg                              ft_rd_n_o,
+   output reg                              ft_rd_n_o = 1'b1,
    // Drive low to write ft_data_io to FIFO for transmission.
-   output reg                              ft_wr_n_o,
+   output reg                              ft_wr_n_o = 1'b1,
    // Flush transmission data to USB immediately.
    output wire                             ft_siwua_n_o,
    // 60MHz clock used to synchronize data transfers.
    input wire                              ft_clkout_i,
    // Drive low one period before ft_rd_n_o to signal read.
-   output reg                              ft_oe_n_o,
+   output reg                              ft_oe_n_o = 1'b1,
    // Low when USB in suspend mode.
    input wire                              ft_suspend_n_i,
 
