@@ -813,6 +813,8 @@ module fir #(
 
    localparam LATENCY = 2;
    reg                              dvalid_sync [0:LATENCY-1];
+   initial for (i=0; i<LATENCY; i=i+1) dvalid_sync[i] <= 1'b0;
+
    always @(posedge clk) begin
       if (~srst_n) begin
          for (i=0; i<LATENCY; i=i+1) begin
