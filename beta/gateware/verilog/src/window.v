@@ -57,6 +57,10 @@ module window #(
    localparam LATENCY = 2;
    integer i;
    reg valid_sync [0:LATENCY-1];
+   initial begin
+      for (i=0; i<LATENCY; i=i+1) valid_sync[i] <= 1'b0;
+   end
+
    always @(posedge clk) begin
       if (~srst_n) begin
          for (i=0; i<LATENCY; i=i+1) valid_sync[i] <= 1'b0;
