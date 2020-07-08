@@ -439,7 +439,8 @@ module top #(
               PROC_FILTER = 4,  // filter and window
               PROC_FFT    = 5,
               TX          = 6;
-   reg [NUM_STATES-1:0] state, next;
+   reg [NUM_STATES-1:0] state;
+   reg [NUM_STATES-1:0] next;
    initial begin
       state         = {NUM_STATES{1'b0}};
       state[IDLE]   = 1'b1;
@@ -630,7 +631,8 @@ module top #(
               FTCLK_TX_LAST       = 15,
               FTCLK_TX_STOP       = 16,
               FTCLK_TX_WAIT       = 17;
-   reg [FTCLK_NUM_STATES-1:0] ftclk_state, ftclk_next;
+   reg [FTCLK_NUM_STATES-1:0] ftclk_state;
+   reg [FTCLK_NUM_STATES-1:0] ftclk_next;
    initial begin
       ftclk_state             = {FTCLK_NUM_STATES{1'b0}};
       ftclk_state[FTCLK_IDLE] = 1'b1;
@@ -656,7 +658,8 @@ module top #(
 
       // Read states
       ftclk_state[FTCLK_READ_OE]       :                                 ftclk_next[FTCLK_READ]          = 1'b1;
-      ftclk_state[FTCLK_READ]          :                                 ftclk_next[FTCLK_READ_INDIC]    = 1'b1;
+      ftclk_state[FTCLK_READ]          : if (~ft_rxf_n_i)                ftclk_next[FTCLK_READ_INDIC]    = 1'b1;
+                                         else                            ftclk_next[FTCLK_READ]          = 1'b1;
       ftclk_state[FTCLK_READ_INDIC]    : if (ft_data_io == 8'hFF)        ftclk_next[FTCLK_READ_STOP]     = 1'b1;
                                          else if (ft_data_io == 8'h00)   ftclk_next[FTCLK_READ_START]    = 1'b1;
                                          else if (ft_data_io[7] == 1'b1) ftclk_next[FTCLK_READ_ADF]      = 1'b1;
@@ -708,13 +711,9 @@ module top #(
    always @(posedge ft_clkout_i) begin
       ft_oe_n_o        <= 1'b1;
       ft_rd_n_o        <= 1'b1;
-      ftclk_ctr        <= {CTR_WIDTH{1'b0}};
-      adf_ctr          <= 2'd0;
-      start_ftclk      <= 1'b0;
-      stop_ftclk       <= 1'b0;
       adf_reg_fifo_wen <= 1'b0;
 
-      ft_wr_data  <= `USB_DATA_WIDTH'd0;
+      // ft_wr_data  <= `USB_DATA_WIDTH'd0;
       ft_wr_n_o   <= 1'b1;
       tx_done     <= 1'b0;
       ft_txe_last <= ft_txe_n_i;
@@ -729,79 +728,40 @@ module top #(
       ftclk_next[FTCLK_READ]:
         begin
            ft_oe_n_o <= 1'b0;
-           ft_rd_n_o <= 1'b0;
+           if (~ft_rxf_n_i) ft_rd_n_o <= 1'b0;
         end
       ftclk_next[FTCLK_READ_INDIC]:
         begin
-           ft_oe_n_o                  <= 1'b0;
+           ft_oe_n_o <= 1'b0;
            if (~ft_rxf_n_i) ft_rd_n_o <= 1'b0;
-           adf_reg                    <= ft_data_io[2:0];
         end
       ftclk_next[FTCLK_READ_START]:
         begin
-           ft_oe_n_o   <= 1'b0;
-           ftclk_ctr   <= ftclk_ctr + 1'b1;
-           start_ftclk <= 1'b1;
+           ft_oe_n_o <= 1'b0;
         end
       ftclk_next[FTCLK_READ_STOP]:
         begin
-           ft_oe_n_o  <= 1'b0;
-           ftclk_ctr  <= ftclk_ctr + 1'b1;
-           stop_ftclk <= 1'b1;
+           ft_oe_n_o <= 1'b0;
         end
       ftclk_next[FTCLK_READ_CHANA]:
         begin
            ft_oe_n_o <= 1'b0;
-           if (ftclk_ctr == {CTR_WIDTH{1'b0}}) begin
-              if (~ft_rd_n_o) begin
-                 use_chan_a_ftclk <= ft_data_io[0];
-                 ftclk_ctr        <= ftclk_ctr + 1'b1;
-                 ft_rd_n_o        <= 1'b1;
-              end
-              else if (~ft_rxf_n_i) ft_rd_n_o <= 1'b0;
-           end
-           else ftclk_ctr <= ftclk_ctr + 1'b1;
+           ft_rd_n_o <= 1'b1;
         end
       ftclk_next[FTCLK_READ_CHANB]:
         begin
            ft_oe_n_o <= 1'b0;
-           if (ftclk_ctr == {CTR_WIDTH{1'b0}}) begin
-              if (~ft_rd_n_o) begin
-                 use_chan_b_ftclk <= ft_data_io[0];
-                 ftclk_ctr        <= ftclk_ctr + 1'b1;
-                 ft_rd_n_o        <= 1'b1;
-              end
-              else if (~ft_rxf_n_i) ft_rd_n_o <= 1'b0;
-           end
-           else ftclk_ctr <= ftclk_ctr + 1'b1;
+           ft_rd_n_o <= 1'b1;
         end
       ftclk_next[FTCLK_READ_OUTPUT]:
         begin
            ft_oe_n_o <= 1'b0;
-           if (ftclk_ctr == {CTR_WIDTH{1'b0}}) begin
-              if (~ft_rd_n_o) begin
-                 out_ftclk <= ft_data_io[1:0];
-                 ftclk_ctr <= ftclk_ctr + 1'b1;
-                 ft_rd_n_o <= 1'b1;
-              end
-              else if (~ft_rxf_n_i) ft_rd_n_o <= 1'b0;
-           end
-           else ftclk_ctr <= ftclk_ctr + 1'b1;
+           ft_rd_n_o <= 1'b1;
         end
       ftclk_next[FTCLK_READ_ADF]:
         begin
-           ft_oe_n_o                  <= 1'b0;
-           if (~ft_rxf_n_i) ft_rd_n_o <= 1'b0;
-           if (~ft_rd_n_o) begin
-              case (adf_ctr)
-              2'd0: adf_val[7:0]   <= ft_data_io;
-              2'd1: adf_val[15:8]  <= ft_data_io;
-              2'd2: adf_val[23:16] <= ft_data_io;
-              2'd3: adf_val[31:24] <= ft_data_io;
-              endcase
-              adf_ctr <= adf_ctr + 1'b1;
-           end
-           else adf_ctr <= adf_ctr;
+           ft_oe_n_o <= 1'b0;
+           if (~ft_rxf_n_i & adf_ctr < 2'd2) ft_rd_n_o <= 1'b0;
         end
       ftclk_next[FTCLK_READ_ADF_SEND]:
         begin
@@ -838,12 +798,60 @@ module top #(
       ftclk_next[FTCLK_TX_WAIT]:
         begin
            ft_wr_n_o <= 1'b1;
-           tx_done   <= 1'b1;
+           if (ft_fifo_empty) tx_done <= 1'b1;
+           else               tx_done <= 1'b0;
         end
-      ftclk_next[FTCLK_READ]:
+      endcase
+   end
+
+   always @(posedge ft_clkout_i) begin
+      ftclk_ctr        <= {CTR_WIDTH{1'b0}};
+      adf_ctr          <= 2'd0;
+      start_ftclk      <= 1'b0;
+      stop_ftclk       <= 1'b0;
+
+      case (1'b1)
+      ftclk_state[FTCLK_READ_INDIC]:
         begin
-           ft_oe_n_o <= 1'b0;
-           if (~ft_oe_n_o) ft_rd_n_o <= 1'b0;
+           adf_reg <= ft_data_io[2:0];
+        end
+      ftclk_state[FTCLK_READ_START]:
+        begin
+           ftclk_ctr   <= ftclk_ctr + 1'b1;
+           start_ftclk <= 1'b1;
+        end
+      ftclk_state[FTCLK_READ_STOP]:
+        begin
+           ftclk_ctr  <= ftclk_ctr + 1'b1;
+           stop_ftclk <= 1'b1;
+        end
+      ftclk_state[FTCLK_READ_CHANA]:
+        begin
+           ftclk_ctr <= ftclk_ctr + 1'b1;
+           if (ftclk_ctr == {CTR_WIDTH{1'b0}}) use_chan_a_ftclk <= ft_data_io[0];
+        end
+      ftclk_state[FTCLK_READ_CHANB]:
+        begin
+           ftclk_ctr <= ftclk_ctr + 1'b1;
+           if (ftclk_ctr == {CTR_WIDTH{1'b0}}) use_chan_b_ftclk <= ft_data_io[0];
+        end
+      ftclk_state[FTCLK_READ_OUTPUT]:
+        begin
+           ftclk_ctr <= ftclk_ctr + 1'b1;
+           if (ftclk_ctr == {CTR_WIDTH{1'b0}}) out_ftclk <= ft_data_io[1:0];
+        end
+      ftclk_state[FTCLK_READ_ADF]:
+        begin
+           if (~ft_rd_n_o & ~ft_rxf_n_i | adf_ctr > 2'd1) begin
+              case (adf_ctr)
+              2'd0: adf_val[7:0]   <= ft_data_io;
+              2'd1: adf_val[15:8]  <= ft_data_io;
+              2'd2: adf_val[23:16] <= ft_data_io;
+              2'd3: adf_val[31:24] <= ft_data_io;
+              endcase
+              adf_ctr <= adf_ctr + 1'b1;
+           end
+           else adf_ctr <= adf_ctr;
         end
       endcase
    end
@@ -861,23 +869,23 @@ module top #(
    assign ft_data_io = ft_oe_n_o ? ft_wr_data : `USB_DATA_WIDTH'dz;
 
    assign ext1_io[0] = 1'b0;
-   assign ext1_io[3] = state[SAMPLE];
+   assign ext1_io[3] = ft_oe_n_o;
    assign ext1_io[1] = 1'b0;
-   assign ext1_io[4] = state[TX];
+   assign ext1_io[4] = ft_rd_n_o;
    assign ext1_io[2] = 1'b0;
-   assign ext1_io[5] = clk_i;
+   assign ext1_io[5] = ft_rxf_n_i;
 
    assign ext2_io[0] = 1'b0;
-   assign ext2_io[3] = ftclk_state[FTCLK_TX_DATA];
+   assign ext2_io[3] = start_ftclk;
    assign ext2_io[1] = 1'b0;
-   assign ext2_io[4] = ftclk_state[FTCLK_TX_WAIT];
+   assign ext2_io[4] = start;
    assign ext2_io[2] = 1'b0;
    assign ext2_io[5] = adf_muxout_i;
 
 endmodule
 
 `ifdef TOP_SIMULATE
-
+`include "sync_fifo.v"
 module top_tb;
 
    reg clk10  = 1'b0;
@@ -904,20 +912,16 @@ module top_tb;
       end
    end
 
+   integer i;
    initial begin
       $dumpfile("tb/top_tb.vcd");
       $dumpvars(0, top_tb);
-
-      #12.5;
-      clk20 = ~clk20;
-      forever clk20 = #25 ~clk20;
+      for (i=0; i<10; i=i+1) $dumpvars(0, dut.adf4158.r[i]);
+      #1000000 $finish;
    end
 
-   initial begin
-      #12.5;
-      clk80 = ~clk80;
-      forever clk80 = #6.25 ~clk80;
-   end
+   always #12.5 clk40 = ~clk40;
+   always #8.33 clk60 = ~clk60;
 
    initial begin
       #12.5;
@@ -927,10 +931,14 @@ module top_tb;
 
    initial begin
       #12.5;
+      clk20 = ~clk20;
+      forever clk20 = #25 ~clk20;
    end
 
    initial begin
-      #10000000 $finish;
+      #12.5;
+      clk80 = ~clk80;
+      forever clk80 = #6.25 ~clk80;
    end
 
    reg ft_txe_n = 1'b0;
@@ -955,21 +963,107 @@ module top_tb;
    //    end
    // end
 
-   reg ft_rxf_n = 1'b1;
-   reg [`USB_DATA_WIDTH-1:0] ft_data_i = 8'h00;
+   localparam NUM_RBYTES = 47;
+   reg [7:0] ft245_rdata [0:NUM_RBYTES-1];
    initial begin
-      #100;
-      ft_rxf_n = 1'b0;
-      #20;
-      ft_rxf_n = 1'b1;
+      // chan A
+      ft245_rdata[0]  = 8'h1;
+      ft245_rdata[1]  = 8'h0;
+      // chan B
+      ft245_rdata[2]  = 8'h2;
+      ft245_rdata[3]  = 8'h1;
+      // output
+      ft245_rdata[4]  = 8'h3;
+      ft245_rdata[5]  = 8'h0;
+      // adf reg 0
+      ft245_rdata[6]  = 8'h80;
+      ft245_rdata[7]  = 8'h00;
+      ft245_rdata[8]  = 8'h00;
+      ft245_rdata[9]  = 8'h8C;
+      ft245_rdata[10] = 8'h78;
+      // adf reg 1
+      ft245_rdata[11] = 8'h81;
+      ft245_rdata[12] = 8'h01;
+      ft245_rdata[13] = 8'h00;
+      ft245_rdata[14] = 8'h00;
+      ft245_rdata[15] = 8'h00;
+      // adf reg 2
+      ft245_rdata[16] = 8'h82;
+      ft245_rdata[17] = 8'h52;
+      ft245_rdata[18] = 8'h80;
+      ft245_rdata[19] = 8'h60;
+      ft245_rdata[20] = 8'h10;
+      // adf reg 3
+      ft245_rdata[21] = 8'h83;
+      ft245_rdata[22] = 8'h43;
+      ft245_rdata[23] = 8'h80;
+      ft245_rdata[24] = 8'h00;
+      ft245_rdata[25] = 8'h00;
+      // adf reg 4
+      ft245_rdata[26] = 8'h84;
+      ft245_rdata[27] = 8'h84;
+      ft245_rdata[28] = 8'h00;
+      ft245_rdata[29] = 8'h78;
+      ft245_rdata[30] = 8'h00;
+      // adf reg 5
+      ft245_rdata[31] = 8'h85;
+      ft245_rdata[32] = 8'h85;
+      ft245_rdata[33] = 8'h00;
+      ft245_rdata[34] = 8'h20;
+      ft245_rdata[35] = 8'h00;
+      // adf reg 6
+      ft245_rdata[36] = 8'h86;
+      ft245_rdata[37] = 8'h86;
+      ft245_rdata[38] = 8'h3E;
+      ft245_rdata[39] = 8'h00;
+      ft245_rdata[40] = 8'h00;
+      // adf reg 7
+      ft245_rdata[41] = 8'h87;
+      ft245_rdata[42] = 8'h07;
+      ft245_rdata[43] = 8'h7D;
+      ft245_rdata[44] = 8'h03;
+      ft245_rdata[45] = 8'h00;
+      // start
+      ft245_rdata[46] = 8'h00;
    end
 
-   always #12.5 clk40 = ~clk40;
-   always #8.33 clk60 = ~clk60;
+   wire       ft245_rfifo_full;
+   wire       ft245_rfifo_empty;
+   wire       ft_rd_n;
+   reg        ft_rd_n_last;
+   wire [7:0] ft245_rfifo_rdata;
+   reg        ft245_rfifo_wen;
+   reg [7:0]  ft245_rfifo_wdata;
+   async_fifo #(
+      .WIDTH (`USB_DATA_WIDTH ),
+      .DEPTH (1024            )
+   ) ft245_read_fifo (
+      .rst_n (1'b1              ),
+      .wclk  (clk10             ),
+      .rclk  (clk60             ),
+      .full  (ft245_rfifo_full  ),
+      .empty (ft245_rfifo_empty ),
+      .ren   (~ft_rd_n          ),
+      .rdata (ft245_rfifo_rdata ),
+      .wen   (ft245_rfifo_wen   ),
+      .wdata (ft245_rfifo_wdata )
+   );
+
+   reg [$clog2(NUM_RBYTES)-1:0] ctr = 0;
+   always @(posedge clk10) begin
+      ft_rd_n_last <= ft_rd_n;
+      if (~ft245_rfifo_full & ctr < NUM_RBYTES) begin
+         ft245_rfifo_wdata <= ft245_rdata[ctr];
+         ctr               <= ctr + 1'b1;
+         ft245_rfifo_wen   <= 1'b1;
+      end else begin
+         ft245_rfifo_wen <= 1'b0;
+      end
+   end
 
    wire [`USB_DATA_WIDTH-1:0] ft_data_io;
    wire                       ft_oe_n;
-   assign ft_data_io = ft_oe_n ? 8'hzz : ft_data_i;
+   assign ft_data_io = ~ft_oe_n ? (~ft_rd_n_last ? ft245_rfifo_rdata : 8'hxx) : 8'hzz;
    top #(
       .FIR_TAP_WIDTH     (16 ),
       .FIR_NORM_SHIFT    (4  ),
@@ -981,9 +1075,10 @@ module top_tb;
       .clk80          (clk80                   ),
       .clk_i          (clk40                   ),
       .ft_data_io     (ft_data_io              ),
-      .ft_rxf_n_i     (ft_rxf_n                ),
+      .ft_rxf_n_i     (ft245_rfifo_empty       ),
       .ft_txe_n_i     (ft_txe_n                ),
       .ft_oe_n_o      (ft_oe_n                 ),
+      .ft_rd_n_o      (ft_rd_n                 ),
       .ft_clkout_i    (clk60                   ),
       .ft_suspend_n_i (1'b1                    ),
       // send the least significant counter nibble with the full
