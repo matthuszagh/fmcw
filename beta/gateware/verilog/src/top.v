@@ -612,25 +612,36 @@ module top #(
    );
 
    // ==================== FT clock state machine ====================
-   localparam FTCLK_NUM_STATES = 18;
-   localparam FTCLK_IDLE          = 0,
-              FTCLK_READ_OE       = 1,
-              FTCLK_READ          = 2,
-              FTCLK_READ_INDIC    = 3,
-              FTCLK_READ_START    = 4,
-              FTCLK_READ_STOP     = 5,
-              FTCLK_READ_CHANA    = 6,
-              FTCLK_READ_CHANB    = 7,
-              FTCLK_READ_OUTPUT   = 8,
-              FTCLK_READ_ADF      = 9,
-              FTCLK_READ_ADF_SEND = 10,
-              FTCLK_TX_LOAD       = 11,
-              FTCLK_TX_START      = 12,
-              FTCLK_TX_DATA       = 13,
-              FTCLK_TX_TXE        = 14,
-              FTCLK_TX_LAST       = 15,
-              FTCLK_TX_STOP       = 16,
-              FTCLK_TX_WAIT       = 17;
+   localparam FTCLK_NUM_STATES = 29;
+   localparam FTCLK_IDLE            = 0,
+              FTCLK_READ_OE         = 1,
+              FTCLK_READ            = 2,
+              FTCLK_READ_CMD_PRE    = 3,
+              FTCLK_READ_CMD        = 4,
+              FTCLK_READ_START      = 5,
+              FTCLK_READ_STOP       = 6,
+              FTCLK_READ_CHANA_PRE  = 7,
+              FTCLK_READ_CHANA      = 8,
+              FTCLK_READ_CHANB_PRE  = 9,
+              FTCLK_READ_CHANB      = 10,
+              FTCLK_READ_OUTPUT_PRE = 11,
+              FTCLK_READ_OUTPUT     = 12,
+              FTCLK_READ_ADF0_PRE   = 13,
+              FTCLK_READ_ADF0       = 14,
+              FTCLK_READ_ADF1_PRE   = 15,
+              FTCLK_READ_ADF1       = 16,
+              FTCLK_READ_ADF2_PRE   = 17,
+              FTCLK_READ_ADF2       = 18,
+              FTCLK_READ_ADF3_PRE   = 19,
+              FTCLK_READ_ADF3       = 20,
+              FTCLK_READ_ADF_SEND   = 21,
+              FTCLK_TX_LOAD         = 22,
+              FTCLK_TX_START        = 23,
+              FTCLK_TX_DATA         = 24,
+              FTCLK_TX_TXE          = 25,
+              FTCLK_TX_LAST         = 26,
+              FTCLK_TX_STOP         = 27,
+              FTCLK_TX_WAIT         = 28;
    reg [FTCLK_NUM_STATES-1:0] ftclk_state;
    reg [FTCLK_NUM_STATES-1:0] ftclk_next;
    initial begin
@@ -647,9 +658,8 @@ module top #(
 
    localparam CTR_WIDTH = 2;
    localparam [CTR_WIDTH-1:0] CTR_MAX = {CTR_WIDTH{1'b1}};
-   reg [CTR_WIDTH-1:0]  ftclk_ctr;
+   reg [CTR_WIDTH-1:0] ftclk_ctr;
 
-   reg [1:0]            adf_ctr;
    always @(*) begin
       ftclk_next = {FTCLK_NUM_STATES{1'b0}};
       case (1'b1)
@@ -657,51 +667,67 @@ module top #(
                                          else             ftclk_next[FTCLK_IDLE]    = 1'b1;
 
       // Read states
-      ftclk_state[FTCLK_READ_OE]       :                                 ftclk_next[FTCLK_READ]          = 1'b1;
-      ftclk_state[FTCLK_READ]          : if (~ft_rxf_n_i)                ftclk_next[FTCLK_READ_INDIC]    = 1'b1;
-                                         else                            ftclk_next[FTCLK_READ]          = 1'b1;
-      ftclk_state[FTCLK_READ_INDIC]    : if (ft_data_io == 8'hFF)        ftclk_next[FTCLK_READ_STOP]     = 1'b1;
-                                         else if (ft_data_io == 8'h00)   ftclk_next[FTCLK_READ_START]    = 1'b1;
-                                         else if (ft_data_io[7] == 1'b1) ftclk_next[FTCLK_READ_ADF]      = 1'b1;
-                                         else if (ft_data_io == 8'h01)   ftclk_next[FTCLK_READ_CHANA]    = 1'b1;
-                                         else if (ft_data_io == 8'h02)   ftclk_next[FTCLK_READ_CHANB]    = 1'b1;
-                                         else if (ft_data_io == 8'h03)   ftclk_next[FTCLK_READ_OUTPUT]   = 1'b1;
-                                         // TODO this should never occur and can bring the state
-                                         // machine into a temporary bad state
-                                         else                            ftclk_next[FTCLK_IDLE]          = 1'b1;
-      ftclk_state[FTCLK_READ_START]    : if (ftclk_ctr == CTR_MAX)       ftclk_next[FTCLK_TX_WAIT]       = 1'b1;
-                                         else                            ftclk_next[FTCLK_READ_START]    = 1'b1;
-      ftclk_state[FTCLK_READ_STOP]     : if (ftclk_ctr == CTR_MAX)       ftclk_next[FTCLK_IDLE]          = 1'b1;
-                                         else                            ftclk_next[FTCLK_READ_STOP]     = 1'b1;
-      ftclk_state[FTCLK_READ_CHANA]    : if (ftclk_ctr == CTR_MAX)       ftclk_next[FTCLK_READ]          = 1'b1;
-                                         else                            ftclk_next[FTCLK_READ_CHANA]    = 1'b1;
-      ftclk_state[FTCLK_READ_CHANB]    : if (ftclk_ctr == CTR_MAX)       ftclk_next[FTCLK_READ]          = 1'b1;
-                                         else                            ftclk_next[FTCLK_READ_CHANB]    = 1'b1;
-      ftclk_state[FTCLK_READ_OUTPUT]   : if (ftclk_ctr == CTR_MAX)       ftclk_next[FTCLK_READ]          = 1'b1;
-                                         else                            ftclk_next[FTCLK_READ_OUTPUT]   = 1'b1;
-      ftclk_state[FTCLK_READ_ADF]      : if (adf_ctr == 2'd3)            ftclk_next[FTCLK_READ_ADF_SEND] = 1'b1;
-                                         else                            ftclk_next[FTCLK_READ_ADF]      = 1'b1;
-      ftclk_state[FTCLK_READ_ADF_SEND] :                                 ftclk_next[FTCLK_READ]          = 1'b1;
+      ftclk_state[FTCLK_READ_OE]         :                                 ftclk_next[FTCLK_READ_CMD_PRE]    = 1'b1;
+      ftclk_state[FTCLK_READ_CMD_PRE]    : if (~ft_rd_n_o)                 ftclk_next[FTCLK_READ_CMD]        = 1'b1;
+                                           else                            ftclk_next[FTCLK_READ_CMD_PRE]    = 1'b1;
+      ftclk_state[FTCLK_READ_CMD]        : if (ft_data_io == 8'hFF)        ftclk_next[FTCLK_READ_STOP]       = 1'b1;
+                                           else if (ft_data_io == 8'h00)   ftclk_next[FTCLK_READ_START]      = 1'b1;
+                                           else if (ft_data_io[7] == 1'b1) ftclk_next[FTCLK_READ_ADF0_PRE]   = 1'b1;
+                                           else if (ft_data_io == 8'h01)   ftclk_next[FTCLK_READ_CHANA_PRE]  = 1'b1;
+                                           else if (ft_data_io == 8'h02)   ftclk_next[FTCLK_READ_CHANB_PRE]  = 1'b1;
+                                           else if (ft_data_io == 8'h03)   ftclk_next[FTCLK_READ_OUTPUT_PRE] = 1'b1;
+                                           // TODO this should never occur and can bring the state
+                                           // machine into a temporary bad state
+                                           else                            ftclk_next[FTCLK_IDLE]            = 1'b1;
+      ftclk_state[FTCLK_READ_START]      : if (ftclk_ctr == CTR_MAX)       ftclk_next[FTCLK_TX_WAIT]         = 1'b1;
+                                           else                            ftclk_next[FTCLK_READ_START]      = 1'b1;
+      ftclk_state[FTCLK_READ_STOP]       : if (ftclk_ctr == CTR_MAX)       ftclk_next[FTCLK_IDLE]            = 1'b1;
+                                           else                            ftclk_next[FTCLK_READ_STOP]       = 1'b1;
+      ftclk_state[FTCLK_READ_CHANA_PRE]  : if (~ft_rd_n_o)                 ftclk_next[FTCLK_READ_CHANA]      = 1'b1;
+                                           else                            ftclk_next[FTCLK_READ_CHANA_PRE]  = 1'b1;
+      ftclk_state[FTCLK_READ_CHANA]      : if (ftclk_ctr == CTR_MAX)       ftclk_next[FTCLK_READ_CMD_PRE]    = 1'b1;
+                                           else                            ftclk_next[FTCLK_READ_CHANA]      = 1'b1;
+      ftclk_state[FTCLK_READ_CHANB_PRE]  : if (~ft_rd_n_o)                 ftclk_next[FTCLK_READ_CHANB]      = 1'b1;
+                                           else                            ftclk_next[FTCLK_READ_CHANB_PRE]  = 1'b1;
+      ftclk_state[FTCLK_READ_CHANB]      : if (ftclk_ctr == CTR_MAX)       ftclk_next[FTCLK_READ_CMD_PRE]    = 1'b1;
+                                           else                            ftclk_next[FTCLK_READ_CHANB]      = 1'b1;
+      ftclk_state[FTCLK_READ_OUTPUT_PRE] : if (~ft_rd_n_o)                 ftclk_next[FTCLK_READ_OUTPUT]     = 1'b1;
+                                           else                            ftclk_next[FTCLK_READ_OUTPUT_PRE] = 1'b1;
+      ftclk_state[FTCLK_READ_OUTPUT]     : if (ftclk_ctr == CTR_MAX)       ftclk_next[FTCLK_READ_CMD_PRE]    = 1'b1;
+                                           else                            ftclk_next[FTCLK_READ_OUTPUT]     = 1'b1;
+      ftclk_state[FTCLK_READ_ADF0_PRE]   : if (~ft_rd_n_o)                 ftclk_next[FTCLK_READ_ADF0]       = 1'b1;
+                                           else                            ftclk_next[FTCLK_READ_ADF0_PRE]   = 1'b1;
+      ftclk_state[FTCLK_READ_ADF0]       :                                 ftclk_next[FTCLK_READ_ADF1_PRE]   = 1'b1;
+      ftclk_state[FTCLK_READ_ADF1_PRE]   : if (~ft_rd_n_o)                 ftclk_next[FTCLK_READ_ADF1]       = 1'b1;
+                                           else                            ftclk_next[FTCLK_READ_ADF1_PRE]   = 1'b1;
+      ftclk_state[FTCLK_READ_ADF1]       :                                 ftclk_next[FTCLK_READ_ADF2_PRE]   = 1'b1;
+      ftclk_state[FTCLK_READ_ADF2_PRE]   : if (~ft_rd_n_o)                 ftclk_next[FTCLK_READ_ADF2]       = 1'b1;
+                                           else                            ftclk_next[FTCLK_READ_ADF2_PRE]   = 1'b1;
+      ftclk_state[FTCLK_READ_ADF2]       :                                 ftclk_next[FTCLK_READ_ADF3_PRE]   = 1'b1;
+      ftclk_state[FTCLK_READ_ADF3_PRE]   : if (~ft_rd_n_o)                 ftclk_next[FTCLK_READ_ADF3]       = 1'b1;
+                                           else                            ftclk_next[FTCLK_READ_ADF3_PRE]   = 1'b1;
+      ftclk_state[FTCLK_READ_ADF3]       :                                 ftclk_next[FTCLK_READ_ADF_SEND]   = 1'b1;
+      ftclk_state[FTCLK_READ_ADF_SEND]   :                                 ftclk_next[FTCLK_READ_CMD_PRE]    = 1'b1;
 
       // TX states
-      ftclk_state[FTCLK_TX_WAIT]       : if (~ft_rxf_n_i)                       ftclk_next[FTCLK_READ_OE]  = 1'b1;
-                                         else if (state_ftclk_domain[TX])       ftclk_next[FTCLK_TX_LOAD]  = 1'b1;
-                                         else                                   ftclk_next[FTCLK_TX_WAIT]  = 1'b1;
-      ftclk_state[FTCLK_TX_LOAD]       : if (out_ftclk == RAW | out_fifo_empty) ftclk_next[FTCLK_TX_START] = 1'b1;
-                                         else                                   ftclk_next[FTCLK_TX_LOAD]  = 1'b1;
-      ftclk_state[FTCLK_TX_START]      : if (flag_ctr == max_flag_ctr)          ftclk_next[FTCLK_TX_DATA]  = 1'b1;
-                                         else                                   ftclk_next[FTCLK_TX_START] = 1'b1;
-      ftclk_state[FTCLK_TX_DATA]       : if (ft_fifo_empty)                     ftclk_next[FTCLK_TX_LAST]  = 1'b1;
-                                         else if (ft_txe_n_i)                   ftclk_next[FTCLK_TX_TXE]   = 1'b1;
-                                         else                                   ftclk_next[FTCLK_TX_DATA]  = 1'b1;
-      ftclk_state[FTCLK_TX_TXE]        : if (~ft_txe_n_i)                       ftclk_next[FTCLK_TX_DATA]  = 1'b1;
-                                         else                                   ftclk_next[FTCLK_TX_TXE]   = 1'b1;
-      ftclk_state[FTCLK_TX_LAST]       : if (~ft_txe_n_i)                       ftclk_next[FTCLK_TX_STOP]  = 1'b1;
-                                         else                                   ftclk_next[FTCLK_TX_LAST]  = 1'b1;
-      ftclk_state[FTCLK_TX_STOP]       : if (flag_ctr == max_flag_ctr)          ftclk_next[FTCLK_TX_WAIT]  = 1'b1;
-                                         else                                   ftclk_next[FTCLK_TX_STOP]  = 1'b1;
+      ftclk_state[FTCLK_TX_WAIT]         : if (~ft_rxf_n_i)                       ftclk_next[FTCLK_READ_OE]  = 1'b1;
+                                           else if (state_ftclk_domain[TX])       ftclk_next[FTCLK_TX_LOAD]  = 1'b1;
+                                           else                                   ftclk_next[FTCLK_TX_WAIT]  = 1'b1;
+      ftclk_state[FTCLK_TX_LOAD]         : if (out_ftclk == RAW | out_fifo_empty) ftclk_next[FTCLK_TX_START] = 1'b1;
+                                           else                                   ftclk_next[FTCLK_TX_LOAD]  = 1'b1;
+      ftclk_state[FTCLK_TX_START]        : if (flag_ctr == max_flag_ctr)          ftclk_next[FTCLK_TX_DATA]  = 1'b1;
+                                           else                                   ftclk_next[FTCLK_TX_START] = 1'b1;
+      ftclk_state[FTCLK_TX_DATA]         : if (ft_fifo_empty)                     ftclk_next[FTCLK_TX_LAST]  = 1'b1;
+                                           else if (ft_txe_n_i)                   ftclk_next[FTCLK_TX_TXE]   = 1'b1;
+                                           else                                   ftclk_next[FTCLK_TX_DATA]  = 1'b1;
+      ftclk_state[FTCLK_TX_TXE]          : if (~ft_txe_n_i)                       ftclk_next[FTCLK_TX_DATA]  = 1'b1;
+                                           else                                   ftclk_next[FTCLK_TX_TXE]   = 1'b1;
+      ftclk_state[FTCLK_TX_LAST]         : if (~ft_txe_n_i)                       ftclk_next[FTCLK_TX_STOP]  = 1'b1;
+                                           else                                   ftclk_next[FTCLK_TX_LAST]  = 1'b1;
+      ftclk_state[FTCLK_TX_STOP]         : if (flag_ctr == max_flag_ctr)          ftclk_next[FTCLK_TX_WAIT]  = 1'b1;
+                                           else                                   ftclk_next[FTCLK_TX_STOP]  = 1'b1;
 
-      default                          : ftclk_next[FTCLK_IDLE] = 1'b1;
+      default                            : ftclk_next[FTCLK_IDLE] = 1'b1;
       endcase
    end
 
@@ -713,7 +739,6 @@ module top #(
       ft_rd_n_o        <= 1'b1;
       adf_reg_fifo_wen <= 1'b0;
 
-      // ft_wr_data  <= `USB_DATA_WIDTH'd0;
       ft_wr_n_o   <= 1'b1;
       tx_done     <= 1'b0;
       ft_txe_last <= ft_txe_n_i;
@@ -721,52 +746,60 @@ module top #(
 
       case (1'b1)
       // Read states
-      ftclk_next[FTCLK_READ_OE]:
-        begin
-           ft_oe_n_o <= 1'b0;
-        end
-      ftclk_next[FTCLK_READ]:
+      ftclk_next[FTCLK_READ_OE]: ft_oe_n_o <= 1'b0;
+      ftclk_next[FTCLK_READ_CMD_PRE]:
         begin
            ft_oe_n_o <= 1'b0;
            if (~ft_rxf_n_i) ft_rd_n_o <= 1'b0;
         end
-      ftclk_next[FTCLK_READ_INDIC]:
+      ftclk_next[FTCLK_READ_CMD]: ft_oe_n_o <= 1'b0;
+      ftclk_next[FTCLK_READ_START]: ft_oe_n_o <= 1'b0;
+      ftclk_next[FTCLK_READ_STOP]: ft_oe_n_o <= 1'b0;
+      ftclk_next[FTCLK_READ_CHANA_PRE]:
         begin
            ft_oe_n_o <= 1'b0;
            if (~ft_rxf_n_i) ft_rd_n_o <= 1'b0;
         end
-      ftclk_next[FTCLK_READ_START]:
+      ftclk_next[FTCLK_READ_CHANA]: ft_oe_n_o <= 1'b0;
+      ftclk_next[FTCLK_READ_CHANB_PRE]:
         begin
            ft_oe_n_o <= 1'b0;
+           if (~ft_rxf_n_i) ft_rd_n_o <= 1'b0;
         end
-      ftclk_next[FTCLK_READ_STOP]:
+      ftclk_next[FTCLK_READ_CHANB]: ft_oe_n_o <= 1'b0;
+      ftclk_next[FTCLK_READ_OUTPUT_PRE]:
         begin
            ft_oe_n_o <= 1'b0;
+           if (~ft_rxf_n_i) ft_rd_n_o <= 1'b0;
         end
-      ftclk_next[FTCLK_READ_CHANA]:
+      ftclk_next[FTCLK_READ_OUTPUT]: ft_oe_n_o <= 1'b0;
+      ftclk_next[FTCLK_READ_ADF0_PRE]:
         begin
            ft_oe_n_o <= 1'b0;
-           ft_rd_n_o <= 1'b1;
+           if (~ft_rxf_n_i) ft_rd_n_o <= 1'b0;
         end
-      ftclk_next[FTCLK_READ_CHANB]:
+      ftclk_next[FTCLK_READ_ADF0]: ft_oe_n_o <= 1'b0;
+      ftclk_next[FTCLK_READ_ADF1_PRE]:
         begin
            ft_oe_n_o <= 1'b0;
-           ft_rd_n_o <= 1'b1;
+           if (~ft_rxf_n_i) ft_rd_n_o <= 1'b0;
         end
-      ftclk_next[FTCLK_READ_OUTPUT]:
+      ftclk_next[FTCLK_READ_ADF1]: ft_oe_n_o <= 1'b0;
+      ftclk_next[FTCLK_READ_ADF2_PRE]:
         begin
            ft_oe_n_o <= 1'b0;
-           ft_rd_n_o <= 1'b1;
+           if (~ft_rxf_n_i) ft_rd_n_o <= 1'b0;
         end
-      ftclk_next[FTCLK_READ_ADF]:
+      ftclk_next[FTCLK_READ_ADF2]: ft_oe_n_o <= 1'b0;
+      ftclk_next[FTCLK_READ_ADF3_PRE]:
         begin
            ft_oe_n_o <= 1'b0;
-           if (~ft_rxf_n_i & adf_ctr < 2'd2) ft_rd_n_o <= 1'b0;
+           if (~ft_rxf_n_i) ft_rd_n_o <= 1'b0;
         end
+      ftclk_next[FTCLK_READ_ADF3]: ft_oe_n_o <= 1'b0;
       ftclk_next[FTCLK_READ_ADF_SEND]:
         begin
            ft_oe_n_o        <= 1'b0;
-           ft_rd_n_o        <= 1'b1;
            adf_reg_fifo_wen <= 1'b1;
         end
 
@@ -776,6 +809,7 @@ module top #(
            ft_wr_data <= START_FLAG;
            ft_wr_n_o  <= 1'b0;
            if (~ft_txe_n_i) flag_ctr <= flag_ctr + 1'b1;
+           else             flag_ctr <= flag_ctr;
         end
       ftclk_next[FTCLK_TX_DATA] & ftclk_state[FTCLK_TX_TXE]:
         begin
@@ -794,6 +828,7 @@ module top #(
            ft_wr_n_o  <= 1'b0;
            tx_done    <= 1'b1;
            if (~ft_txe_n_i) flag_ctr <= flag_ctr + 1'b1;
+           else             flag_ctr <= flag_ctr;
         end
       ftclk_next[FTCLK_TX_WAIT]:
         begin
@@ -806,15 +841,11 @@ module top #(
 
    always @(posedge ft_clkout_i) begin
       ftclk_ctr        <= {CTR_WIDTH{1'b0}};
-      adf_ctr          <= 2'd0;
       start_ftclk      <= 1'b0;
       stop_ftclk       <= 1'b0;
 
       case (1'b1)
-      ftclk_state[FTCLK_READ_INDIC]:
-        begin
-           adf_reg <= ft_data_io[2:0];
-        end
+      ftclk_state[FTCLK_READ_CMD]: adf_reg <= ft_data_io[2:0];
       ftclk_state[FTCLK_READ_START]:
         begin
            ftclk_ctr   <= ftclk_ctr + 1'b1;
@@ -840,19 +871,10 @@ module top #(
            ftclk_ctr <= ftclk_ctr + 1'b1;
            if (ftclk_ctr == {CTR_WIDTH{1'b0}}) out_ftclk <= ft_data_io[1:0];
         end
-      ftclk_state[FTCLK_READ_ADF]:
-        begin
-           if (~ft_rd_n_o & ~ft_rxf_n_i | adf_ctr > 2'd1) begin
-              case (adf_ctr)
-              2'd0: adf_val[7:0]   <= ft_data_io;
-              2'd1: adf_val[15:8]  <= ft_data_io;
-              2'd2: adf_val[23:16] <= ft_data_io;
-              2'd3: adf_val[31:24] <= ft_data_io;
-              endcase
-              adf_ctr <= adf_ctr + 1'b1;
-           end
-           else adf_ctr <= adf_ctr;
-        end
+      ftclk_state[FTCLK_READ_ADF0]: adf_val[7:0] <= ft_data_io;
+      ftclk_state[FTCLK_READ_ADF1]: adf_val[15:8] <= ft_data_io;
+      ftclk_state[FTCLK_READ_ADF2]: adf_val[23:16] <= ft_data_io;
+      ftclk_state[FTCLK_READ_ADF3]: adf_val[31:24] <= ft_data_io;
       endcase
    end
 
@@ -876,9 +898,9 @@ module top #(
    assign ext1_io[5] = ft_rxf_n_i;
 
    assign ext2_io[0] = 1'b0;
-   assign ext2_io[3] = start_ftclk;
+   assign ext2_io[3] = ftclk_state[FTCLK_READ_CHANA_PRE];
    assign ext2_io[1] = 1'b0;
-   assign ext2_io[4] = start;
+   assign ext2_io[4] = ftclk_state[FTCLK_READ_CHANA];
    assign ext2_io[2] = 1'b0;
    assign ext2_io[5] = adf_muxout_i;
 
@@ -1034,12 +1056,15 @@ module top_tb;
    wire [7:0] ft245_rfifo_rdata;
    reg        ft245_rfifo_wen;
    reg [7:0]  ft245_rfifo_wdata;
+
+   wire       wclk = clk60;
+
    async_fifo #(
       .WIDTH (`USB_DATA_WIDTH ),
       .DEPTH (1024            )
    ) ft245_read_fifo (
       .rst_n (1'b1              ),
-      .wclk  (clk10             ),
+      .wclk  (wclk              ),
       .rclk  (clk60             ),
       .full  (ft245_rfifo_full  ),
       .empty (ft245_rfifo_empty ),
@@ -1050,8 +1075,7 @@ module top_tb;
    );
 
    reg [$clog2(NUM_RBYTES)-1:0] ctr = 0;
-   always @(posedge clk10) begin
-      ft_rd_n_last <= ft_rd_n;
+   always @(posedge wclk) begin
       if (~ft245_rfifo_full & ctr < NUM_RBYTES) begin
          ft245_rfifo_wdata <= ft245_rdata[ctr];
          ctr               <= ctr + 1'b1;
@@ -1061,9 +1085,13 @@ module top_tb;
       end
    end
 
+   always @(posedge clk60) begin
+      ft_rd_n_last <= ft_rd_n;
+   end
+
    wire [`USB_DATA_WIDTH-1:0] ft_data_io;
    wire                       ft_oe_n;
-   assign ft_data_io = ~ft_oe_n ? (~ft_rd_n_last ? ft245_rfifo_rdata : 8'hxx) : 8'hzz;
+   assign ft_data_io = ft_oe_n ? 8'dz : (~ft_rd_n_last ? ft245_rfifo_rdata : 8'hxx);
    top #(
       .FIR_TAP_WIDTH     (16 ),
       .FIR_NORM_SHIFT    (4  ),
