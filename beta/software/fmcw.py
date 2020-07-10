@@ -1153,6 +1153,10 @@ class Proc:
         """
         """
         self._sub_last = newval
+
+    def set_last_seq(self):
+        """
+        """
         if self._sub_last:
             self.last_seq = np.zeros(data_sweep_len(self.indata))
 
@@ -1281,6 +1285,7 @@ class Shell:
             if not self.configuration._check_parameters():
                 raise RuntimeError("Invalid configuration. Exiting.")
             self.plot.initialize_plot()
+            self.proc.set_last_seq()
             self.run()
         else:
             write("Unrecognized input. Try again.")
