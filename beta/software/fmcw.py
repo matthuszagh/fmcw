@@ -332,7 +332,6 @@ class Plot:
         )
         self._img_view.setLimits(yMin=0, yMax=self.max_bin)
         self._img_view.getAxis("left").setTicks(self._y_ticks())
-        # self._img_view.getAxis("left").setScale(0.5)
         self._imv.setLevels(self.db_min, self.db_max)
         self._win.setCentralWidget(self._imv)
         self._win.show()
@@ -383,7 +382,10 @@ class Plot:
         xrg = self._data.shape[0]
         self._imv.setImage(self._data, xvals=[i for i in range(xrg)])
 
-        self._app.processEvents()
+        # speeds up bandwidth somewhat by reducing the burden of
+        # updating the plot.
+        if self._xval % 5 == 0:
+            self._app.processEvents()
 
         self._xval += 1
         if self._xval == xrg:

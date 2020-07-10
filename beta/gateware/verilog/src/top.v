@@ -659,7 +659,7 @@ module top #(
    localparam [CTR_WIDTH-1:0] CTR_MAX = {CTR_WIDTH{1'b1}};
    reg [CTR_WIDTH-1:0] ftclk_ctr;
 
-   wire [`USB_DATA_WIDTH-1:0] ft_rd_data = ft_data_io;
+   reg [`USB_DATA_WIDTH-1:0] ft_rd_data;
    always @(*) begin
       ftclk_next = {FTCLK_NUM_STATES{1'b0}};
       case (1'b1)
@@ -729,6 +729,10 @@ module top #(
 
       default                            : ftclk_next[FTCLK_IDLE] = 1'b1;
       endcase
+   end
+
+   always @(posedge ft_clkout_i) begin
+      if (~ft_rxf_n_i & ~ft_rd_n_o) ft_rd_data <= ft_data_io;
    end
 
    reg [`USB_DATA_WIDTH-1:0] ft_wr_data         = `USB_DATA_WIDTH'd0;
@@ -845,7 +849,7 @@ module top #(
       stop_ftclk       <= 1'b0;
 
       case (1'b1)
-      ftclk_state[FTCLK_READ_CMD]: adf_reg <= ft_data_io[2:0];
+      ftclk_state[FTCLK_READ_CMD]: adf_reg <= ft_rd_data[2:0];
       ftclk_state[FTCLK_READ_START]:
         begin
            ftclk_ctr   <= ftclk_ctr + 1'b1;

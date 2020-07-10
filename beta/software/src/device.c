@@ -225,7 +225,6 @@ int fmcw_read_sweep(int *arr)
 
 int fmcw_add_write(uint32_t val, int nbytes)
 {
-	printf("%X\n", val);
 	unsigned char buf[nbytes];
 	for (int i = 0; i < nbytes; ++i) {
 		buf[i] = (val >> (BYTE_BITS * i)) & 0xFF;
@@ -240,14 +239,9 @@ int fmcw_add_write(uint32_t val, int nbytes)
 
 int fmcw_write_pending()
 {
-	/* vector_reverse(write_data); */
 	if (ftdi_write_data(ftdi, write_data->buf, write_data->size) != write_data->size) {
 		return FALSE;
 	}
-	for (size_t i = 0; i < write_data->size; ++i) {
-		printf("%02X_", write_data->buf[i]);
-	}
-	printf("\n");
 	vector_empty(write_data);
 	return TRUE;
 }
