@@ -37,7 +37,7 @@ module top #(
 
    // ==================== FT2232H USB interface. ====================
    // FIFO data
-   inout wire signed [`USB_DATA_WIDTH-1:0] ft_data_io,
+   inout wire [`USB_DATA_WIDTH-1:0]        ft_data_io,
    // Low when there is data in the buffer that can be read.
    input wire                              ft_rxf_n_i,
    // Low when there is room for transmission data in the FIFO.
@@ -183,8 +183,8 @@ module top #(
       .q        (stop       )
    );
 
-   reg         adf_reg_fifo_wen;
-   reg         adf_reg_fifo_ren;
+   reg         adf_reg_fifo_wen = 1'b0;
+   reg         adf_reg_fifo_ren = 1'b0;
    wire        adf_reg_fifo_empty;
    reg [2:0]   adf_reg;
    reg [31:0]  adf_val;
@@ -612,36 +612,35 @@ module top #(
    );
 
    // ==================== FT clock state machine ====================
-   localparam FTCLK_NUM_STATES = 29;
+   localparam FTCLK_NUM_STATES = 28;
    localparam FTCLK_IDLE            = 0,
               FTCLK_READ_OE         = 1,
-              FTCLK_READ            = 2,
-              FTCLK_READ_CMD_PRE    = 3,
-              FTCLK_READ_CMD        = 4,
-              FTCLK_READ_START      = 5,
-              FTCLK_READ_STOP       = 6,
-              FTCLK_READ_CHANA_PRE  = 7,
-              FTCLK_READ_CHANA      = 8,
-              FTCLK_READ_CHANB_PRE  = 9,
-              FTCLK_READ_CHANB      = 10,
-              FTCLK_READ_OUTPUT_PRE = 11,
-              FTCLK_READ_OUTPUT     = 12,
-              FTCLK_READ_ADF0_PRE   = 13,
-              FTCLK_READ_ADF0       = 14,
-              FTCLK_READ_ADF1_PRE   = 15,
-              FTCLK_READ_ADF1       = 16,
-              FTCLK_READ_ADF2_PRE   = 17,
-              FTCLK_READ_ADF2       = 18,
-              FTCLK_READ_ADF3_PRE   = 19,
-              FTCLK_READ_ADF3       = 20,
-              FTCLK_READ_ADF_SEND   = 21,
-              FTCLK_TX_LOAD         = 22,
-              FTCLK_TX_START        = 23,
-              FTCLK_TX_DATA         = 24,
-              FTCLK_TX_TXE          = 25,
-              FTCLK_TX_LAST         = 26,
-              FTCLK_TX_STOP         = 27,
-              FTCLK_TX_WAIT         = 28;
+              FTCLK_READ_CMD_PRE    = 2,
+              FTCLK_READ_CMD        = 3,
+              FTCLK_READ_START      = 4,
+              FTCLK_READ_STOP       = 5,
+              FTCLK_READ_CHANA_PRE  = 6,
+              FTCLK_READ_CHANA      = 7,
+              FTCLK_READ_CHANB_PRE  = 8,
+              FTCLK_READ_CHANB      = 9,
+              FTCLK_READ_OUTPUT_PRE = 10,
+              FTCLK_READ_OUTPUT     = 11,
+              FTCLK_READ_ADF0_PRE   = 12,
+              FTCLK_READ_ADF0       = 13,
+              FTCLK_READ_ADF1_PRE   = 14,
+              FTCLK_READ_ADF1       = 15,
+              FTCLK_READ_ADF2_PRE   = 16,
+              FTCLK_READ_ADF2       = 17,
+              FTCLK_READ_ADF3_PRE   = 18,
+              FTCLK_READ_ADF3       = 19,
+              FTCLK_READ_ADF_SEND   = 20,
+              FTCLK_TX_LOAD         = 21,
+              FTCLK_TX_START        = 22,
+              FTCLK_TX_DATA         = 23,
+              FTCLK_TX_TXE          = 24,
+              FTCLK_TX_LAST         = 25,
+              FTCLK_TX_STOP         = 26,
+              FTCLK_TX_WAIT         = 27;
    reg [FTCLK_NUM_STATES-1:0] ftclk_state;
    reg [FTCLK_NUM_STATES-1:0] ftclk_next;
    initial begin
@@ -660,6 +659,7 @@ module top #(
    localparam [CTR_WIDTH-1:0] CTR_MAX = {CTR_WIDTH{1'b1}};
    reg [CTR_WIDTH-1:0] ftclk_ctr;
 
+   wire [`USB_DATA_WIDTH-1:0] ft_rd_data = ft_data_io;
    always @(*) begin
       ftclk_next = {FTCLK_NUM_STATES{1'b0}};
       case (1'b1)
@@ -670,12 +670,12 @@ module top #(
       ftclk_state[FTCLK_READ_OE]         :                                 ftclk_next[FTCLK_READ_CMD_PRE]    = 1'b1;
       ftclk_state[FTCLK_READ_CMD_PRE]    : if (~ft_rd_n_o)                 ftclk_next[FTCLK_READ_CMD]        = 1'b1;
                                            else                            ftclk_next[FTCLK_READ_CMD_PRE]    = 1'b1;
-      ftclk_state[FTCLK_READ_CMD]        : if (ft_data_io == 8'hFF)        ftclk_next[FTCLK_READ_STOP]       = 1'b1;
-                                           else if (ft_data_io == 8'h00)   ftclk_next[FTCLK_READ_START]      = 1'b1;
-                                           else if (ft_data_io[7] == 1'b1) ftclk_next[FTCLK_READ_ADF0_PRE]   = 1'b1;
-                                           else if (ft_data_io == 8'h01)   ftclk_next[FTCLK_READ_CHANA_PRE]  = 1'b1;
-                                           else if (ft_data_io == 8'h02)   ftclk_next[FTCLK_READ_CHANB_PRE]  = 1'b1;
-                                           else if (ft_data_io == 8'h03)   ftclk_next[FTCLK_READ_OUTPUT_PRE] = 1'b1;
+      ftclk_state[FTCLK_READ_CMD]        : if (ft_rd_data == 8'hFF)        ftclk_next[FTCLK_READ_STOP]       = 1'b1;
+                                           else if (ft_rd_data == 8'h00)   ftclk_next[FTCLK_READ_START]      = 1'b1;
+                                           else if (ft_rd_data[7] == 1'b1) ftclk_next[FTCLK_READ_ADF0_PRE]   = 1'b1;
+                                           else if (ft_rd_data == 8'h01)   ftclk_next[FTCLK_READ_CHANA_PRE]  = 1'b1;
+                                           else if (ft_rd_data == 8'h02)   ftclk_next[FTCLK_READ_CHANB_PRE]  = 1'b1;
+                                           else if (ft_rd_data == 8'h03)   ftclk_next[FTCLK_READ_OUTPUT_PRE] = 1'b1;
                                            // TODO this should never occur and can bring the state
                                            // machine into a temporary bad state
                                            else                            ftclk_next[FTCLK_IDLE]            = 1'b1;
@@ -859,22 +859,22 @@ module top #(
       ftclk_state[FTCLK_READ_CHANA]:
         begin
            ftclk_ctr <= ftclk_ctr + 1'b1;
-           if (ftclk_ctr == {CTR_WIDTH{1'b0}}) use_chan_a_ftclk <= ft_data_io[0];
+           if (ftclk_ctr == {CTR_WIDTH{1'b0}}) use_chan_a_ftclk <= ft_rd_data[0];
         end
       ftclk_state[FTCLK_READ_CHANB]:
         begin
            ftclk_ctr <= ftclk_ctr + 1'b1;
-           if (ftclk_ctr == {CTR_WIDTH{1'b0}}) use_chan_b_ftclk <= ft_data_io[0];
+           if (ftclk_ctr == {CTR_WIDTH{1'b0}}) use_chan_b_ftclk <= ft_rd_data[0];
         end
       ftclk_state[FTCLK_READ_OUTPUT]:
         begin
            ftclk_ctr <= ftclk_ctr + 1'b1;
-           if (ftclk_ctr == {CTR_WIDTH{1'b0}}) out_ftclk <= ft_data_io[1:0];
+           if (ftclk_ctr == {CTR_WIDTH{1'b0}}) out_ftclk <= ft_rd_data[1:0];
         end
-      ftclk_state[FTCLK_READ_ADF0]: adf_val[7:0] <= ft_data_io;
-      ftclk_state[FTCLK_READ_ADF1]: adf_val[15:8] <= ft_data_io;
-      ftclk_state[FTCLK_READ_ADF2]: adf_val[23:16] <= ft_data_io;
-      ftclk_state[FTCLK_READ_ADF3]: adf_val[31:24] <= ft_data_io;
+      ftclk_state[FTCLK_READ_ADF0]: adf_val[7:0] <= ft_rd_data;
+      ftclk_state[FTCLK_READ_ADF1]: adf_val[15:8] <= ft_rd_data;
+      ftclk_state[FTCLK_READ_ADF2]: adf_val[23:16] <= ft_rd_data;
+      ftclk_state[FTCLK_READ_ADF3]: adf_val[31:24] <= ft_rd_data;
       endcase
    end
 
@@ -888,7 +888,7 @@ module top #(
    end
    // ================================================================
 
-   assign ft_data_io = ft_oe_n_o ? ft_wr_data : `USB_DATA_WIDTH'dz;
+   assign ft_data_io = ft_oe_n_o ? ft_wr_data : {`USB_DATA_WIDTH{1'bz}};
 
    assign ext1_io[0] = 1'b0;
    assign ext1_io[3] = ft_oe_n_o;
