@@ -1,9 +1,13 @@
-{ pkgs ? (import <nixpkgs> {})
+{ nixpkgs ? (import (builtins.fetchTarball {
+  name = "nixos-unstable-2020-07-06";
+  url = "https://github.com/nixos/nixpkgs/archive/44fd570d7344fb31d7dd92a42d6e1ef872b5f76b.tar.gz";
+  sha256 = "0qxajv68s08m0fsyf4q6dscdn5c4j98hnhz4cls3hhiqvzz86cd1";
+}) {})
 }:
 
 let
+  pkgs = nixpkgs;
   custompkgs = import <custompkgs> {};
-  # pkgs = (nixpkgs // custompkgs);
   pythonEnv = (pkgs.python3Full.buildEnv.override {
     extraLibs = (with pkgs.python3Packages; [
       matplotlib
@@ -13,7 +17,8 @@ let
       cocotb
       pyclipper
       simplejson
-      nmigen
+      # TODO fix
+      # nmigen
       cython
       # migen
     ]) ++ (with custompkgs; [
