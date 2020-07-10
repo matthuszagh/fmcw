@@ -9,7 +9,8 @@ from cdevice cimport (
     fmcw_close as c_fmcw_close,
     fmcw_start_acquisition as c_fmcw_start_acquisition,
     fmcw_read_sweep as c_fmcw_read_sweep,
-    fmcw_write as c_fmcw_write
+    fmcw_add_write as c_fmcw_add_write,
+    fmcw_write_pending as c_fmcw_write_pending,
 )
 
 def param_mask(length: int) -> int:
@@ -394,11 +395,13 @@ class Device:
         return c_fmcw_open()
 
     def _close(self):
-        self._send_stop()
+        self._set_stop()
+        self._write()
         c_fmcw_close()
 
     def start_acquisition(self, log_path: str, sample_bits: int, sweep_len: int):
-        self._send_start()
+        self._set_start()
+        self._write()
         if log_path is None:
             return c_fmcw_start_acquisition(NULL, sample_bits, sweep_len)
         return c_fmcw_start_acquisition(log_path, sample_bits, sweep_len)
@@ -421,23 +424,23 @@ class Device:
         if chan not in ["a", "b"]:
             raise ValueError("Channel must be set to A or B.")
         if chan == "a":
-            c_fmcw_write(1, 1)
-            c_fmcw_write(1, 1)
-            c_fmcw_write(2, 1)
-            c_fmcw_write(0, 1)
+            c_fmcw_add_write(1, 1)
+            c_fmcw_add_write(1, 1)
+            c_fmcw_add_write(2, 1)
+            c_fmcw_add_write(0, 1)
         else:
-            c_fmcw_write(1, 1)
-            c_fmcw_write(0, 1)
-            c_fmcw_write(2, 1)
-            c_fmcw_write(1, 1)
+            c_fmcw_add_write(1, 1)
+            c_fmcw_add_write(0, 1)
+            c_fmcw_add_write(2, 1)
+            c_fmcw_add_write(1, 1)
 
     def set_adf_regs(self):
         """
         """
         adf_regs = self.adf.registers()
         for i, reg in enumerate(adf_regs):
-            c_fmcw_write(i | 0x80, 1)
-            c_fmcw_write(reg, 4)
+            c_fmcw_add_write(i | 0x80, 1)
+            c_fmcw_add_write(reg, 4)
 
     def set_output(self, output: str):
         """
@@ -445,18 +448,23 @@ class Device:
         output = output.lower()
         if output not in ["raw", "fir", "window", "fft"]:
             raise ValueError("Output must be RAW, FIR, WINDOW, or FFT.")
-        c_fmcw_write(3, 1)
+        c_fmcw_add_write(3, 1)
         if output == "raw":
-            c_fmcw_write(0, 1)
+            c_fmcw_add_write(0, 1)
         elif output == "fir":
-            c_fmcw_write(1, 1)
+            c_fmcw_add_write(1, 1)
         elif output == "window":
-            c_fmcw_write(2, 1)
+            c_fmcw_add_write(2, 1)
         else:
-            c_fmcw_write(3, 1)
+            c_fmcw_add_write(3, 1)
 
-    def _send_start(self):
-        c_fmcw_write(0, 1)
+    def _write(self):
+        """
+        """
+        c_fmcw_write_pending()
 
-    def _send_stop(self):
-        c_fmcw_write(0xFF, 1)
+    def _set_start(self):
+        c_fmcw_add_write(0, 1)
+
+    def _set_stop(self):
+        c_fmcw_add_write(0xFF, 1)
