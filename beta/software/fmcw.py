@@ -1197,6 +1197,9 @@ class Proc:
             seq = proc_func[i](seq)
             i += 1
 
+        if self.indata == Data.FFT:
+            seq = seq[0 : spectrum_len(self.indata)]
+
         if self.output == Data.FFT:
             seq = db_arr(seq, 2 ** (ADC_BITS - 1), self.db_min, self.db_max)
         elif self.spectrum:
