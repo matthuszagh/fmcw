@@ -993,14 +993,14 @@ module top_tb;
    reg [7:0] ft245_rdata [0:NUM_RBYTES-1];
    initial begin
       // chan A
-      ft245_rdata[0]  = 8'h1;
-      ft245_rdata[1]  = 8'h0;
+      ft245_rdata[0]  = 8'h01;
+      ft245_rdata[1]  = 8'h00;
       // chan B
-      ft245_rdata[2]  = 8'h2;
-      ft245_rdata[3]  = 8'h1;
+      ft245_rdata[2]  = 8'h02;
+      ft245_rdata[3]  = 8'h01;
       // output
-      ft245_rdata[4]  = 8'h3;
-      ft245_rdata[5]  = 8'h0;
+      ft245_rdata[4]  = 8'h03;
+      ft245_rdata[5]  = 8'h01;
       // adf reg 0
       ft245_rdata[6]  = 8'h80;
       ft245_rdata[7]  = 8'h00;
@@ -1053,49 +1053,15 @@ module top_tb;
       ft245_rdata[46] = 8'h00;
    end
 
-   wire       ft245_rfifo_full;
-   wire       ft245_rfifo_empty;
    wire       ft_rd_n;
-   reg        ft_rd_n_last;
-   wire [7:0] ft245_rfifo_rdata;
-   reg        ft245_rfifo_wen;
-   reg [7:0]  ft245_rfifo_wdata;
-
-   wire       wclk = clk60;
-
-   async_fifo #(
-      .WIDTH (`USB_DATA_WIDTH ),
-      .DEPTH (1024            )
-   ) ft245_read_fifo (
-      .rst_n (1'b1              ),
-      .wclk  (wclk              ),
-      .rclk  (clk60             ),
-      .full  (ft245_rfifo_full  ),
-      .empty (ft245_rfifo_empty ),
-      .ren   (~ft_rd_n          ),
-      .rdata (ft245_rfifo_rdata ),
-      .wen   (ft245_rfifo_wen   ),
-      .wdata (ft245_rfifo_wdata )
-   );
-
    reg [$clog2(NUM_RBYTES)-1:0] ctr = 0;
-   always @(posedge wclk) begin
-      if (~ft245_rfifo_full & ctr < NUM_RBYTES) begin
-         ft245_rfifo_wdata <= ft245_rdata[ctr];
-         ctr               <= ctr + 1'b1;
-         ft245_rfifo_wen   <= 1'b1;
-      end else begin
-         ft245_rfifo_wen <= 1'b0;
-      end
-   end
-
    always @(posedge clk60) begin
-      ft_rd_n_last <= ft_rd_n;
+      if (~ft_oe_n & ~ft_rd_n) ctr <= ctr + 1'b1;
    end
 
    wire [`USB_DATA_WIDTH-1:0] ft_data_io;
    wire                       ft_oe_n;
-   assign ft_data_io = ft_oe_n ? 8'dz : (~ft_rd_n_last ? ft245_rfifo_rdata : 8'hxx);
+   assign ft_data_io = ft_oe_n ? 8'dz : (~ft_rd_n ? ft245_rdata[ctr] : 8'hxx);
    top #(
       .FIR_TAP_WIDTH     (16 ),
       .FIR_NORM_SHIFT    (4  ),
@@ -1107,7 +1073,7 @@ module top_tb;
       .clk80          (clk80                   ),
       .clk_i          (clk40                   ),
       .ft_data_io     (ft_data_io              ),
-      .ft_rxf_n_i     (ft245_rfifo_empty       ),
+      .ft_rxf_n_i     (~(ctr < NUM_RBYTES)     ),
       .ft_txe_n_i     (ft_txe_n                ),
       .ft_oe_n_o      (ft_oe_n                 ),
       .ft_rd_n_o      (ft_rd_n                 ),
