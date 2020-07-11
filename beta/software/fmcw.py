@@ -33,11 +33,10 @@ DECIMATE = 20
 DECIMATED_LEN = RAW_LEN // DECIMATE
 BYTE_BITS = 8
 ADC_BITS = 12
+FIR_BITS = 13
+WINDOW_BITS = 13
+FFT_BITS = FIR_BITS + 1 + np.ceil(np.log2(DECIMATED_LEN))
 HIST_RANGE = 1000
-# TODO might need to be set programmatically
-DECIMATE_BITS = 14
-WINDOW_BITS = 14
-FFT_BITS = 25
 # dB min and max if no other value is set
 DB_MIN = -120
 DB_MAX = 0
@@ -101,13 +100,15 @@ def spectrum_len(data: Data) -> int:
     return data_sweep_len(data) // 2 + 1
 
 
+# TODO: this should be in sync with the FPGA configuration. Currently,
+# bit widths need to set twice independently.
 def data_nbits(data: Data) -> int:
     """
     """
     if data == Data.RAW:
         return ADC_BITS
     if data == Data.DECIMATE:
-        return DECIMATE_BITS
+        return FIR_BITS
     if data == Data.WINDOW:
         return WINDOW_BITS
     if data == Data.FFT:
@@ -1200,11 +1201,12 @@ class Proc:
         if self.indata == Data.FFT:
             seq = seq[0 : spectrum_len(self.indata)]
 
+        nbits = data_nbits(self.indata)
         if self.output == Data.FFT:
-            seq = db_arr(seq, 2 ** (ADC_BITS - 1), self.db_min, self.db_max)
+            seq = db_arr(seq, 2 ** (nbits - 1), self.db_min, self.db_max)
         elif self.spectrum:
             seq = np.abs(np.fft.rfft(seq))
-            seq = db_arr(seq, 2 ** (ADC_BITS - 1), self.db_min, self.db_max)
+            seq = db_arr(seq, 2 ** (nbits - 1), self.db_min, self.db_max)
 
         return seq
 
