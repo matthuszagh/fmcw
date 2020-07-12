@@ -43,6 +43,22 @@ DB_MAX = 0
 DIST_MAX = 235
 
 
+def _reverse_bits(val: int, nbits: int) -> int:
+    """
+    """
+    i = 0
+    newval = 0
+    while i < nbits:
+        mask = 0x1 << i
+        newval |= ((mask & val) >> i) << (nbits - 1 - i)
+        i += 1
+
+    return newval
+
+
+BIT_REV_10ARR = np.array([_reverse_bits(i, 10) for i in range(1024)])
+
+
 HORIZONTAL_LINES = "----------\n"
 
 
@@ -186,6 +202,14 @@ def subdivide_range(rg: int, divider: int) -> List[Tuple[int, int]]:
 def db_arr(indata, maxval, db_min, db_max):
     arr = 20 * np.log10(indata / maxval)
     return np.clip(arr, db_min, db_max)
+
+
+def bit_reverse(indata: np.array) -> np.array:
+    """
+    """
+    if len(indata) != 1024:
+        raise ValueError("Currently only 1024 len supported.")
+    return indata[BIT_REV_10ARR]
 
 
 def dbin(fs: float, tsweep: float, nsample: int, bandwidth: float) -> float:
@@ -1199,6 +1223,7 @@ class Proc:
             i += 1
 
         if self.indata == Data.FFT:
+            seq = bit_reverse(seq)
             seq = seq[0 : spectrum_len(self.indata)]
 
         nbits = data_nbits(self.indata)
