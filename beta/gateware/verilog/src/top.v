@@ -354,15 +354,15 @@ module top #(
       .WIDTH (FIR_OUTPUT_WIDTH ),
       .DEPTH (FFT_N            )
    ) window_fifo (
-      .wclk         (clk_i                         ),
-      .rst_n        (~stop_ftclk                   ),
-      .wen          (window_fifo_wen & clk2_pos_en ),
-      .wdata        (window_out                    ),
-      .rclk         (clk_i                         ),
-      .ren          (window_fifo_ren               ),
-      .empty        (window_fifo_empty             ),
-      .full         (window_fifo_full              ),
-      .rdata        (window_fifo_rdata             )
+      .wclk  (clk_i                         ),
+      .rst_n (~stop_ftclk                   ),
+      .wen   (window_fifo_wen & clk2_pos_en ),
+      .wdata (window_out                    ),
+      .rclk  (clk_i                         ),
+      .ren   (window_fifo_ren               ),
+      .empty (window_fifo_empty             ),
+      .full  (window_fifo_full              ),
+      .rdata (window_fifo_rdata             )
    );
 
    reg [`USB_DATA_WIDTH-1:0]       ft_window_fifo_data;
@@ -386,7 +386,7 @@ module top #(
    ) fft (
       .clk        (clk_i                    ),
       .arst_n     (~stop_ftclk              ),
-      .en         (state[PROC_FFT]          ),
+      .en         (window_fifo_ren          ),
       .valid      (fft_valid                ),
       .data_ctr_o (fft_ctr                  ),
       .data_re_i  (window_fifo_rdata        ),
@@ -403,15 +403,15 @@ module top #(
       .WIDTH (2*FFT_OUTPUT_WIDTH ),
       .DEPTH (FFT_N              )
    ) fft_fifo (
-      .wclk         (clk_i                ),
-      .rst_n        (~stop_ftclk          ),
-      .wen          (fft_valid            ),
-      .wdata        ({fft_re_o, fft_im_o} ),
-      .rclk         (clk10                ),
-      .ren          (fft_fifo_ren         ),
-      .empty        (fft_fifo_empty       ),
-      .full         (fft_fifo_full        ),
-      .rdata        (fft_fifo_rdata       )
+      .wclk  (clk_i                ),
+      .rst_n (~stop_ftclk          ),
+      .wen   (fft_valid            ),
+      .wdata ({fft_re_o, fft_im_o} ),
+      .rclk  (clk10                ),
+      .ren   (fft_fifo_ren         ),
+      .empty (fft_fifo_empty       ),
+      .full  (fft_fifo_full        ),
+      .rdata (fft_fifo_rdata       )
    );
 
    // TODO this is not properly parameterized. Currently, we assume
@@ -583,12 +583,17 @@ module top #(
       window_fifo_ren <= 1'b0;
       fir_fifo_ren    <= 1'b0;
       window_fifo_ren <= 1'b0;
-      fft_fifo_ren    <= 1'b0;
 
       case (1'b1)
-      next[SAMPLE]   : if (out == RAW) ft_fifo_wen     <= 1'b1;
-      next[PROC_FFT] : if (out == FFT) window_fifo_ren <= 1'b1;
-      next[TX_LOAD]  :
+      next[SAMPLE]: if (out == RAW) ft_fifo_wen <= 1'b1;
+      next[PROC_FFT]:
+        begin
+           if (out == FFT) begin
+              if (~window_fifo_empty) window_fifo_ren <= 1'b1;
+              else                    window_fifo_ren <= 1'b0;
+           end
+        end
+      next[TX_LOAD]:
         begin
            if (out != RAW) begin
               case (out)
@@ -602,14 +607,21 @@ module top #(
                    window_fifo_ren <= 1'b1;
                    if (window_fifo_ren) ft_fifo_wen <= 1'b1;
                 end
-              FFT:
-                begin
-                   fft_fifo_ren <= 1'b1;
-                   if (fft_fifo_ren) ft_fifo_wen <= 1'b1;
-                end
+              FFT: if (fft_fifo_ren & (ft_fifo_wen | clk80_10_phase_ctr == 3'd7)) ft_fifo_wen <= 1'b1;
               endcase
            end
         end
+      next[TX]:
+        begin
+           if (out == FFT & fft_fifo_ren & clk80_10_phase_ctr < 3'd7) ft_fifo_wen <= 1'b1;
+        end
+      endcase
+   end
+
+   always @(posedge clk10) begin
+      fft_fifo_ren <= 1'b0;
+      case (1'b1)
+      next[TX_LOAD]: if (out == FFT) fft_fifo_ren <= 1'b1;
       endcase
    end
    // ================================================================
@@ -618,7 +630,7 @@ module top #(
    reg                             ft_fifo_ren = 1'b0;
    wire [`USB_DATA_WIDTH-1:0]      ft_fifo_rdata;
 
-   localparam FLAG_WIDTH = $clog2(6);
+   localparam FLAG_WIDTH = $clog2(7);
    reg [FLAG_WIDTH-1:0] flag_ctr = {FLAG_WIDTH{1'b0}};
    reg [FLAG_WIDTH-1:0] max_flag_ctr;
 
@@ -627,7 +639,7 @@ module top #(
       RAW    : max_flag_ctr = 1;
       FIR    : max_flag_ctr = 1;
       WINDOW : max_flag_ctr = 1;
-      FFT    : max_flag_ctr = 6;
+      FFT    : max_flag_ctr = 7;
       endcase
    end
 
@@ -635,14 +647,14 @@ module top #(
       .WIDTH (`USB_DATA_WIDTH ),
       .DEPTH (FT_FIFO_DEPTH   )
    ) ft_fifo (
-      .wclk         (clk80         ),
-      .rst_n        (~stop_ftclk   ),
-      .wen          (ft_fifo_wen   ),
-      .wdata        (ft_fifo_wdata ),
-      .rclk         (ft_clkout_i   ),
-      .ren          (ft_fifo_ren   ),
-      .empty        (ft_fifo_empty ),
-      .rdata        (ft_fifo_rdata )
+      .wclk  (clk80         ),
+      .rst_n (~stop_ftclk   ),
+      .wen   (ft_fifo_wen   ),
+      .wdata (ft_fifo_wdata ),
+      .rclk  (ft_clkout_i   ),
+      .ren   (ft_fifo_ren   ),
+      .empty (ft_fifo_empty ),
+      .rdata (ft_fifo_rdata )
    );
 
    // ==================== FT clock state machine ====================
@@ -854,7 +866,11 @@ module top #(
         begin
            ft_wr_data <= START_FLAG;
            ft_wr_n_o  <= 1'b0;
-           if (flag_ctr == max_flag_ctr - 1'b1) ft_fifo_ren <= ~ft_txe_last;
+           if (out == FFT) begin
+              if (flag_ctr == max_flag_ctr - 2'd2 | ft_fifo_ren) ft_fifo_ren <= ~ft_txe_last;
+              else                                               ft_fifo_ren <= 1'b0;
+           end
+           else ft_fifo_ren <= ~ft_txe_last;
         end
       ftclk_next[FTCLK_TX_DATA] & ftclk_state[FTCLK_TX_TXE]:
         begin
@@ -1040,7 +1056,7 @@ module top_tb;
       ft245_rdata[3]  = 8'h01;
       // output
       ft245_rdata[4]  = 8'h03;
-      ft245_rdata[5]  = 8'h01;
+      ft245_rdata[5]  = 8'h03;
       // adf reg 0
       ft245_rdata[6]  = 8'h80;
       ft245_rdata[7]  = 8'h00;

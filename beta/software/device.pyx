@@ -399,12 +399,12 @@ class Device:
         self._write()
         c_fmcw_close()
 
-    def start_acquisition(self, log_path: str, sample_bits: int, sweep_len: int):
+    def start_acquisition(self, log_path: str, sample_bits: int, sweep_len: int, fft: bint):
         self._set_start()
         self._write()
         if log_path is None:
-            return c_fmcw_start_acquisition(NULL, sample_bits, sweep_len)
-        return c_fmcw_start_acquisition(log_path, sample_bits, sweep_len)
+            return c_fmcw_start_acquisition(NULL, sample_bits, sweep_len, fft)
+        return c_fmcw_start_acquisition(log_path, sample_bits, sweep_len, fft)
 
     def read_sweep(self, sweep_len: int):
         arr = np.empty(sweep_len, dtype=np.int32)

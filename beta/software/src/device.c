@@ -33,6 +33,7 @@ struct ConsumerData *cons_data = NULL;
 static int _sample_bits;
 static int _sample_bytes;
 static int _nflags;
+static int _fft;
 static int _sweep_len;
 static int _start_flags;
 static int _stop_flags;
@@ -42,10 +43,14 @@ static FILE *_log_file = NULL;
 static sample_t *sweep = NULL;
 static sample_t _last_sample;
 static int _byte_idx;
-static uint _uval;
+static uint64_t _uval;
 static int _cancel;
 static struct Vector *write_data = NULL;
 
+/**
+ * Nearest greater or equal power of 2.
+ */
+static int pow2ceil(int val);
 /**
  * Asynchronous read callback.
  */
@@ -77,7 +82,7 @@ void fmcw_close();
  *
  * Returns TRUE on success and FALSE on failure.
  */
-int fmcw_start_acquisition(char *log_path, int sample_bits, int sweep_len);
+int fmcw_start_acquisition(char *log_path, int sample_bits, int sweep_len, int fft);
 /**
  * Retrieves the next sweep if one is available, or NULL otherwise.
  */
@@ -99,7 +104,7 @@ static int inc_check_idx(int read_idx, int length);
 static int read_stop_seq(uint8_t *buffer, int length, int read_idx);
 static int read_sample_seq(uint8_t *buffer, int length, int read_idx);
 static int read_start_seq(uint8_t *buffer, int length, int read_idx);
-static sample_t sample_val(uint uval);
+static sample_t sample_val(uint64_t uval);
 
 int fmcw_open()
 {
@@ -188,10 +193,11 @@ void fmcw_close()
 	sweep = NULL;
 }
 
-int fmcw_start_acquisition(char *log_path, int sample_bits, int sweep_len)
+int fmcw_start_acquisition(char *log_path, int sample_bits, int sweep_len, int fft)
 {
 	mutex = malloc(sizeof(pthread_mutex_t));
 	pthread_mutex_init(mutex, NULL);
+	_fft = fft;
 	_sample_bits = sample_bits;
 	_sample_bytes = sample_bytes(_sample_bits);
 	_nflags = num_flags(_sample_bits);
@@ -331,8 +337,8 @@ int read_sample_seq(uint8_t *buffer, int length, int read_idx)
 {
 	while (_sweep_idx < _sweep_len) {
 		while (_byte_idx < _sample_bytes) {
-			_uval |= buffer[read_idx]
-				 << (BYTE_BITS * (_sample_bytes - 1 - _byte_idx++));
+			_uval |= ((uint64_t)buffer[read_idx]
+				  << (BYTE_BITS * (_sample_bytes - 1 - _byte_idx++)));
 			if (!(read_idx = inc_check_idx(read_idx, length))) {
 				return FALSE;
 			}
@@ -378,21 +384,51 @@ int inc_check_idx(int read_idx, int length)
 	return read_idx;
 }
 
-int num_flags(int sample_bits) { return sample_bits / BYTE_BITS + 1; }
+int num_flags(int sample_bits)
+{
+	if (_fft) {
+		sample_bits *= 2;
+	}
+	int bytes = sample_bits / BYTE_BITS + 1;
+	return pow2ceil(bytes);
+}
+
+int pow2ceil(int val)
+{
+	int pow2val = 1;
+	while (val > pow2val) {
+		pow2val *= 2;
+	}
+	return pow2val;
+}
 
 int sample_bytes(int sample_bits)
 {
+	if (_fft) {
+		sample_bits *= 2;
+	}
 	int bytes = sample_bits / BYTE_BITS;
 	if (sample_bits % BYTE_BITS != 0) {
 		++bytes;
 	}
-	return bytes;
+	return pow2ceil(bytes);
 }
 
-sample_t sample_val(uint uval)
+sample_t sample_val(uint64_t uval)
 {
-	uint mask = 0x1 << (_sample_bits - 1);
-	return (sample_t)(-(uval & mask) + (uval & ~mask));
+	uint64_t mask = 0x1 << (_sample_bits - 1);
+	if (!_fft) {
+		return (sample_t)(-(uval & mask) + (uval & ~mask));
+	}
+	uint64_t lumask = (0x1 << _sample_bits) - 1;
+	uint64_t luval = uval & lumask;
+	sample_t lval = (sample_t)(-(luval & mask) + (luval & ~mask));
+
+	uint64_t uumask = lumask << _sample_bits;
+	uint64_t uuval = (uval & uumask) >> _sample_bits;
+	sample_t upval = (sample_t)(-(uuval & mask) + (uuval & ~mask));
+
+	return (sample_t)sqrt(pow(lval, 2) + pow(upval, 2));
 }
 
 double tsec(struct timespec tspec) { return tspec.tv_sec + NS_TO_S * tspec.tv_nsec; }

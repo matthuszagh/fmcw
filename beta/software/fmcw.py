@@ -35,7 +35,7 @@ BYTE_BITS = 8
 ADC_BITS = 12
 FIR_BITS = 13
 WINDOW_BITS = 13
-FFT_BITS = FIR_BITS + 1 + np.ceil(np.log2(DECIMATED_LEN))
+FFT_BITS = FIR_BITS + 1 + int(np.ceil(np.log2(DECIMATED_LEN)))
 HIST_RANGE = 1000
 # dB min and max if no other value is set
 DB_MIN = -120
@@ -1203,7 +1203,8 @@ class Proc:
 
         nbits = data_nbits(self.indata)
         if self.output == Data.FFT:
-            seq = db_arr(seq, 2 ** (nbits - 1), self.db_min, self.db_max)
+            # seq = db_arr(seq, 2 ** (nbits - 1), self.db_min, self.db_max)
+            seq = db_arr(seq, 2 ** (13 - 1), self.db_min, self.db_max)
         elif self.spectrum:
             seq = np.abs(np.fft.rfft(seq))
             seq = db_arr(seq, 2 ** (nbits - 1), self.db_min, self.db_max)
@@ -1344,7 +1345,12 @@ class Shell:
             )
             radar.set_adf_regs()
 
-            radar.start_acquisition(log_file, sample_bits, sweep_len)
+            radar.start_acquisition(
+                log_file,
+                sample_bits,
+                sweep_len,
+                self.configuration._fpga_output == Data.FFT,
+            )
             while current_time < end_time:
                 sweep = radar.read_sweep(sweep_len)
                 if sweep is not None:
