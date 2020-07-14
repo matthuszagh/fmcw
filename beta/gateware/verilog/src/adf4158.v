@@ -215,7 +215,7 @@ module adf4158 #(
    output reg        active = 1'b0,
    output reg        le = 1'b1,
    output reg        ramp_start = 1'b0,
-   output reg        ce = 1'b0,
+   output reg        ce = 1'b1,
    output reg        txdata = 1'b0,
    output reg        data = 1'b0
 );
@@ -238,6 +238,16 @@ module adf4158 #(
    reg [31:0]        r [0:9];
    reg               ramp_en = 1'b0;
    always @(posedge clk) begin
+      r[0][31] <= ramp_en;
+
+      r[6][31:24] <= r[5][31:24];
+      r[6][23]    <= 1'b0;
+      r[6][22:0]  <= r[5][22:0];
+
+      r[8][31:24] <= r[7][31:24];
+      r[8][23]    <= 1'b0;
+      r[8][22:0]  <= r[7][22:0];
+
       if (load_reg) begin
          case (reg_num)
          3'd0: r[0][30:0] <= reg_val[30:0];
@@ -261,29 +271,6 @@ module adf4158 #(
          endcase
       end
    end
-
-   always @(*) begin
-      r[0][31] = ramp_en;
-
-      r[6]     = r[5];
-      r[6][23] = 1'b0;
-
-      r[8]     = r[7];
-      r[8][23] = 1'b0;
-   end
-
-   // initial begin
-   //    r[0] = {RAMP_EN_INIT, MUXOUT, INT, FRAC[24:13], 3'd0};
-   //    r[1] = {4'd0, FRAC[12:0], 12'd0, 3'd1};
-   //    r[2] = {3'd0, CSR_EN, CP_CURRENT, 1'd0, PRESCALER, RDIV2, DOUBLER, R_COUNTER, CLK1_DIV, 3'd2};
-   //    r[3] = {16'd0, N_SEL, SD_RESET, 2'd0, RAMP_MODE, PSK_EN, FSK_EN, LDP, PD, PWR_DWN_INIT, CP3, COUNTER_RST_INIT, 3'd3};
-   //    r[4] = {LE_SEL, DELTA_SIGMA, 1'd0, BLEED_CURRENT, READBACK_MUXOUT, CLK_DIV_MODE, CLK2_DIV, 4'd0, 3'd4};
-   //    r[5] = {2'd0, TX_RAMP_CLK, PAR_RAMP, INTERRUPT, FSK_RAMP_EN, RAMP2_EN, 1'd1, DEV_OFFSET, DEV, 3'd5}; /* reg 5 part 2 */
-   //    r[6] = {2'd0, TX_RAMP_CLK, PAR_RAMP, INTERRUPT, FSK_RAMP_EN, RAMP2_EN, 1'd0, DEV_OFFSET, DEV, 3'd5}; /* reg 5 part 1 */
-   //    r[7] = {8'd0, 1'd1, RAMP_STEPS, 3'd6}; /* reg 6 part 2 */
-   //    r[8] = {8'd0, 1'd0, RAMP_STEPS, 3'd6}; /* reg 6 part 1 */
-   //    r[9] = {13'd0, RAMP_DEL_FST_LCK, RAMP_DELAY, DELAY_CLK_SEL, DELAY_START_EN, DELAY_STEPS, 3'd7}; /* reg 7 */
-   // end
 
    reg muxout_last = 1'b0;
    always @(posedge clk) begin
@@ -326,7 +313,7 @@ module adf4158 #(
         else                                   next[CONFIG_DAT] = 1'b1;
       state[CONFIG_DAT] : if (bit_ctr == 5'd0) next[CONFIG_LE]  = 1'b1;
                           else                 next[CONFIG_DAT] = 1'b1;
-      state[ACTIVE]     : if (~srst_n)         next[CONFIG_LE]  = 1'b1;
+      state[ACTIVE]     : if (~srst_n)         next[INACTIVE]   = 1'b1;
                           else                 next[ACTIVE]     = 1'b1;
       default           :                      next[INACTIVE]   = 1'b1;
       endcase
