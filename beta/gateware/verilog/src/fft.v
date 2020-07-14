@@ -24,10 +24,10 @@
 
 module fft #(
    parameter N              = 1024, /* FFT length */
-   parameter INPUT_WIDTH    = 14,
+   parameter INPUT_WIDTH    = 13,
    parameter TWIDDLE_WIDTH  = 10,
    // +1 comes from complex multiply, which is really 2 multiplies.
-   parameter OUTPUT_WIDTH   = 25   /* ceil(log_2(N)) + INPUT_WIDTH + 1 */
+   parameter OUTPUT_WIDTH   = 24   /* $clog2(N) + INPUT_WIDTH + 1 */
 ) (
    input wire                           clk,
    input wire                           arst_n,

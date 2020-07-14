@@ -335,13 +335,13 @@ module top #(
       .DATA_WIDTH  (FIR_OUTPUT_WIDTH ),
       .COEFF_WIDTH (FIR_TAP_WIDTH    )
    ) window (
-      .clk    (clk_i          ),
-      .arst_n (~stop_ftclk    ),
-      .en     (fir_dvalid     ),
-      .clk_en (clk2_pos_en    ),
-      .di     (fir_out        ),
-      .dvalid (window_dvalid  ),
-      .dout   (window_out     )
+      .clk    (clk_i         ),
+      .arst_n (~stop_ftclk   ),
+      .en     (fir_dvalid    ),
+      .clk_en (clk2_pos_en   ),
+      .di     (fir_out       ),
+      .dvalid (window_dvalid ),
+      .dout   (window_out    )
    );
 
    wire                            window_fifo_empty;
@@ -582,7 +582,6 @@ module top #(
       ft_fifo_wen     <= 1'b0;
       window_fifo_ren <= 1'b0;
       fir_fifo_ren    <= 1'b0;
-      window_fifo_ren <= 1'b0;
 
       case (1'b1)
       next[SAMPLE]: if (out == RAW) ft_fifo_wen <= 1'b1;
@@ -951,7 +950,7 @@ module top #(
    assign ft_data_io = ft_oe_n_o ? ft_wr_data : {`USB_DATA_WIDTH{1'bz}};
 
    assign ext1_io[0] = 1'b0;
-   assign ext1_io[3] = fir_fifo_empty;
+   assign ext1_io[3] = adf_muxout_i;
    assign ext1_io[1] = 1'b0;
    assign ext1_io[4] = window_fifo_ren;
    assign ext1_io[2] = 1'b0;

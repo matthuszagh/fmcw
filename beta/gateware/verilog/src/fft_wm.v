@@ -7,7 +7,7 @@
 `include "pll_sync_ctr.v"
 
 module fft_wm #(
-   parameter WIDTH         = 25,
+   parameter WIDTH         = 24,
    parameter TWIDDLE_WIDTH = 10,
    parameter N             = 1024
 ) (
@@ -51,10 +51,10 @@ module fft_wm #(
    reg signed [WIDTH+TWIDDLE_WIDTH:0] kar_i;
 
    localparam XSR_LEN = 2;
-   reg signed [WIDTH-1:0]             x_re_sr [0:XSR_LEN-1];
-   reg signed [WIDTH-1:0]             x_im_sr [0:XSR_LEN-1];
-   reg signed [WIDTH-1:0]             w_re_sr [0:XSR_LEN-2];
-   reg signed [WIDTH-1:0]             w_im_sr [0:XSR_LEN-2];
+   reg signed [WIDTH-1:0]         x_re_sr [0:XSR_LEN-1];
+   reg signed [WIDTH-1:0]         x_im_sr [0:XSR_LEN-1];
+   reg signed [TWIDDLE_WIDTH-1:0] w_re_sr [0:XSR_LEN-2];
+   reg signed [TWIDDLE_WIDTH-1:0] w_im_sr [0:XSR_LEN-2];
    localparam LATENCY = 4;
    integer i;
 
@@ -117,12 +117,12 @@ module fft_wm #(
 
       // safe to ignore the msb since the greatest possible
       // absolute twiddle value is 2^(TWIDDLE_WIDTH-1)
-      z_re_o   <= trunc_to_out(round_convergent(drop_msb_bits(kar_r)));
-      z_im_o   <= trunc_to_out(round_convergent(drop_msb_bits(kar_i)));
+      z_re_o <= trunc_to_out(round_convergent(drop_msb_bits(kar_r)));
+      z_im_o <= trunc_to_out(round_convergent(drop_msb_bits(kar_i)));
 
       // simple truncation for comparison
-      // z_re_o   <= kar_r[WIDTH+TWIDDLE_WIDTH-2:TWIDDLE_WIDTH-1];
-      // z_im_o   <= kar_i[WIDTH+TWIDDLE_WIDTH-2:TWIDDLE_WIDTH-1];
+      // z_re_o <= kar_r[WIDTH+TWIDDLE_WIDTH-2:TWIDDLE_WIDTH-1];
+      // z_im_o <= kar_i[WIDTH+TWIDDLE_WIDTH-2:TWIDDLE_WIDTH-1];
    end
    assign ctr_o = ctr_shift_reg[LATENCY-1];
 
