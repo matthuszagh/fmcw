@@ -75,8 +75,8 @@ module window #(
 
    always @(posedge clk) begin
       if (clk_en) begin
-         internal         <= di * $signed({1'b0, coeffs[ctr]});
-         dout             <= trunc_to_out(round_convergent(internal));
+         internal <= di * $signed({1'b0, coeffs[ctr]});
+         dout     <= trunc_to_out(round_convergent(internal));
          if (ctr == {$clog2(N){1'b0}}) begin
             if (en) ctr <= {{$clog2(N)-1{1'b0}}, 1'b1};
          end else begin
