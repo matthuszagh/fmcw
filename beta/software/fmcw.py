@@ -1210,6 +1210,8 @@ class Proc:
             new_seq = np.subtract(seq, self.last_seq)
             self.last_seq = np.copy(seq)
             seq = new_seq
+            if self.indata == Data.FFT:
+                seq = np.abs(seq)
 
         i = self.indata.value
         proc_func = [
