@@ -59,7 +59,7 @@ module fft_bfii #(
    end
 
    // TODO see note in bfi
-   integer                       i;
+   integer i;
    generate
       if (SHIFT_REG_LEN > 32) begin
          shift_reg #(
@@ -80,8 +80,8 @@ module fft_bfii #(
             .data_o (sr_im  )
          );
       end else begin
-         reg signed [WIDTH-1:0]        sr_re_reg [0:SHIFT_REG_LEN-1];
-         reg signed [WIDTH-1:0]        sr_im_reg [0:SHIFT_REG_LEN-1];
+         reg signed [WIDTH-1:0] sr_re_reg [0:SHIFT_REG_LEN-1];
+         reg signed [WIDTH-1:0] sr_im_reg [0:SHIFT_REG_LEN-1];
 
          always @(posedge clk) begin
             sr_re_reg[0] <= zsr_re;
@@ -91,12 +91,12 @@ module fft_bfii #(
                sr_im_reg[i] <= sr_im_reg[i-1];
             end
          end
-         assign sr_re     = sr_re_reg[SHIFT_REG_LEN-1];
-         assign sr_im     = sr_im_reg[SHIFT_REG_LEN-1];
+         assign sr_re = sr_re_reg[SHIFT_REG_LEN-1];
+         assign sr_im = sr_im_reg[SHIFT_REG_LEN-1];
       end
    endgenerate
 
-   reg                           carry [0:SHIFT_REG_LEN-1];
+   reg carry [0:SHIFT_REG_LEN-1];
    initial begin
       for (i=0; i<SHIFT_REG_LEN; i=i+1) carry[i] <= 1'b0;
    end
