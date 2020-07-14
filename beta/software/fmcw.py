@@ -1233,7 +1233,7 @@ class Proc:
             # seq = db_arr(seq, 2 ** (nbits - 1), self.db_min, self.db_max)
             seq = db_arr(seq, 2 ** (13 - 1), self.db_min, self.db_max)
         elif self.spectrum:
-            seq = np.abs(np.fft.rfft(seq))
+            seq = self.perform_fft(seq)
             seq = db_arr(seq, 2 ** (nbits - 1), self.db_min, self.db_max)
 
         return seq
@@ -1261,7 +1261,6 @@ class Proc:
         """
         fft = np.fft.rfft(seq)
         return np.abs(fft)
-        # return np.divide(np.abs(fft), fft.shape[0])
 
 
 class Shell:
