@@ -200,6 +200,8 @@ def subdivide_range(rg: int, divider: int) -> List[Tuple[int, int]]:
 
 
 def db_arr(indata, maxval, db_min, db_max):
+    # log(0) is undefined. Replace with the smallest value (1).
+    indata = np.where(indata == 0, 1, indata)
     arr = 20 * np.log10(indata / maxval)
     return np.clip(arr, db_min, db_max)
 
