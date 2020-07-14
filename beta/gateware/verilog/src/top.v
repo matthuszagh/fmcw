@@ -18,10 +18,11 @@
 
 module top #(
    // TODO these are not properly parameterized
-   parameter FIR_TAP_WIDTH     = 16,
-   parameter FIR_NORM_SHIFT    = 4,
-   parameter FIR_OUTPUT_WIDTH  = 13,
-   parameter FFT_TWIDDLE_WIDTH = 10
+   parameter FIR_TAP_WIDTH      = 16,
+   parameter FIR_NORM_SHIFT     = 4,
+   parameter FIR_OUTPUT_WIDTH   = 13,
+   parameter WINDOW_COEFF_WIDTH = 16,
+   parameter FFT_TWIDDLE_WIDTH  = 10
 ) (
 `ifdef TOP_SIMULATE
    input wire clk10,
@@ -331,9 +332,9 @@ module top #(
    wire                               window_dvalid;
    wire signed [FIR_OUTPUT_WIDTH-1:0] window_out;
    window #(
-      .N           (FFT_N            ),
-      .DATA_WIDTH  (FIR_OUTPUT_WIDTH ),
-      .COEFF_WIDTH (FIR_TAP_WIDTH    )
+      .N           (FFT_N              ),
+      .DATA_WIDTH  (FIR_OUTPUT_WIDTH   ),
+      .COEFF_WIDTH (WINDOW_COEFF_WIDTH )
    ) window (
       .clk    (clk_i         ),
       .arst_n (~stop_ftclk   ),
