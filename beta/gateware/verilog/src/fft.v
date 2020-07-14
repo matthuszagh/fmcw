@@ -374,7 +374,7 @@ module fft #(
             .z_re_o    (bf3_re        ),
             .z_im_o    (bf3_im        )
          );
-      end // if (N > 3)
+      end
    endgenerate
 
    // stage 4
@@ -421,7 +421,7 @@ module fft #(
             .z_im_o    (bf4_im     )
          );
          /* verilator lint_on PINMISSING */
-      end // if (N > 4)
+      end
    endgenerate
 
    wire signed [OUTPUT_WIDTH-1:0] data_bf_last_re;
