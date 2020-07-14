@@ -630,7 +630,7 @@ module top #(
    reg                             ft_fifo_ren = 1'b0;
    wire [`USB_DATA_WIDTH-1:0]      ft_fifo_rdata;
 
-   localparam FLAG_WIDTH = $clog2(7);
+   localparam FLAG_WIDTH = $clog2(8);
    reg [FLAG_WIDTH-1:0] flag_ctr = {FLAG_WIDTH{1'b0}};
    reg [FLAG_WIDTH-1:0] max_flag_ctr;
 
