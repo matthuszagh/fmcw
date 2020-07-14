@@ -19,12 +19,20 @@ class FFTTB:
     R22 SDF FFT testbench class.
     """
 
-    def __init__(self, dut, num_samples, input_width):
+    def __init__(self, dut, num_samples, input_width, use_max: bool = False):
         clk = Clock(dut.clk, 40)
         self.clk = clk
         self.dut = dut
-        self.re_inputs = random_samples(input_width, num_samples)
-        self.im_inputs = random_samples(input_width, num_samples)
+        if use_max:
+            self.re_inputs = np.array(
+                [2 ** (input_width - 1) - 1 for _ in range(num_samples)]
+            )
+            self.im_inputs = np.array(
+                [2 ** (input_width - 1) - 1 for _ in range(num_samples)]
+            )
+        else:
+            self.re_inputs = random_samples(input_width, num_samples)
+            self.im_inputs = random_samples(input_width, num_samples)
         self.outputs = np.fft.fft(self.re_inputs + 1j * self.im_inputs)
 
     @cocotb.coroutine
@@ -94,8 +102,8 @@ async def check_sequence(dut):
     Compare the hdl FFT output with numpy, to within some specified tolerance.
     """
     num_samples = 1024
-    input_width = 14
-    fft = FFTTB(dut, num_samples, input_width)
+    input_width = 13
+    fft = FFTTB(dut, num_samples, input_width, use_max=False)
     await fft.setup()
     cocotb.fork(fft.write_inputs())
 
