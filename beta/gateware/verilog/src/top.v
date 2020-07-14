@@ -348,7 +348,7 @@ module top #(
    wire                            window_fifo_full;
    reg                             window_fifo_ren = 1'b0;
    wire [FIR_OUTPUT_WIDTH-1:0]     window_fifo_rdata;
-   wire                            window_fifo_wen = window_dvalid & (state[SAMPLE] | state[PROC_FILTER]);
+   wire                            window_fifo_wen = window_dvalid;
    // TODO: use a synchronous fifo
    async_fifo #(
       .WIDTH (FIR_OUTPUT_WIDTH ),
