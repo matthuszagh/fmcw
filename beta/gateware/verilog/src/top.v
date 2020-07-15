@@ -106,6 +106,7 @@ module top #(
    wire clk10;
    wire pll_lock;
    wire pll_fb;
+   /* verilator lint_off DECLFILENAME */
    PLLE2_BASE #(
       .CLKFBOUT_MULT  (24 ),
       .DIVCLK_DIVIDE  (1  ),
@@ -123,6 +124,7 @@ module top #(
       .CLKFBOUT (pll_fb     ),
       .CLKFBIN  (pll_fb     )
    );
+   /* verilator lint_on DECLFILENAME */
 `else
    reg pll_lock = 1'b1;
 `endif
@@ -156,6 +158,7 @@ module top #(
       .ctr     (clk80_10_phase_ctr )
    );
 
+   /* verilator lint_off PINMISSING */
    wire clk2_pos_en;
    clk_enable #(
       .DIVIDE (DECIMATE)
@@ -163,6 +166,7 @@ module top #(
       .clk_base (clk_i       ),
       .clk_en   (clk2_pos_en )
    );
+   /* verilator lint_on PINMISSING */
 
    reg start_ftclk = 1'b0;
    reg stop_ftclk  = 1'b0;
@@ -191,6 +195,7 @@ module top #(
    reg [31:0]  adf_val;
    wire [2:0]  adf_reg_sysclk;
    wire [31:0] adf_val_sysclk;
+   /* verilator lint_off PINMISSING */
    async_fifo #(
       .WIDTH (35 ),
       .DEPTH (8  )
@@ -204,6 +209,7 @@ module top #(
       .empty        (adf_reg_fifo_empty               ),
       .rdata        ({adf_reg_sysclk, adf_val_sysclk} )
    );
+   /* verilator lint_on PINMISSING */
    always @(posedge clk_i) begin
       if (~adf_reg_fifo_empty) adf_reg_fifo_ren <= 1'b1;
       else                     adf_reg_fifo_ren <= 1'b0;
@@ -306,6 +312,7 @@ module top #(
    wire [FIR_OUTPUT_WIDTH-1:0] fir_fifo_rdata;
    wire                        fir_fifo_wen = fir_dvalid;
    // TODO: use a synchronous fifo
+   /* verilator lint_off PINMISSING */
    async_fifo #(
       .WIDTH (FIR_OUTPUT_WIDTH ),
       .DEPTH (FFT_N            )
@@ -319,6 +326,7 @@ module top #(
       .empty        (fir_fifo_empty             ),
       .rdata        (fir_fifo_rdata             )
    );
+   /* verilator lint_on PINMISSING */
 
    localparam FIR_REM_WIDTH = 16 - FIR_OUTPUT_WIDTH;
    reg [`USB_DATA_WIDTH-1:0]       ft_fir_fifo_data;
@@ -351,6 +359,7 @@ module top #(
    wire [FIR_OUTPUT_WIDTH-1:0]     window_fifo_rdata;
    wire                            window_fifo_wen = window_dvalid;
    // TODO: use a synchronous fifo
+   /* verilator lint_off PINMISSING */
    async_fifo #(
       .WIDTH (FIR_OUTPUT_WIDTH ),
       .DEPTH (FFT_N            )
@@ -365,6 +374,7 @@ module top #(
       .full  (window_fifo_full              ),
       .rdata (window_fifo_rdata             )
    );
+   /* verilator lint_on PINMISSING */
 
    reg [`USB_DATA_WIDTH-1:0]       ft_window_fifo_data;
    always @(*) begin
@@ -400,6 +410,7 @@ module top #(
    wire                            fft_fifo_full;
    reg                             fft_fifo_ren = 1'b0;
    wire [2*FFT_OUTPUT_WIDTH-1:0]   fft_fifo_rdata;
+   /* verilator lint_off PINMISSING */
    async_fifo #(
       .WIDTH (2*FFT_OUTPUT_WIDTH ),
       .DEPTH (FFT_N              )
@@ -414,6 +425,7 @@ module top #(
       .full  (fft_fifo_full        ),
       .rdata (fft_fifo_rdata       )
    );
+   /* verilator lint_on PINMISSING */
 
    // TODO this is not properly parameterized. Currently, we assume
    // FIR_OUTPUT_WIDTH = 13, which gives FFT_OUTPUT_WIDTH = 24.
@@ -643,6 +655,7 @@ module top #(
       endcase
    end
 
+   /* verilator lint_off PINMISSING */
    async_fifo #(
       .WIDTH (`USB_DATA_WIDTH ),
       .DEPTH (FT_FIFO_DEPTH   )
@@ -656,6 +669,7 @@ module top #(
       .empty (ft_fifo_empty ),
       .rdata (ft_fifo_rdata )
    );
+   /* verilator lint_on PINMISSING */
 
    // ==================== FT clock state machine ====================
    localparam FTCLK_NUM_STATES = 29;
