@@ -6,6 +6,7 @@ Unit tests for R2^2 SDF FFT.
 import numpy as np
 
 import bit
+from fft import FFT
 from cocotb_helpers import Clock, MultiClock, random_samples
 
 import cocotb
@@ -19,10 +20,21 @@ class FFTTB:
     R22 SDF FFT testbench class.
     """
 
-    def __init__(self, dut, num_samples, input_width, use_max: bool = False):
+    def __init__(
+        self,
+        dut,
+        num_samples,
+        input_width,
+        twiddle_width,
+        discretize_twiddles: bool = False,
+        use_max: bool = False,
+    ):
         clk = Clock(dut.clk, 40)
         self.clk = clk
         self.dut = dut
+        self.twiddle_width = twiddle_width
+        self.discretize_twiddles = discretize_twiddles
+        self.length = num_samples
         if use_max:
             self.re_inputs = np.array(
                 [2 ** (input_width - 1) - 1 for _ in range(num_samples)]
@@ -33,7 +45,33 @@ class FFTTB:
         else:
             self.re_inputs = random_samples(input_width, num_samples)
             self.im_inputs = random_samples(input_width, num_samples)
-        self.outputs = np.fft.fft(self.re_inputs + 1j * self.im_inputs)
+        self.gen_outputs()
+
+    def gen_outputs(self) -> None:
+        """
+        """
+        if self.discretize_twiddles:
+            real_prec_twiddles = np.zeros(
+                (self.length, self.length), dtype=np.cdouble
+            )
+            quantized_twiddles = np.zeros(
+                (self.length, self.length), dtype=np.cdouble
+            )
+            self.outputs = np.zeros(self.length, dtype=np.cdouble)
+            for k in range(self.length):
+                for n in range(self.length):
+                    real_prec_twiddles[k][n] = np.exp(
+                        -2 * np.pi * 1j * n * k / self.length
+                    )
+                    quantized_twiddles[k][n] = bit.quantized_complex(
+                        real_prec_twiddles[k][n], self.twiddle_width
+                    )
+                    self.outputs[k] += (
+                        self.re_inputs[n] + 1j * self.im_inputs[n]
+                    ) * quantized_twiddles[k][n]
+
+        else:
+            self.outputs = np.fft.fft(self.re_inputs + 1j * self.im_inputs)
 
     @cocotb.coroutine
     async def setup(self):
@@ -103,13 +141,21 @@ async def check_sequence(dut):
     """
     num_samples = 1024
     input_width = 13
-    fft = FFTTB(dut, num_samples, input_width, use_max=False)
+    twiddle_width = 10
+    fft = FFTTB(
+        dut,
+        num_samples,
+        input_width,
+        twiddle_width,
+        discretize_twiddles=True,
+        use_max=False,
+    )
     await fft.setup()
     cocotb.fork(fft.write_inputs())
 
     # TODO this tolerance is way too high. This is just an initial
     # sanity check.
-    tol = 3000
+    tol = 1500
     rdiffs = []
     idiffs = []
 
