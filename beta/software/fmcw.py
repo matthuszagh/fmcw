@@ -376,7 +376,7 @@ class Plot:
         """
         """
         # makes the update much faster
-        ranges = subdivide_range(self._data.shape[0], 100)
+        ranges = subdivide_range(self._data.shape[0], len(sweep) // 200)
         for rg in ranges:
             self._data[rg[0] : rg[1]] = sweep[rg[0] : rg[1]]
             self._win.disableAutoRange()
