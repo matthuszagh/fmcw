@@ -1243,8 +1243,8 @@ class Proc:
     def perform_fir(self, seq: np.array) -> np.array:
         """
         """
-        fir = np.convolve(seq, self.taps, mode="same")
-        return fir
+        fir = np.convolve(seq, self.taps)
+        return fir[: len(seq)]
 
     def perform_decimate(self, seq: np.array) -> np.array:
         """
