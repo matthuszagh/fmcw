@@ -47,14 +47,9 @@ module fft_bfi #(
       end
    end
 
-   // TODO it may be better to always use the shift_reg module since
-   // the underlying ram module uses behavioral verilog to instantiate
-   // the underlying storage. By using the shift_reg module then, we
-   // can allow the synthesis tool to infer the most efficient use of
-   // resources.
    integer i;
    generate
-      if (SHIFT_REG_LEN > 32) begin
+      if (SHIFT_REG_LEN > 1) begin
          shift_reg #(
             .WIDTH (WIDTH         ),
             .LEN   (SHIFT_REG_LEN )

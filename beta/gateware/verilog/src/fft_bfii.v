@@ -58,10 +58,9 @@ module fft_bfii #(
       endcase
    end
 
-   // TODO see note in bfi
    integer i;
    generate
-      if (SHIFT_REG_LEN > 32) begin
+      if (SHIFT_REG_LEN > 1) begin
          shift_reg #(
             .WIDTH (WIDTH         ),
             .LEN   (SHIFT_REG_LEN )
