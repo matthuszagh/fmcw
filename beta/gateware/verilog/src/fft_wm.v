@@ -25,15 +25,7 @@ module fft_wm #(
    output reg signed [WIDTH-1:0]         z_im_o
 );
 
-   localparam A_WIDTH = WIDTH;
-   localparam B_WIDTH = TWIDDLE_WIDTH + 1;
-   localparam C_WIDTH = WIDTH + TWIDDLE_WIDTH + 1;
-   localparam P_WIDTH = WIDTH + TWIDDLE_WIDTH + 1;
-
-   function [B_WIDTH-1:0] sign_extend_b(input [TWIDDLE_WIDTH-1:0] expr);
-      sign_extend_b = (expr[TWIDDLE_WIDTH-1] == 1'b1) ? {{B_WIDTH-TWIDDLE_WIDTH{1'b1}}, expr}
-                      : {{B_WIDTH-TWIDDLE_WIDTH{1'b0}}, expr};
-   endfunction
+   localparam INTERNAL_WIDTH = WIDTH + TWIDDLE_WIDTH;
 
    /**
     * Use the karatsuba algorithm to use 3 multiplies instead of 4.
@@ -46,9 +38,9 @@ module fft_wm #(
     * I = a(c+d)-f
     */
    // compute multiplies in stages to share DSP.
-   reg signed [WIDTH+TWIDDLE_WIDTH:0] kar_f;
-   reg signed [WIDTH+TWIDDLE_WIDTH:0] kar_r;
-   reg signed [WIDTH+TWIDDLE_WIDTH:0] kar_i;
+   reg signed [INTERNAL_WIDTH-1:0] kar_f;
+   reg signed [INTERNAL_WIDTH-1:0] kar_r;
+   reg signed [INTERNAL_WIDTH-1:0] kar_i;
 
    localparam XSR_LEN = 2;
    reg signed [WIDTH-1:0]         x_re_sr [0:XSR_LEN-1];
@@ -78,10 +70,9 @@ module fft_wm #(
       kar_i <= x_re_sr[1] * (w_re_sr[0] + w_im_sr[0]) - kar_f;
    end
 
-   parameter INTERNAL_WIDTH = WIDTH + TWIDDLE_WIDTH;
-   parameter INTERNAL_MIN_MSB = INTERNAL_WIDTH - 1;
+   localparam INTERNAL_MIN_MSB = INTERNAL_WIDTH - 1;
 
-   function [INTERNAL_MIN_MSB-1:0] drop_msb_bits(input [INTERNAL_WIDTH:0] expr);
+   function [INTERNAL_MIN_MSB-1:0] drop_msb_bits(input [INTERNAL_WIDTH-1:0] expr);
       drop_msb_bits = expr[INTERNAL_MIN_MSB-1:0];
    endfunction
 
