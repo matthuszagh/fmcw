@@ -141,21 +141,19 @@ async def check_sequence(dut):
     """
     num_samples = 1024
     input_width = 13
-    twiddle_width = 10
+    twiddle_width = 18
     fft = FFTTB(
         dut,
         num_samples,
         input_width,
         twiddle_width,
-        discretize_twiddles=True,
+        discretize_twiddles=False,
         use_max=False,
     )
     await fft.setup()
     cocotb.fork(fft.write_inputs())
 
-    # TODO this tolerance is way too high. This is just an initial
-    # sanity check.
-    tol = 1500
+    tol = 20
     rdiffs = []
     idiffs = []
 
@@ -166,11 +164,13 @@ async def check_sequence(dut):
             (rval, ival) = fft.check_outputs(tol)
             rdiffs.append(rval)
             idiffs.append(ival)
+            # print(num_samples - 1 - i, " (real): ", int(rval))
+            # print(num_samples - 1 - i, " (imag): ", int(ival))
 
             i -= 1
         await RisingEdge(fft.dut.clk)
 
-    avg_tol = 70
+    avg_tol = 1
     if abs(np.average(rdiffs)) > avg_tol:
         raise TestFailure(
             (

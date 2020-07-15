@@ -22,7 +22,7 @@ module top #(
    parameter FIR_NORM_SHIFT     = 4,
    parameter FIR_OUTPUT_WIDTH   = 13,
    parameter WINDOW_COEFF_WIDTH = 16,
-   parameter FFT_TWIDDLE_WIDTH  = 10
+   parameter FFT_TWIDDLE_WIDTH  = 18
 ) (
 `ifdef TOP_SIMULATE
    input wire clk10,
@@ -1061,7 +1061,7 @@ module top_tb;
       ft245_rdata[3]  = 8'h01;
       // output
       ft245_rdata[4]  = 8'h03;
-      ft245_rdata[5]  = 8'h00;
+      ft245_rdata[5]  = 8'h03;
       // adf reg 0
       ft245_rdata[6]  = 8'h80;
       ft245_rdata[7]  = 8'h00;
@@ -1127,7 +1127,7 @@ module top_tb;
       .FIR_TAP_WIDTH     (16 ),
       .FIR_NORM_SHIFT    (4  ),
       .FIR_OUTPUT_WIDTH  (13 ),
-      .FFT_TWIDDLE_WIDTH (10 )
+      .FFT_TWIDDLE_WIDTH (18 )
    ) dut (
       .clk10          (clk10                   ),
       .clk20          (clk20                   ),

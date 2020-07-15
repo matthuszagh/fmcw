@@ -25,7 +25,7 @@
 module fft #(
    parameter N             = 1024, /* FFT length */
    parameter INPUT_WIDTH   = 13,
-   parameter TWIDDLE_WIDTH = 10,
+   parameter TWIDDLE_WIDTH = 18,
    // +1 comes from complex multiply, which is really the sum of 2
    // multiplies for each complex component.
    parameter OUTPUT_WIDTH  = 24   /* $clog2(N) + INPUT_WIDTH + 1 */
