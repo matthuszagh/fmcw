@@ -790,7 +790,6 @@ module top #(
 
    reg [`USB_DATA_WIDTH-1:0] ft_wr_data         = `USB_DATA_WIDTH'd0;
    reg [`USB_DATA_WIDTH-1:0] ft_fifo_rdata_last = `USB_DATA_WIDTH'd0;
-   reg [`USB_DATA_WIDTH-1:0] ft_fifo_rdata_prev = `USB_DATA_WIDTH'd0;
    reg                       ft_txe_last        = 1'b0;
    reg                       ft_txe_last2       = 1'b0;
    always @(posedge ft_clkout_i) begin
@@ -881,15 +880,13 @@ module top #(
         end
       ftclk_next[FTCLK_TX_DATA] & ftclk_state[FTCLK_TX_TXE]:
         begin
-           ft_wr_data  <= ft_fifo_rdata_prev;
-           ft_wr_n_o   <= 1'b0;
+           ft_wr_n_o <= 1'b0;
         end
       (ftclk_next[FTCLK_TX_DATA] | ftclk_next[FTCLK_TX_LAST]) & ~ftclk_state[FTCLK_TX_TXE]:
         begin
            if (ft_txe_last2) ft_wr_data <= ft_fifo_rdata_last;
            else              ft_wr_data <= ft_fifo_rdata;
            ft_wr_n_o          <= 1'b0;
-           ft_fifo_rdata_prev <= ft_fifo_rdata;
            ft_fifo_ren        <= 1'b1;
         end
       ftclk_next[FTCLK_TX_STOP]:
