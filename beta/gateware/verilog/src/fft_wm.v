@@ -78,7 +78,7 @@ module fft_wm #(
       kar_i <= x_re_sr[1] * (w_re_sr[0] + w_im_sr[0]) - kar_f;
    end
 
-   parameter INTERNAL_WIDTH = WIDTH+TWIDDLE_WIDTH;
+   parameter INTERNAL_WIDTH = WIDTH + TWIDDLE_WIDTH;
    parameter INTERNAL_MIN_MSB = INTERNAL_WIDTH - 1;
 
    function [INTERNAL_MIN_MSB-1:0] drop_msb_bits(input [INTERNAL_WIDTH:0] expr);
