@@ -6,6 +6,7 @@
 `define ADC_DATA_WIDTH 12
 `define SD_DATA_WIDTH 4
 
+`include "sync_fifo.v"
 `include "async_fifo.v"
 `include "ltc2292.v"
 `include "ff_sync.v"
@@ -311,20 +312,18 @@ module top #(
    reg                         fir_fifo_ren = 1'b0;
    wire [FIR_OUTPUT_WIDTH-1:0] fir_fifo_rdata;
    wire                        fir_fifo_wen = fir_dvalid;
-   // TODO: use a synchronous fifo
    /* verilator lint_off PINMISSING */
-   async_fifo #(
+   sync_fifo #(
       .WIDTH (FIR_OUTPUT_WIDTH ),
       .DEPTH (FFT_N            )
    ) fir_fifo (
-      .wclk         (clk_i                      ),
-      .rst_n        (~stop_ftclk                ),
-      .wen          (fir_fifo_wen & clk2_pos_en ),
-      .wdata        (fir_out                    ),
-      .rclk         (clk_i                      ),
-      .ren          (fir_fifo_ren               ),
-      .empty        (fir_fifo_empty             ),
-      .rdata        (fir_fifo_rdata             )
+      .clk    (clk_i                      ),
+      .srst_n (~stop                      ),
+      .wen    (fir_fifo_wen & clk2_pos_en ),
+      .wdata  (fir_out                    ),
+      .ren    (fir_fifo_ren               ),
+      .empty  (fir_fifo_empty             ),
+      .rdata  (fir_fifo_rdata             )
    );
    /* verilator lint_on PINMISSING */
 
@@ -358,23 +357,19 @@ module top #(
    reg                             window_fifo_ren = 1'b0;
    wire [FIR_OUTPUT_WIDTH-1:0]     window_fifo_rdata;
    wire                            window_fifo_wen = window_dvalid;
-   // TODO: use a synchronous fifo
-   /* verilator lint_off PINMISSING */
-   async_fifo #(
+   sync_fifo #(
       .WIDTH (FIR_OUTPUT_WIDTH ),
       .DEPTH (FFT_N            )
    ) window_fifo (
-      .wclk  (clk_i                         ),
-      .rst_n (~stop_ftclk                   ),
-      .wen   (window_fifo_wen & clk2_pos_en ),
-      .wdata (window_out                    ),
-      .rclk  (clk_i                         ),
-      .ren   (window_fifo_ren               ),
-      .empty (window_fifo_empty             ),
-      .full  (window_fifo_full              ),
-      .rdata (window_fifo_rdata             )
+      .clk    (clk_i                         ),
+      .srst_n (~stop                         ),
+      .wen    (window_fifo_wen & clk2_pos_en ),
+      .wdata  (window_out                    ),
+      .ren    (window_fifo_ren               ),
+      .empty  (window_fifo_empty             ),
+      .full   (window_fifo_full              ),
+      .rdata  (window_fifo_rdata             )
    );
-   /* verilator lint_on PINMISSING */
 
    reg [`USB_DATA_WIDTH-1:0]       ft_window_fifo_data;
    always @(*) begin
