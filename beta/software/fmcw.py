@@ -36,7 +36,7 @@ ADC_BITS = 12
 FIR_BITS = 13
 WINDOW_BITS = 13
 FFT_BITS = FIR_BITS + 1 + int(np.ceil(np.log2(DECIMATED_LEN)))
-HIST_RANGE = 1000
+HIST_RANGE = 3000
 # dB min and max if no other value is set
 DB_MIN = -120
 DB_MAX = 0
@@ -431,7 +431,7 @@ class Plot:
         i = 0
         while i < tval_len:
             ret.append((i, "{:.0f}".format(self._tvals[i])))
-            i += 100
+            i += HIST_RANGE // 10
         return [ret]
 
     def _y_ticks(self) -> List[List[Tuple[int, float]]]:
