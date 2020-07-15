@@ -8,7 +8,7 @@ module fir_bank #(
    parameter BANK_LEN     = 6,   /* N_TAPS/M */
    parameter INPUT_WIDTH  = 12,
    parameter TAP_WIDTH    = 16,
-   parameter OUTPUT_WIDTH = 35   /* same as internal width in fir_poly */
+   parameter OUTPUT_WIDTH = 35   /* same as internal width in fir */
 ) (
    input wire                            clk,
    input wire signed [INPUT_WIDTH-1:0]   din,
@@ -21,7 +21,7 @@ module fir_bank #(
    input wire signed [OUTPUT_WIDTH-1:0]  dsp_p
 );
 
-   reg signed [INPUT_WIDTH-1:0]         shift_reg [0:BANK_LEN-1];
+   reg signed [INPUT_WIDTH-1:0] shift_reg [0:BANK_LEN-1];
    integer i;
    initial begin
       for (i=0; i<BANK_LEN; i=i+1)
@@ -31,17 +31,16 @@ module fir_bank #(
    always @(posedge clk) begin
       if (tap_addr == {$clog2(M){1'b0}}) begin
          shift_reg[0] <= din;
-         for (i=1; i<BANK_LEN; i=i+1)
-           shift_reg[i] <= shift_reg[i-1];
+         for (i=1; i<BANK_LEN; i=i+1) shift_reg[i] <= shift_reg[i-1];
       end
    end
 
-   reg signed [INPUT_WIDTH-1:0]       dsp_din = {INPUT_WIDTH{1'b0}};
+   reg signed [INPUT_WIDTH-1:0] dsp_din = {INPUT_WIDTH{1'b0}};
 
    always @(*) begin
       case (dsp_acc)
-      0: dsp_din       = din;
-      default: dsp_din = shift_reg[tap_addr[$clog2(BANK_LEN)-1:0]];
+      1'b0: dsp_din = din;
+      1'b1: dsp_din = shift_reg[tap_addr[$clog2(BANK_LEN)-1:0]];
       endcase
    end
 
@@ -53,9 +52,7 @@ module fir_bank #(
    reg signed [OUTPUT_WIDTH-1:0] p_reg = {OUTPUT_WIDTH{1'b0}};
 
    always @(posedge clk) begin
-      if (tap_addr == 5'd8) begin
-         p_reg <= dsp_p[OUTPUT_WIDTH-1:0];
-      end
+      if (tap_addr == 5'd8)  p_reg <= dsp_p[OUTPUT_WIDTH-1:0];
    end
 
    assign dout = p_reg;

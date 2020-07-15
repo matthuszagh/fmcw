@@ -7,10 +7,6 @@
 `include "fir_bank.v"
 `include "ff_sync.v"
 
-`define N_TAPS 120
-`define M 20
-`define BANK_LEN 6
-
 // Polyphase FIR filter
 //
 // This polyphase FIR filter currently requires a fixed decimation of
@@ -43,12 +39,10 @@ module fir #(
    output wire                          dvalid
 );
 
-   localparam N_TAPS         = `N_TAPS;
-   localparam M              = `M;
-   localparam BANK_LEN       = `BANK_LEN;
+   localparam N_TAPS         = 120;
+   localparam M              = 20;
+   localparam BANK_LEN       = 6;
    localparam INTERNAL_WIDTH = INPUT_WIDTH + TAP_WIDTH + $clog2(N_TAPS);
-   localparam M_LOG2         = $clog2(M);
-   localparam BANK_LEN_LOG2  = $clog2(BANK_LEN);
 
    wire                                 srst_n;
    ff_sync #(
@@ -95,19 +89,19 @@ module fir #(
       end
    end
 
-   reg [M_LOG2-1:0]     tap_addr = {M_LOG2{1'b0}};
-   reg [M_LOG2-1:0]     tap_addr_pipe = {M_LOG2{1'b0}};
+   reg [$clog2(M)-1:0]     tap_addr = {$clog2(M){1'b0}};
+   reg [$clog2(M)-1:0]     tap_addr_pipe = {$clog2(M){1'b0}};
 
    always @(posedge clk) begin
       tap_addr      <= tap_addr + 1'b1;
       tap_addr_pipe <= tap_addr;
       if (clk_pos_en) begin
-         tap_addr <= {M_LOG2{1'b0}};
+         tap_addr <= {$clog2(M){1'b0}};
       end
    end
 
-   wire [M_LOG2-1:0] tap_addr2 = tap_addr_pipe - 5'd9;
-   wire dsp_acc = ((tap_addr_pipe != {M_LOG2{1'b0}}) && (tap_addr2 != {M_LOG2{1'b0}}));
+   wire [$clog2(M)-1:0] tap_addr2 = tap_addr_pipe - 5'd9;
+   wire dsp_acc = ((tap_addr_pipe != {$clog2(M){1'b0}}) && (tap_addr2 != {$clog2(M){1'b0}}));
 
    reg signed [TAP_WIDTH-1:0] taps0 [0:BANK_LEN-1];
    reg signed [TAP_WIDTH-1:0] taps1 [0:BANK_LEN-1];
@@ -153,26 +147,26 @@ module fir #(
       $readmemh("/home/matt/src/fmcw/beta/gateware/verilog/src/roms/fir/taps19.hex", taps19);
    end
 
-   wire signed [TAP_WIDTH-1:0] tap0 = taps0[tap_addr_pipe[BANK_LEN_LOG2-1:0]];
-   wire signed [TAP_WIDTH-1:0] tap1 = taps1[tap_addr2[BANK_LEN_LOG2-1:0]];
-   wire signed [TAP_WIDTH-1:0] tap2 = taps2[tap_addr_pipe[BANK_LEN_LOG2-1:0]];
-   wire signed [TAP_WIDTH-1:0] tap3 = taps3[tap_addr2[BANK_LEN_LOG2-1:0]];
-   wire signed [TAP_WIDTH-1:0] tap4 = taps4[tap_addr_pipe[BANK_LEN_LOG2-1:0]];
-   wire signed [TAP_WIDTH-1:0] tap5 = taps5[tap_addr2[BANK_LEN_LOG2-1:0]];
-   wire signed [TAP_WIDTH-1:0] tap6 = taps6[tap_addr_pipe[BANK_LEN_LOG2-1:0]];
-   wire signed [TAP_WIDTH-1:0] tap7 = taps7[tap_addr2[BANK_LEN_LOG2-1:0]];
-   wire signed [TAP_WIDTH-1:0] tap8 = taps8[tap_addr_pipe[BANK_LEN_LOG2-1:0]];
-   wire signed [TAP_WIDTH-1:0] tap9 = taps9[tap_addr2[BANK_LEN_LOG2-1:0]];
-   wire signed [TAP_WIDTH-1:0] tap10 = taps10[tap_addr_pipe[BANK_LEN_LOG2-1:0]];
-   wire signed [TAP_WIDTH-1:0] tap11 = taps11[tap_addr2[BANK_LEN_LOG2-1:0]];
-   wire signed [TAP_WIDTH-1:0] tap12 = taps12[tap_addr_pipe[BANK_LEN_LOG2-1:0]];
-   wire signed [TAP_WIDTH-1:0] tap13 = taps13[tap_addr2[BANK_LEN_LOG2-1:0]];
-   wire signed [TAP_WIDTH-1:0] tap14 = taps14[tap_addr_pipe[BANK_LEN_LOG2-1:0]];
-   wire signed [TAP_WIDTH-1:0] tap15 = taps15[tap_addr2[BANK_LEN_LOG2-1:0]];
-   wire signed [TAP_WIDTH-1:0] tap16 = taps16[tap_addr_pipe[BANK_LEN_LOG2-1:0]];
-   wire signed [TAP_WIDTH-1:0] tap17 = taps17[tap_addr2[BANK_LEN_LOG2-1:0]];
-   wire signed [TAP_WIDTH-1:0] tap18 = taps18[tap_addr_pipe[BANK_LEN_LOG2-1:0]];
-   wire signed [TAP_WIDTH-1:0] tap19 = taps19[tap_addr2[BANK_LEN_LOG2-1:0]];
+   wire signed [TAP_WIDTH-1:0] tap0 = taps0[tap_addr_pipe[$clog2(BANK_LEN)-1:0]];
+   wire signed [TAP_WIDTH-1:0] tap1 = taps1[tap_addr2[$clog2(BANK_LEN)-1:0]];
+   wire signed [TAP_WIDTH-1:0] tap2 = taps2[tap_addr_pipe[$clog2(BANK_LEN)-1:0]];
+   wire signed [TAP_WIDTH-1:0] tap3 = taps3[tap_addr2[$clog2(BANK_LEN)-1:0]];
+   wire signed [TAP_WIDTH-1:0] tap4 = taps4[tap_addr_pipe[$clog2(BANK_LEN)-1:0]];
+   wire signed [TAP_WIDTH-1:0] tap5 = taps5[tap_addr2[$clog2(BANK_LEN)-1:0]];
+   wire signed [TAP_WIDTH-1:0] tap6 = taps6[tap_addr_pipe[$clog2(BANK_LEN)-1:0]];
+   wire signed [TAP_WIDTH-1:0] tap7 = taps7[tap_addr2[$clog2(BANK_LEN)-1:0]];
+   wire signed [TAP_WIDTH-1:0] tap8 = taps8[tap_addr_pipe[$clog2(BANK_LEN)-1:0]];
+   wire signed [TAP_WIDTH-1:0] tap9 = taps9[tap_addr2[$clog2(BANK_LEN)-1:0]];
+   wire signed [TAP_WIDTH-1:0] tap10 = taps10[tap_addr_pipe[$clog2(BANK_LEN)-1:0]];
+   wire signed [TAP_WIDTH-1:0] tap11 = taps11[tap_addr2[$clog2(BANK_LEN)-1:0]];
+   wire signed [TAP_WIDTH-1:0] tap12 = taps12[tap_addr_pipe[$clog2(BANK_LEN)-1:0]];
+   wire signed [TAP_WIDTH-1:0] tap13 = taps13[tap_addr2[$clog2(BANK_LEN)-1:0]];
+   wire signed [TAP_WIDTH-1:0] tap14 = taps14[tap_addr_pipe[$clog2(BANK_LEN)-1:0]];
+   wire signed [TAP_WIDTH-1:0] tap15 = taps15[tap_addr2[$clog2(BANK_LEN)-1:0]];
+   wire signed [TAP_WIDTH-1:0] tap16 = taps16[tap_addr_pipe[$clog2(BANK_LEN)-1:0]];
+   wire signed [TAP_WIDTH-1:0] tap17 = taps17[tap_addr2[$clog2(BANK_LEN)-1:0]];
+   wire signed [TAP_WIDTH-1:0] tap18 = taps18[tap_addr_pipe[$clog2(BANK_LEN)-1:0]];
+   wire signed [TAP_WIDTH-1:0] tap19 = taps19[tap_addr2[$clog2(BANK_LEN)-1:0]];
 
    wire signed [INTERNAL_WIDTH-1:0] bank_dout [0:M-1];
 
@@ -224,7 +218,7 @@ module fir #(
 
    wire signed [TAP_WIDTH-1:0]         bank0_1_dsp_a = tap_addr_pipe < 5'd8 ? bank0_dsp_a : bank1_dsp_a;
    wire signed [INPUT_WIDTH-1:0]       bank0_1_dsp_b = tap_addr_pipe < 5'd8 ? bank0_dsp_b : bank1_dsp_b;
-   reg signed [INTERNAL_WIDTH-1:0]     bank0_1_dsp_p = {INTERNAL_WIDTH{1'B0}};
+   reg signed [INTERNAL_WIDTH-1:0]     bank0_1_dsp_p = {INTERNAL_WIDTH{1'b0}};
    assign bank0_dsp_p = bank0_1_dsp_p;
    assign bank1_dsp_p = bank0_1_dsp_p;
 
@@ -283,7 +277,7 @@ module fir #(
 
    wire signed [TAP_WIDTH-1:0]         bank2_3_dsp_a = tap_addr_pipe < 5'd8 ? bank2_dsp_a : bank3_dsp_a;
    wire signed [INPUT_WIDTH-1:0]       bank2_3_dsp_b = tap_addr_pipe < 5'd8 ? bank2_dsp_b : bank3_dsp_b;
-   reg signed [INTERNAL_WIDTH-1:0]     bank2_3_dsp_p = {INTERNAL_WIDTH{1'B0}};
+   reg signed [INTERNAL_WIDTH-1:0]     bank2_3_dsp_p = {INTERNAL_WIDTH{1'b0}};
    assign bank2_dsp_p = bank2_3_dsp_p;
    assign bank3_dsp_p = bank2_3_dsp_p;
 
@@ -342,7 +336,7 @@ module fir #(
 
    wire signed [TAP_WIDTH-1:0]         bank4_5_dsp_a = tap_addr_pipe < 5'd8 ? bank4_dsp_a : bank5_dsp_a;
    wire signed [INPUT_WIDTH-1:0]       bank4_5_dsp_b = tap_addr_pipe < 5'd8 ? bank4_dsp_b : bank5_dsp_b;
-   reg signed [INTERNAL_WIDTH-1:0]     bank4_5_dsp_p = {INTERNAL_WIDTH{1'B0}};
+   reg signed [INTERNAL_WIDTH-1:0]     bank4_5_dsp_p = {INTERNAL_WIDTH{1'b0}};
    assign bank4_dsp_p = bank4_5_dsp_p;
    assign bank5_dsp_p = bank4_5_dsp_p;
 
@@ -401,7 +395,7 @@ module fir #(
 
    wire signed [TAP_WIDTH-1:0]         bank6_7_dsp_a = tap_addr_pipe < 5'd8 ? bank6_dsp_a : bank7_dsp_a;
    wire signed [INPUT_WIDTH-1:0]       bank6_7_dsp_b = tap_addr_pipe < 5'd8 ? bank6_dsp_b : bank7_dsp_b;
-   reg signed [INTERNAL_WIDTH-1:0]     bank6_7_dsp_p = {INTERNAL_WIDTH{1'B0}};
+   reg signed [INTERNAL_WIDTH-1:0]     bank6_7_dsp_p = {INTERNAL_WIDTH{1'b0}};
    assign bank6_dsp_p = bank6_7_dsp_p;
    assign bank7_dsp_p = bank6_7_dsp_p;
 
@@ -460,7 +454,7 @@ module fir #(
 
    wire signed [TAP_WIDTH-1:0]         bank8_9_dsp_a = tap_addr_pipe < 5'd8 ? bank8_dsp_a : bank9_dsp_a;
    wire signed [INPUT_WIDTH-1:0]       bank8_9_dsp_b = tap_addr_pipe < 5'd8 ? bank8_dsp_b : bank9_dsp_b;
-   reg signed [INTERNAL_WIDTH-1:0]     bank8_9_dsp_p = {INTERNAL_WIDTH{1'B0}};
+   reg signed [INTERNAL_WIDTH-1:0]     bank8_9_dsp_p = {INTERNAL_WIDTH{1'b0}};
    assign bank8_dsp_p = bank8_9_dsp_p;
    assign bank9_dsp_p = bank8_9_dsp_p;
 
@@ -519,7 +513,7 @@ module fir #(
 
    wire signed [TAP_WIDTH-1:0]         bank10_11_dsp_a = tap_addr_pipe < 5'd8 ? bank10_dsp_a : bank11_dsp_a;
    wire signed [INPUT_WIDTH-1:0]       bank10_11_dsp_b = tap_addr_pipe < 5'd8 ? bank10_dsp_b : bank11_dsp_b;
-   reg signed [INTERNAL_WIDTH-1:0]     bank10_11_dsp_p = {INTERNAL_WIDTH{1'B0}};
+   reg signed [INTERNAL_WIDTH-1:0]     bank10_11_dsp_p = {INTERNAL_WIDTH{1'b0}};
    assign bank10_dsp_p = bank10_11_dsp_p;
    assign bank11_dsp_p = bank10_11_dsp_p;
 
@@ -578,7 +572,7 @@ module fir #(
 
    wire signed [TAP_WIDTH-1:0]         bank12_13_dsp_a = tap_addr_pipe < 5'd8 ? bank12_dsp_a : bank13_dsp_a;
    wire signed [INPUT_WIDTH-1:0]       bank12_13_dsp_b = tap_addr_pipe < 5'd8 ? bank12_dsp_b : bank13_dsp_b;
-   reg signed [INTERNAL_WIDTH-1:0]     bank12_13_dsp_p = {INTERNAL_WIDTH{1'B0}};
+   reg signed [INTERNAL_WIDTH-1:0]     bank12_13_dsp_p = {INTERNAL_WIDTH{1'b0}};
    assign bank12_dsp_p = bank12_13_dsp_p;
    assign bank13_dsp_p = bank12_13_dsp_p;
 
@@ -637,7 +631,7 @@ module fir #(
 
    wire signed [TAP_WIDTH-1:0]         bank14_15_dsp_a = tap_addr_pipe < 5'd8 ? bank14_dsp_a : bank15_dsp_a;
    wire signed [INPUT_WIDTH-1:0]       bank14_15_dsp_b = tap_addr_pipe < 5'd8 ? bank14_dsp_b : bank15_dsp_b;
-   reg signed [INTERNAL_WIDTH-1:0]     bank14_15_dsp_p = {INTERNAL_WIDTH{1'B0}};
+   reg signed [INTERNAL_WIDTH-1:0]     bank14_15_dsp_p = {INTERNAL_WIDTH{1'b0}};
    assign bank14_dsp_p = bank14_15_dsp_p;
    assign bank15_dsp_p = bank14_15_dsp_p;
 
@@ -696,7 +690,7 @@ module fir #(
 
    wire signed [TAP_WIDTH-1:0]         bank16_17_dsp_a = tap_addr_pipe < 5'd8 ? bank16_dsp_a : bank17_dsp_a;
    wire signed [INPUT_WIDTH-1:0]       bank16_17_dsp_b = tap_addr_pipe < 5'd8 ? bank16_dsp_b : bank17_dsp_b;
-   reg signed [INTERNAL_WIDTH-1:0]     bank16_17_dsp_p = {INTERNAL_WIDTH{1'B0}};
+   reg signed [INTERNAL_WIDTH-1:0]     bank16_17_dsp_p = {INTERNAL_WIDTH{1'b0}};
    assign bank16_dsp_p = bank16_17_dsp_p;
    assign bank17_dsp_p = bank16_17_dsp_p;
 
@@ -755,7 +749,7 @@ module fir #(
 
    wire signed [TAP_WIDTH-1:0]         bank18_19_dsp_a = tap_addr_pipe < 5'd8 ? bank18_dsp_a : bank19_dsp_a;
    wire signed [INPUT_WIDTH-1:0]       bank18_19_dsp_b = tap_addr_pipe < 5'd8 ? bank18_dsp_b : bank19_dsp_b;
-   reg signed [INTERNAL_WIDTH-1:0]     bank18_19_dsp_p = {INTERNAL_WIDTH{1'B0}};
+   reg signed [INTERNAL_WIDTH-1:0]     bank18_19_dsp_p = {INTERNAL_WIDTH{1'b0}};
    assign bank18_dsp_p = bank18_19_dsp_p;
    assign bank19_dsp_p = bank18_19_dsp_p;
 
@@ -843,7 +837,7 @@ module fir #(
    `ifdef FIR
    // integer i;
    initial begin
-      $dumpfile ("cocotb/build/fir.vcd");
+      $dumpfile ("build/fir.vcd");
       $dumpvars (0, fir);
       // for (i=0; i<100; i=i+1)
       //   $dumpvars (0, ram.mem[i]);
@@ -853,9 +847,5 @@ module fir #(
 `endif
 
 endmodule
-
-`undef N_TAPS
-`undef M
-`undef BANK_LEN
 
 `endif

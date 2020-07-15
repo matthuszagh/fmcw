@@ -50,6 +50,11 @@ test_fft:
 	$(eval TOP_MODULE = fft)
 	$(MAKE) -C $(TEST_DIR) cocotb
 
+.PHONY: test_fir
+test_fir:
+	$(eval TOP_MODULE = fir)
+	$(MAKE) -C $(TEST_DIR) cocotb
+
 # traditional testbenches
 .PHONY: sim
 sim:
