@@ -790,15 +790,18 @@ module top #(
 
    reg [`USB_DATA_WIDTH-1:0] ft_wr_data         = `USB_DATA_WIDTH'd0;
    reg [`USB_DATA_WIDTH-1:0] ft_fifo_rdata_last = `USB_DATA_WIDTH'd0;
+   reg [`USB_DATA_WIDTH-1:0] ft_fifo_rdata_prev = `USB_DATA_WIDTH'd0;
    reg                       ft_txe_last        = 1'b0;
+   reg                       ft_txe_last2       = 1'b0;
    always @(posedge ft_clkout_i) begin
       ft_oe_n_o        <= 1'b1;
       ft_rd_n_o        <= 1'b1;
       adf_reg_fifo_wen <= 1'b0;
 
-      ft_wr_n_o   <= 1'b1;
-      tx_done     <= 1'b0;
-      ft_txe_last <= ft_txe_n_i;
+      ft_wr_n_o    <= 1'b1;
+      tx_done      <= 1'b0;
+      ft_txe_last  <= ft_txe_n_i;
+      ft_txe_last2 <= ft_txe_last;
 
       ft_fifo_ren <= 1'b0;
 
@@ -872,16 +875,21 @@ module top #(
            end
            else ft_fifo_ren <= ~ft_txe_last;
         end
+      ftclk_next[FTCLK_TX_TXE] & ftclk_state[FTCLK_TX_DATA]:
+        begin
+           ft_fifo_rdata_last <= ft_fifo_rdata;
+        end
       ftclk_next[FTCLK_TX_DATA] & ftclk_state[FTCLK_TX_TXE]:
         begin
-           ft_wr_data <= ft_fifo_rdata_last;
-           ft_wr_n_o  <= 1'b0;
+           ft_wr_data  <= ft_fifo_rdata_prev;
+           ft_wr_n_o   <= 1'b0;
         end
       (ftclk_next[FTCLK_TX_DATA] | ftclk_next[FTCLK_TX_LAST]) & ~ftclk_state[FTCLK_TX_TXE]:
         begin
-           ft_wr_data         <= ft_fifo_rdata;
+           if (ft_txe_last2) ft_wr_data <= ft_fifo_rdata_last;
+           else              ft_wr_data <= ft_fifo_rdata;
            ft_wr_n_o          <= 1'b0;
-           ft_fifo_rdata_last <= ft_fifo_rdata;
+           ft_fifo_rdata_prev <= ft_fifo_rdata;
            ft_fifo_ren        <= 1'b1;
         end
       ftclk_next[FTCLK_TX_STOP]:
@@ -953,9 +961,9 @@ module top #(
    assign ext1_io[0] = 1'b0;
    assign ext1_io[3] = adf_muxout_i;
    assign ext1_io[1] = 1'b0;
-   assign ext1_io[4] = window_fifo_ren;
+   assign ext1_io[4] = adc_of_i[0];
    assign ext1_io[2] = 1'b0;
-   assign ext1_io[5] = tx_done;
+   assign ext1_io[5] = adc_of_i[1];
 
    assign ext2_io[0] = 1'b0;
    assign ext2_io[3] = state[SAMPLE];
@@ -1027,23 +1035,23 @@ module top_tb;
    integer ft_txe_on_ctr = 0;
    integer ft_txe_off_ctr = 0;
    // Note: uncomment if you want to test effect of ft_txe_n.
-   // always @(posedge clk60) begin
-   //    if (ft_txe_n == 1'b0) begin
-   //       ft_txe_off_ctr    <= 0;
-   //       if (ft_txe_on_ctr == 500) begin
-   //          ft_txe_n <= 1'b1;
-   //       end else begin
-   //          ft_txe_on_ctr <= ft_txe_on_ctr + 1;
-   //       end
-   //    end else begin
-   //       ft_txe_on_ctr      <= 0;
-   //       if (ft_txe_off_ctr == 5) begin
-   //          ft_txe_n <= 1'b0;
-   //       end else begin
-   //          ft_txe_off_ctr <= ft_txe_off_ctr + 1;
-   //       end
-   //    end
-   // end
+   always @(posedge clk60) begin
+      if (ft_txe_n == 1'b0) begin
+         ft_txe_off_ctr    <= 0;
+         if (ft_txe_on_ctr == 500) begin
+            ft_txe_n <= 1'b1;
+         end else begin
+            ft_txe_on_ctr <= ft_txe_on_ctr + 1;
+         end
+      end else begin
+         ft_txe_on_ctr      <= 0;
+         if (ft_txe_off_ctr == 5) begin
+            ft_txe_n <= 1'b0;
+         end else begin
+            ft_txe_off_ctr <= ft_txe_off_ctr + 1;
+         end
+      end
+   end
 
    localparam NUM_RBYTES = 47;
    reg [7:0] ft245_rdata [0:NUM_RBYTES-1];
@@ -1056,7 +1064,7 @@ module top_tb;
       ft245_rdata[3]  = 8'h01;
       // output
       ft245_rdata[4]  = 8'h03;
-      ft245_rdata[5]  = 8'h03;
+      ft245_rdata[5]  = 8'h00;
       // adf reg 0
       ft245_rdata[6]  = 8'h80;
       ft245_rdata[7]  = 8'h00;
