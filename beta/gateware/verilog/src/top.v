@@ -452,11 +452,11 @@ module top #(
    reg [NUM_STATES-1:0] state;
    reg [NUM_STATES-1:0] next;
    initial begin
-      state         = {NUM_STATES{1'b0}};
-      state[IDLE]   = 1'b1;
+      state       = {NUM_STATES{1'b0}};
+      state[IDLE] = 1'b1;
 
-      next         = {NUM_STATES{1'b0}};
-      next[IDLE]   = 1'b1;
+      next       = {NUM_STATES{1'b0}};
+      next[IDLE] = 1'b1;
    end
 
    reg [`USB_DATA_WIDTH-1:0]       ft_fifo_wdata;
@@ -967,9 +967,9 @@ module top #(
    assign ext1_io[0] = 1'b0;
    assign ext1_io[3] = adf_muxout_i;
    assign ext1_io[1] = 1'b0;
-   assign ext1_io[4] = adc_of_i[0];
+   assign ext1_io[4] = fft_valid;
    assign ext1_io[2] = 1'b0;
-   assign ext1_io[5] = adc_of_i[1];
+   assign ext1_io[5] = fft_fifo_ren;
 
    assign ext2_io[0] = 1'b0;
    assign ext2_io[3] = state[SAMPLE];
