@@ -389,8 +389,8 @@ module top #(
 
    reg                                fft_en = 1'b0;
    always @(posedge clk_i) begin
-      if (window_fifo_ren) fft_en <= 1'b1;
-      else                 fft_en <= 1'b0;
+      if (window_fifo_ren & ~window_fifo_empty) fft_en <= 1'b1;
+      else                                      fft_en <= 1'b0;
    end
 
    fft #(
