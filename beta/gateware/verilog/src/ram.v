@@ -18,21 +18,19 @@ module ram #(
    parameter WIDTH    = 64,
    parameter SIZE     = 512
 ) (
-   input wire             rdclk,
-   input wire             rden,
-   input wire [ABITS-1:0] rdaddr,
-   output reg [WIDTH-1:0] rddata = {WIDTH{1'b0}},
-   input wire             wrclk,
-   input wire             wren,
-   input wire [ABITS-1:0] wraddr,
-   input wire [WIDTH-1:0] wrdata
+   input wire                    rdclk,
+   input wire                    rden,
+   input wire [$clog2(SIZE)-1:0] rdaddr,
+   output reg [WIDTH-1:0]        rddata = {WIDTH{1'b0}},
+   input wire                    wrclk,
+   input wire                    wren,
+   input wire [$clog2(SIZE)-1:0] wraddr,
+   input wire [WIDTH-1:0]        wrdata
 );
 
-   localparam ABITS = $clog2(SIZE);
+   reg [WIDTH-1:0] mem [0:SIZE-1];
 
-   reg [WIDTH-1:0]        mem [0:SIZE-1];
-
-   integer                i;
+   integer i;
    generate
       /* verilator lint_off WIDTH */
       if (INITFILE == "") begin
@@ -41,26 +39,20 @@ module ram #(
               mem[i] = {WIDTH{1'b0}};
          end
       end else begin
-         initial begin
-            $readmemh(INITFILE, mem);
-         end
+         initial $readmemh(INITFILE, mem);
       end
       /* verilator lint_on WIDTH */
    endgenerate
 
-   wire                   conflict = (rden & wren) ? (rdaddr == wraddr) : 1'b0;
+   wire conflict = (rden & wren) ? (rdaddr == wraddr) : 1'b0;
 
    always @(posedge rdclk) begin
-      if (rden) begin
-         rddata <= mem[rdaddr];
-      end
+      if (rden) rddata <= mem[rdaddr];
    end
 
    // Prioritize reads when read/write conflicts occur.
    always @(posedge wrclk) begin
-      if (wren & ~conflict) begin
-         mem[wraddr] <= wrdata;
-      end
+      if (wren & ~conflict) mem[wraddr] <= wrdata;
    end
 
 `ifdef FORMAL
