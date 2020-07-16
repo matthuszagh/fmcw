@@ -87,14 +87,12 @@ module fft_wm #(
    endfunction
 
    reg [$clog2(N)-1:0] ctr_shift_reg [0:LATENCY-1];
-   reg [$clog2(N)-1:0] carry_shift_reg [0:LATENCY-1];
+   reg carry_shift_reg [0:LATENCY-1];
 
-   initial begin
-      for (i=0; i<LATENCY; i=i+1) carry_shift_reg[i] <= {$clog2(N){1'b0}};
-   end
+   initial for (i=0; i<LATENCY; i=i+1) carry_shift_reg[i] = 1'b0;
    always @(posedge clk) begin
       if (~srst_n) begin
-         for (i=0; i<LATENCY; i=i+1) carry_shift_reg[i] <= {$clog2(N){1'b0}};
+         for (i=0; i<LATENCY; i=i+1) carry_shift_reg[i] <= 1'b0;
       end else begin
          carry_shift_reg[0] <= carry_in;
          for (i=0; i<LATENCY-1; i=i+1) carry_shift_reg[i+1] <= carry_shift_reg[i];
