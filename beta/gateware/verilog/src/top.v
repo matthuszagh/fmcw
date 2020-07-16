@@ -387,6 +387,12 @@ module top #(
    wire signed [FFT_OUTPUT_WIDTH-1:0] fft_re_o;
    wire signed [FFT_OUTPUT_WIDTH-1:0] fft_im_o;
 
+   reg                                fft_en = 1'b0;
+   always @(posedge clk_i) begin
+      if (window_fifo_ren) fft_en <= 1'b1;
+      else                 fft_en <= 1'b0;
+   end
+
    fft #(
       .N             (FFT_N             ),
       .INPUT_WIDTH   (FIR_OUTPUT_WIDTH  ),
@@ -395,7 +401,7 @@ module top #(
    ) fft (
       .clk        (clk_i                    ),
       .arst_n     (~stop_ftclk              ),
-      .en         (window_fifo_ren          ),
+      .en         (fft_en                   ),
       .valid      (fft_valid                ),
       .data_ctr_o (fft_ctr                  ),
       .data_re_i  (window_fifo_rdata        ),
