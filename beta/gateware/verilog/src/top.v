@@ -404,41 +404,72 @@ module top #(
       .data_im_o  (fft_im_o                 )
    );
 
-   wire                            fft_fifo_empty;
-   wire                            fft_fifo_full;
-   reg                             fft_fifo_ren = 1'b0;
-   wire [2*FFT_OUTPUT_WIDTH-1:0]   fft_fifo_rdata;
-   /* verilator lint_off PINMISSING */
-   async_fifo #(
+   localparam [$clog2(FFT_N)-1:0] FFT_N_MAX = {$clog2(FFT_N){1'b1}};
+   reg [$clog2(FFT_N)-1:0]        fft_ram_raddr = {$clog2(FFT_N){1'b0}};
+   reg                            fft_ram_empty = 1'b1;
+   reg                            fft_ram_ren = 1'b0;
+   wire [2*FFT_OUTPUT_WIDTH-1:0]  fft_ram_rdata;
+   reg                            fft_ram_full = 1'b0;
+
+   always @(posedge clk_i) begin
+      if (stop) begin
+         fft_ram_full <= 1'b0;
+      end else begin
+         if (fft_ctr == FFT_N_MAX & ~fft_ram_ren) begin
+            fft_ram_full <= 1'b1;
+         end else if (fft_ram_ren) begin
+            fft_ram_full <= 1'b0;
+         end
+      end
+   end
+
+   always @(posedge clk10) begin
+      if (stop) begin
+         fft_ram_raddr  <= {$clog2(FFT_N){1'b0}};
+         fft_ram_empty <= 1'b1;
+      end else begin
+         if (fft_ram_ren & ~fft_ram_empty) begin
+            if (fft_ram_raddr == FFT_N_MAX) begin
+               fft_ram_raddr  <= {$clog2(FFT_N){1'b0}};
+               fft_ram_empty <= 1'b1;
+            end else begin
+               fft_ram_raddr  <= fft_ram_raddr + 1'b1;
+               fft_ram_empty <= 1'b0;
+            end
+         end else if (fft_valid) begin
+            fft_ram_empty <= 1'b0;
+         end
+      end
+   end
+
+   ram #(
       .WIDTH (2*FFT_OUTPUT_WIDTH ),
-      .DEPTH (FFT_N              )
-   ) fft_fifo (
-      .wclk  (clk_i                ),
-      .rst_n (~stop_ftclk          ),
-      .wen   (fft_valid            ),
-      .wdata ({fft_re_o, fft_im_o} ),
-      .rclk  (clk10                ),
-      .ren   (fft_fifo_ren         ),
-      .empty (fft_fifo_empty       ),
-      .full  (fft_fifo_full        ),
-      .rdata (fft_fifo_rdata       )
+      .SIZE  (FFT_N              )
+   ) fft_bitrev_ram (
+      .wrclk  (clk_i                ),
+      .wren   (fft_valid            ),
+      .wraddr (fft_ctr              ),
+      .wrdata ({fft_re_o, fft_im_o} ),
+      .rdclk  (clk10                ),
+      .rden   (fft_ram_ren         ),
+      .rdaddr (fft_ram_raddr        ),
+      .rddata (fft_ram_rdata       )
    );
-   /* verilator lint_on PINMISSING */
 
    // TODO this is not properly parameterized. Currently, we assume
    // FIR_OUTPUT_WIDTH = 13, which gives FFT_OUTPUT_WIDTH = 24.
    // localparam FFT_REM_WIDTH = 64 - (2 * FFT_OUTPUT_WIDTH);
-   reg [`USB_DATA_WIDTH-1:0] ft_fft_fifo_data;
+   reg [`USB_DATA_WIDTH-1:0] ft_fft_ram_data;
    always @(*) begin
       case (clk80_10_phase_ctr)
-      3'd0: ft_fft_fifo_data = 8'd0;
-      3'd1: ft_fft_fifo_data = 8'd0;
-      3'd2: ft_fft_fifo_data = fft_fifo_rdata[47:40];
-      3'd3: ft_fft_fifo_data = fft_fifo_rdata[39:32];
-      3'd4: ft_fft_fifo_data = fft_fifo_rdata[31:24];
-      3'd5: ft_fft_fifo_data = fft_fifo_rdata[23:16];
-      3'd6: ft_fft_fifo_data = fft_fifo_rdata[15:8];
-      3'd7: ft_fft_fifo_data = fft_fifo_rdata[7:0];
+      3'd0: ft_fft_ram_data = 8'd0;
+      3'd1: ft_fft_ram_data = 8'd0;
+      3'd2: ft_fft_ram_data = fft_ram_rdata[47:40];
+      3'd3: ft_fft_ram_data = fft_ram_rdata[39:32];
+      3'd4: ft_fft_ram_data = fft_ram_rdata[31:24];
+      3'd5: ft_fft_ram_data = fft_ram_rdata[23:16];
+      3'd6: ft_fft_ram_data = fft_ram_rdata[15:8];
+      3'd7: ft_fft_ram_data = fft_ram_rdata[7:0];
       endcase
    end
 
@@ -485,8 +516,8 @@ module top #(
         end
       FFT:
         begin
-           ft_fifo_wdata  = ft_fft_fifo_data;
-           out_fifo_empty = fft_fifo_empty;
+           ft_fifo_wdata  = ft_fft_ram_data;
+           out_fifo_empty = fft_ram_empty;
         end
       endcase
    end
@@ -564,7 +595,7 @@ module top #(
       state[PROC_FFT]:
         begin
            if (stop)                           next[IDLE]     = 1'b1;
-           else if (out < FFT | fft_fifo_full) next[TX_LOAD]  = 1'b1;
+           else if (out < FFT | fft_ram_full) next[TX_LOAD]  = 1'b1;
            else                                next[PROC_FFT] = 1'b1;
         end
       state[TX_LOAD]:
@@ -617,21 +648,21 @@ module top #(
                    window_fifo_ren <= 1'b1;
                    if (window_fifo_ren) ft_fifo_wen <= 1'b1;
                 end
-              FFT: if (fft_fifo_ren & (ft_fifo_wen | clk80_10_phase_ctr == 3'd7)) ft_fifo_wen <= 1'b1;
+              FFT: if (fft_ram_ren & (ft_fifo_wen | clk80_10_phase_ctr == 3'd7)) ft_fifo_wen <= 1'b1;
               endcase
            end
         end
       next[TX]:
         begin
-           if (out == FFT & fft_fifo_ren & clk80_10_phase_ctr < 3'd7) ft_fifo_wen <= 1'b1;
+           if (out == FFT & fft_ram_ren & clk80_10_phase_ctr < 3'd7) ft_fifo_wen <= 1'b1;
         end
       endcase
    end
 
    always @(posedge clk10) begin
-      fft_fifo_ren <= 1'b0;
+      fft_ram_ren <= 1'b0;
       case (1'b1)
-      next[TX_LOAD]: if (out == FFT) fft_fifo_ren <= 1'b1;
+      next[TX_LOAD]: if (out == FFT) fft_ram_ren <= 1'b1;
       endcase
    end
    // ================================================================
@@ -972,7 +1003,7 @@ module top #(
    assign ext1_io[1] = 1'b0;
    assign ext1_io[4] = fft_valid;
    assign ext1_io[2] = 1'b0;
-   assign ext1_io[5] = fft_fifo_ren;
+   assign ext1_io[5] = fft_ram_ren;
 
    assign ext2_io[0] = 1'b0;
    assign ext2_io[3] = state[SAMPLE];
@@ -1161,11 +1192,13 @@ module top_tb;
    );
 
    reg [`USB_DATA_WIDTH-1:0]  data_rx;
+   integer                    rx_ctr = 0;
    always @(posedge clk60) begin
-      if (~ft_txe_n & ~dut.ft_wr_n_o)
-        data_rx <= ft_data_io;
-      else
-        data_rx <= `USB_DATA_WIDTH'dx;
+      if (~ft_txe_n & ~dut.ft_wr_n_o) begin
+         data_rx <= ft_data_io;
+         rx_ctr <= rx_ctr + 1;
+      end
+      else data_rx <= `USB_DATA_WIDTH'dx;
    end
 
 endmodule

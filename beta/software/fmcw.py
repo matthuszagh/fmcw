@@ -56,9 +56,6 @@ def _reverse_bits(val: int, nbits: int) -> int:
     return newval
 
 
-BIT_REV_10ARR = np.array([_reverse_bits(i, 10) for i in range(1024)])
-
-
 HORIZONTAL_LINES = "----------\n"
 
 
@@ -204,14 +201,6 @@ def db_arr(indata, maxval, db_min, db_max):
     indata = np.where(indata == 0, 1, indata)
     arr = 20 * np.log10(indata / maxval)
     return np.clip(arr, db_min, db_max)
-
-
-def bit_reverse(indata: np.array) -> np.array:
-    """
-    """
-    if len(indata) != 1024:
-        raise ValueError("Currently only 1024 len supported.")
-    return indata[BIT_REV_10ARR]
 
 
 def dbin(fs: float, tsweep: float, nsample: int, bandwidth: float) -> float:
@@ -1227,7 +1216,6 @@ class Proc:
             i += 1
 
         if self.indata == Data.FFT:
-            seq = bit_reverse(seq)
             seq = seq[0 : spectrum_len(self.indata)]
 
         nbits = data_nbits(self.indata)
