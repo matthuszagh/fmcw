@@ -1,6 +1,8 @@
 `ifndef _FIR_BANK_V_
 `define _FIR_BANK_V_
+
 `default_nettype none
+`timescale 1ns/1ps
 
 module fir_bank #(
    parameter N_TAPS       = 120, /* total number of taps */
@@ -23,10 +25,7 @@ module fir_bank #(
 
    reg signed [INPUT_WIDTH-1:0] shift_reg [0:BANK_LEN-1];
    integer i;
-   initial begin
-      for (i=0; i<BANK_LEN; i=i+1)
-        shift_reg[i] <= {INPUT_WIDTH{1'b0}};
-   end
+   initial for (i=0; i<BANK_LEN; i=i+1) shift_reg[i] = {INPUT_WIDTH{1'b0}};
 
    always @(posedge clk) begin
       if (tap_addr == {$clog2(M){1'b0}}) begin

@@ -59,10 +59,7 @@ module fir #(
    // input and therefore doesn't need a shift register.
    reg signed [INPUT_WIDTH-1:0]         shift_reg [0:M-2];
    integer                              i;
-   initial begin
-      for (i=0; i<M-1; i=i+1)
-         shift_reg[i] <= {INPUT_WIDTH{1'b0}};
-   end
+   initial for (i=0; i<M-1; i=i+1) shift_reg[i] = {INPUT_WIDTH{1'b0}};
 
    always @(posedge clk) begin
       shift_reg[0] <= din;
@@ -76,10 +73,7 @@ module fir #(
    // other half need to be registered. This relates to the way the
    // multiply is time-multiplexed.
    reg signed [INPUT_WIDTH-1:0]     bank_decimated_in [0:M-1];
-   initial begin
-      for (i=0; i<M; i=i+1)
-        bank_decimated_in[i] <= {INPUT_WIDTH{1'b0}};
-   end
+   initial for (i=0; i<M; i=i+1) bank_decimated_in[i] = {INPUT_WIDTH{1'b0}};
 
    always @(posedge clk) begin
       if (tap_addr == 5'd0) begin
@@ -807,7 +801,7 @@ module fir #(
 
    localparam LATENCY = 2;
    reg dvalid_sync [0:LATENCY-1];
-   initial for (i=0; i<LATENCY; i=i+1) dvalid_sync[i] <= 1'b0;
+   initial for (i=0; i<LATENCY; i=i+1) dvalid_sync[i] = 1'b0;
 
    always @(posedge clk) begin
       if (~srst_n) begin

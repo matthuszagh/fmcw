@@ -8,7 +8,7 @@
 `include "fft_bfii.v"
 
 module fft_bf #(
-   parameter WIDTH  = 25,
+   parameter WIDTH  = 24,
    parameter N      = 1024,
    parameter STAGE  = 0
 ) (

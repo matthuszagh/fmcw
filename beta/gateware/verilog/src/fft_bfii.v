@@ -7,7 +7,7 @@
 `include "shift_reg.v"
 
 module fft_bfii #(
-   parameter WIDTH         = 25,
+   parameter WIDTH         = 24,
    parameter SHIFT_REG_LEN = 256
 ) (
    input wire                    clk,
@@ -96,9 +96,7 @@ module fft_bfii #(
    endgenerate
 
    reg carry [0:SHIFT_REG_LEN-1];
-   initial begin
-      for (i=0; i<SHIFT_REG_LEN; i=i+1) carry[i] <= 1'b0;
-   end
+   initial for (i=0; i<SHIFT_REG_LEN; i=i+1) carry[i] = 1'b0;
    always @(posedge clk) begin
       if (~srst_n) begin
          for (i=0; i<SHIFT_REG_LEN; i=i+1) carry[i] <= 1'b0;
