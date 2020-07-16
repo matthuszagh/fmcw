@@ -4,11 +4,9 @@
 `default_nettype none
 `timescale 1ns/1ps
 
-`include "pll_sync_ctr.v"
-
 module fft_wm #(
    parameter WIDTH         = 24,
-   parameter TWIDDLE_WIDTH = 10,
+   parameter TWIDDLE_WIDTH = 18,
    parameter N             = 1024
 ) (
    input wire                            clk,
