@@ -1,5 +1,5 @@
-`default_nettype none
-`timescale 1ns/1ps
+`ifndef _TOP_V_
+`define _TOP_V_
 
 `define GPIO_WIDTH 6
 `define USB_DATA_WIDTH 8
@@ -16,6 +16,9 @@
 `include "fir.v"
 `include "window.v"
 `include "fft.v"
+
+`default_nettype none
+`timescale 1ns/1ps
 
 module top #(
    // TODO these are not properly parameterized
@@ -1172,3 +1175,4 @@ endmodule
 `undef USB_DATA_WIDTH
 `undef ADC_DATA_WIDTH
 `undef SD_DATA_WIDTH
+`endif

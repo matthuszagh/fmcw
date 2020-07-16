@@ -20,7 +20,9 @@ module shift_reg #(
    output wire [WIDTH-1:0] data_o
 );
 
+   /* verilator lint_off WIDTH */
    localparam [$clog2(LEN)-1:0] LEN_MAX = LEN-1;
+   /* verilator lint_on WIDTH */
 
    reg [$clog2(LEN)-1:0]        addr   = {$clog2(LEN){1'b0}};
    reg [$clog2(LEN)-1:0]        rdaddr = {{$clog2(LEN)-1{1'b0}}, 1'b1};

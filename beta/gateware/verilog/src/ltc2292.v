@@ -1,6 +1,8 @@
 `ifndef _LTC2292_V_
 `define _LTC2292_V_
+
 `default_nettype none
+`timescale 1ns/1ps
 
 // Simple interface for the LTC2292 ADC.
 
