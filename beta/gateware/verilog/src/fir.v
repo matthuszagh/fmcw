@@ -63,8 +63,7 @@ module fir #(
 
    always @(posedge clk) begin
       shift_reg[0] <= din;
-      for (i=1; i<M-1; i=i+1)
-        shift_reg[i] <= shift_reg[i-1];
+      for (i=1; i<M-1; i=i+1) shift_reg[i] <= shift_reg[i-1];
    end
 
    // Decimate the input signal by the downsampling factor. We can get
@@ -73,13 +72,13 @@ module fir #(
    // other half need to be registered. This relates to the way the
    // multiply is time-multiplexed.
    reg signed [INPUT_WIDTH-1:0]     bank_decimated_in [0:M-1];
-   initial for (i=0; i<M; i=i+1) bank_decimated_in[i] = {INPUT_WIDTH{1'b0}};
+   integer                          i3;
+   initial for (i3=0; i3<M; i3=i3+1) bank_decimated_in[i3] = {INPUT_WIDTH{1'b0}};
 
    always @(posedge clk) begin
       if (tap_addr == 5'd0) begin
          bank_decimated_in[0] <= din;
-         for (i=1; i<M; i=i+1)
-           bank_decimated_in[i] <= shift_reg[i-1];
+         for (i3=1; i3<M; i3=i3+1) bank_decimated_in[i3] <= shift_reg[i3-1];
       end
    end
 
@@ -800,18 +799,17 @@ module fir #(
    endfunction
 
    localparam LATENCY = 2;
+   integer                          i2;
    reg dvalid_sync [0:LATENCY-1];
-   initial for (i=0; i<LATENCY; i=i+1) dvalid_sync[i] = 1'b0;
+   initial for (i2=0; i2<LATENCY; i2=i2+1) dvalid_sync[i2] = 1'b0;
 
    always @(posedge clk) begin
       if (~srst_n) begin
-         for (i=0; i<LATENCY; i=i+1) dvalid_sync[i] <= 1'b0;
+         for (i2=0; i2<LATENCY; i2=i2+1) dvalid_sync[i2] <= 1'b0;
       end else begin
          if (clk_pos_en) begin
             dvalid_sync[0] <= en;
-            for (i=1; i<LATENCY; i=i+1) begin
-               dvalid_sync[i] <= dvalid_sync[i-1];
-            end
+            for (i2=1; i2<LATENCY; i2=i2+1) dvalid_sync[i2] <= dvalid_sync[i2-1];
          end
       end
    end
