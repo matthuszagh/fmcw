@@ -10,7 +10,7 @@ VERILOG_SRCS	:= $(shell find $(VERILOG_DIRS) -maxdepth 1 -name '*.v')
 TEST_DIR	:= $(realpath test)
 
 TOP_MODULE	= top
-TOP_MODULE_SRC	:= $(realpath src/top.v)
+TOP_MODULE_SRC	= $(realpath src/$(TOP_MODULE).v)
 
 .PHONY: prog
 prog: top.svf bscan_spi_xc7a15t.bit scripts/openocd/*
@@ -29,6 +29,9 @@ bscan_spi_xc7a15t.bit: scripts/xilinx_bscan_spi.py
 flash.bin: top.bit
 	vivado -nolog -nojournal -mode batch -source scripts/vivado/flash_bitstream.tcl
 
+top.edif: src/*
+	$(MAKE) -C $(YOSYS_SCRIPT)
+
 top.bit: src/* env.sh
 	vivado -nolog -nojournal -mode batch -source scripts/vivado/synth.tcl
 
@@ -37,12 +40,15 @@ env.sh: $(SCRIPT_DIR)/roms.py $(SCRIPT_DIR)/fir.py $(SCRIPT_DIR)/fft.py $(SCRIPT
 
 .PHONY: lint
 lint:
-	$(eval TOP_MODULE = top)
+	$(eval TOP_MODULE = fir)
 	verilator $(VERILOG_INCS) \
+		--language "1364-2005" \
 		--lint-only \
+		--bbox-sys \
+		--bbox-unsup \
 		--Wall \
 		--top-module $(TOP_MODULE) \
-		$(TOP_MODULE_SRC)
+		$(realpath src/$(TOP_MODULE).v)
 
 # cocotb simulations
 .PHONY: test_fft
