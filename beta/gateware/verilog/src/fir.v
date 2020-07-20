@@ -75,15 +75,15 @@ module fir #(
    integer                          i3;
    initial for (i3=0; i3<M; i3=i3+1) bank_decimated_in[i3] = {INPUT_WIDTH{1'b0}};
 
+   reg [$clog2(M)-1:0]     tap_addr = {$clog2(M){1'b0}};
+   reg [$clog2(M)-1:0]     tap_addr_pipe = {$clog2(M){1'b0}};
+
    always @(posedge clk) begin
       if (tap_addr == 5'd0) begin
          bank_decimated_in[0] <= din;
          for (i3=1; i3<M; i3=i3+1) bank_decimated_in[i3] <= shift_reg[i3-1];
       end
    end
-
-   reg [$clog2(M)-1:0]     tap_addr = {$clog2(M){1'b0}};
-   reg [$clog2(M)-1:0]     tap_addr_pipe = {$clog2(M){1'b0}};
 
    always @(posedge clk) begin
       tap_addr      <= tap_addr + 1'b1;

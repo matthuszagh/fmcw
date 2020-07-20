@@ -12,7 +12,7 @@
 // register, implement the shift register with flip-flops.
 
 module shift_reg #(
-   parameter WIDTH = 25,
+   parameter WIDTH = 24,
    parameter LEN   = 512
 ) (
    input wire              clk,

@@ -99,6 +99,18 @@ module top #(
    // never flush tx/rx buffers
    assign ft_siwua_n_o = 1'b1;
 
+   localparam NUM_STATES = 8;
+   localparam IDLE        = 0,
+              CONFIG      = 1,
+              WAIT        = 2,
+              SAMPLE      = 3,
+              PROC_FILTER = 4,  // filter and window
+              PROC_FFT    = 5,
+              TX_LOAD     = 6,
+              TX          = 7;
+   reg [NUM_STATES-1:0] state;
+   reg [NUM_STATES-1:0] next;
+
    assign pa_en_n_o    = ~state[SAMPLE];
    assign mix_enbl_n_o = 1'b0;
    assign adc_oe_o     = 2'b00;
@@ -480,17 +492,6 @@ module top #(
    end
 
    // ============== System clock (40MHz) state machine ==============
-   localparam NUM_STATES = 8;
-   localparam IDLE        = 0,
-              CONFIG      = 1,
-              WAIT        = 2,
-              SAMPLE      = 3,
-              PROC_FILTER = 4,  // filter and window
-              PROC_FFT    = 5,
-              TX_LOAD     = 6,
-              TX          = 7;
-   reg [NUM_STATES-1:0] state;
-   reg [NUM_STATES-1:0] next;
    initial begin
       state       = {NUM_STATES{1'b0}};
       state[IDLE] = 1'b1;
