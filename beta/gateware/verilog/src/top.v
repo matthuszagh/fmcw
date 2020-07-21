@@ -312,16 +312,26 @@ module top #(
       .q        (out       )
    );
 
-   wire signed [FIR_OUTPUT_WIDTH-1:0] fir_out;
-   wire                               fir_dvalid;
-   reg                                fir_en = 1'b0;
-   always @(posedge clk_i) begin
-      if (clk2_pos_en) begin
-         if (state[SAMPLE]) fir_en <= 1'b1;
-         else               fir_en <= 1'b0;
-      end
+   reg fir_en = 1'b0;
+   reg fir_en_next;
+
+   always @(*) begin
+      case (clk2_pos_en)
+      1'b0: fir_en_next = fir_en;
+      1'b1:
+        begin
+           if (state[SAMPLE] & raw_sample_ctr < RAW_SAMPLES_MAX) fir_en_next = 1'b1;
+           else                                                  fir_en_next = 1'b0;
+        end
+      endcase
    end
 
+   always @(posedge clk_i) begin
+      fir_en <= fir_en_next;
+   end
+
+   wire signed [FIR_OUTPUT_WIDTH-1:0] fir_out;
+   wire                               fir_dvalid;
    fir #(
       .INPUT_WIDTH    (`ADC_DATA_WIDTH  ),
       .TAP_WIDTH      (FIR_TAP_WIDTH    ),
@@ -647,7 +657,7 @@ module top #(
       fir_fifo_ren    <= 1'b0;
 
       case (1'b1)
-      next[SAMPLE]: if (out == RAW) ft_fifo_wen <= 1'b1;
+      next[SAMPLE]: if (out == RAW & fir_en_next & raw_sample_ctr < RAW_SAMPLES) ft_fifo_wen <= 1'b1;
       next[PROC_FFT]:
         begin
            if (out == FFT) begin
@@ -1037,8 +1047,8 @@ module top #(
    `ifdef TOP
       integer i;
       initial begin
-         $dumpfile ("build/top_tb.vcd");
-         $dumpvars (0, top);
+         $dumpfile("build/top_tb.vcd");
+         $dumpvars(0, top);
          // for (i=0; i<18; i=i+1) $dumpvars(0, fir.shift_reg[i]);
          // for (i=0; i<19; i=i+1) $dumpvars(0, fir.bank_decimated_in[i]);
          // for (i=0; i<19; i=i+1) $dumpvars(0, fir.bank_dout[i]);
@@ -1090,7 +1100,7 @@ module top_tb;
    initial begin
       $dumpfile("tb/top_tb.vcd");
       $dumpvars(0, top_tb);
-      for (i=0; i<10; i=i+1) $dumpvars(0, dut.adf4158.r[i]);
+      // for (i=0; i<10; i=i+1) $dumpvars(0, dut.adf4158.r[i]);
       #10000000 $finish;
    end
 
@@ -1148,7 +1158,7 @@ module top_tb;
       ft245_rdata[3]  = 8'h01;
       // output
       ft245_rdata[4]  = 8'h03;
-      ft245_rdata[5]  = 8'h03;
+      ft245_rdata[5]  = 8'h00;
       // adf reg 0
       ft245_rdata[6]  = 8'h80;
       ft245_rdata[7]  = 8'h00;
