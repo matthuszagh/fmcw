@@ -57,8 +57,8 @@ module fir #(
    // Data is first passed through a shift register at the base clock
    // rate. The first polyphase bank gets its data directly from the
    // input and therefore doesn't need a shift register.
-   reg signed [INPUT_WIDTH-1:0]         shift_reg [0:M-2];
-   integer                              i;
+   reg signed [INPUT_WIDTH-1:0] shift_reg [0:M-2];
+   integer i;
    initial for (i=0; i<M-1; i=i+1) shift_reg[i] = {INPUT_WIDTH{1'b0}};
 
    always @(posedge clk) begin
@@ -71,8 +71,8 @@ module fir #(
    // time (those where the accumulation starts on tap_addr == 0). The
    // other half need to be registered. This relates to the way the
    // multiply is time-multiplexed.
-   reg signed [INPUT_WIDTH-1:0]     bank_decimated_in [0:M-1];
-   integer                          i3;
+   reg signed [INPUT_WIDTH-1:0] bank_decimated_in [0:M-1];
+   integer i3;
    initial for (i3=0; i3<M; i3=i3+1) bank_decimated_in[i3] = {INPUT_WIDTH{1'b0}};
 
    reg [$clog2(M)-1:0]     tap_addr = {$clog2(M){1'b0}};
@@ -799,7 +799,7 @@ module fir #(
    endfunction
 
    localparam LATENCY = 2;
-   integer                          i2;
+   integer i2;
    reg dvalid_sync [0:LATENCY-1];
    initial for (i2=0; i2<LATENCY; i2=i2+1) dvalid_sync[i2] = 1'b0;
 
