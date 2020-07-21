@@ -30,8 +30,9 @@ class TopTb:
         self.clk_en = ClockEnable(dut.clk_i, dut.clk2_pos_en, 20)
         self.clk60 = Clock(dut.ft_clkout_i, 60)
         self.dut = dut
-        self.inputs = []
-        # self.inputs = random_samples(12, 20480)
+        # self.inputs = []
+        self.inputs = random_samples(12, 20480)
+        self.outputs = self.gen_outputs()
 
     @cocotb.coroutine
     async def setup(self):
@@ -96,17 +97,6 @@ class TopTb:
                 else:
                     ctr += 1
             await RisingEdge(self.dut.ft_clkout_i)
-
-    @cocotb.coroutine
-    async def write_continuous(self):
-        """
-        """
-        bit_width = 12
-        while True:
-            self.dut.adc_d_i <= np.random.randint(
-                -(2 ** (bit_width - 1)), 2 ** (bit_width - 1) - 1
-            )
-            await RisingEdge(self.dut.clk_i)
 
     @cocotb.coroutine
     async def write_configuration(self):
@@ -189,40 +179,30 @@ class TopTb:
         self.dut.ft_rxf_n_i.setimmediatevalue(1)
 
     @cocotb.coroutine
-    async def gen_inputs(self):
+    async def write_inputs(self):
         """
         """
+        input_ctr = 0
         input_len = 20480
         input_valid = False
-        start_capture = False
+        start_send = False
         muxout = self.dut.adf_muxout_i
         clk2_pos_en = self.dut.clk2_pos_en
 
-        while len(self.inputs) < input_len:
+        while input_ctr < input_len:
             if (
-                clk2_pos_en.value.is_resolvable
-                and clk2_pos_en.value.integer == 1
+                self.dut.fir.tap_addr.value.is_resolvable
+                and self.dut.fir.tap_addr.value.integer == 18
+                and self.dut.adf_muxout_i.value.is_resolvable
+                and self.dut.adf_muxout_i.value.integer == 0
             ):
-                start_capture = True
+                input_valid = True
+
+            if input_valid:
+                self.dut.adc_d_i <= self.inputs[input_ctr].item()
+                input_ctr += 1
 
             await RisingEdge(self.dut.clk_i)
-
-            if start_capture:
-                if not input_valid:
-                    if (
-                        len(self.inputs) == 20
-                        and muxout.value.is_resolvable
-                        and muxout.value.integer == 0
-                    ):
-                        input_valid = True
-                    elif len(self.inputs) == 20:
-                        self.inputs = []
-
-                self.inputs.append(
-                    self.dut.adc_single_chan.value.signed_integer
-                )
-
-        self.outputs = self.gen_outputs()
 
     def gen_outputs(self):
         """
@@ -250,9 +230,6 @@ class TopTb:
         self.window_outputs = self.fir_outputs * window_coeffs
         outputs = np.fft.fft(self.window_outputs)
         return outputs
-        # # Drop the first value. This ensures that the first output
-        # # gets the full 2MHz cycle of inputs.
-        # return outputs[1:]
 
     def check_fir_output(self, ctr: int, tol: float) -> None:
         """
@@ -268,7 +245,6 @@ class TopTb:
                 )
                 % (act_val, exp_val, act_val - exp_val, tol, ctr)
             )
-        print(ctr, ":", act_val, "(act)", exp_val, "(exp)")
 
     def check_window_output(self, ctr: int, tol: float) -> None:
         """
@@ -326,8 +302,7 @@ async def check_sequence(dut):
     tb = TopTb(dut)
     await tb.setup()
     await tb.write_configuration()
-    cocotb.fork(tb.write_continuous())
-    await tb.gen_inputs()
+    cocotb.fork(tb.write_inputs())
 
     fir_tol = 1
     fir_ctr = 0
@@ -337,7 +312,8 @@ async def check_sequence(dut):
     window_ctr = 0
     window_ctr_max = 1024
 
-    fft_tol = 20
+    # TODO this is much higher than in test_fft
+    fft_tol = 100
     fft_ctr = 0
     fft_ctr_max = 1024
 
@@ -370,39 +346,9 @@ async def check_sequence(dut):
 
         await RisingEdge(dut.clk_i)
 
-    # i = 0
-    # while i < num_samples:
-    #     print("input ", i, ": ", tb.inputs[i])
-    #     i += 1
-
-    # i = 0
-    # while i < 1024:
-    #     print("fir output ", i, ": ", int(round(tb.fir_outputs[i])))
-    #     i += 1
-
-    # i = 0
-    # while i < 1024:
-    #     print("window output ", i, ": ", int(round(tb.window_outputs[i])))
-    #     i += 1
-
-    # tol = 20
-    # i = len(tb.outputs)
-    # rdiffs = []
-    # idiffs = []
-
-    # while i > 0:
-    #     await ReadOnly()
-    #     if (
-    #         dut.ft_txe_n_i.value.is_resolvable
-    #         and dut.ft_txe_n_i.value.integer == 0
-    #         and dut.ft_wr_n_o.value.is_resolvable
-    #         and dut.ft_wr_n_o.value.integer == 0
-    #     ):
-    #         print(
-    #             "output ",
-    #             len(tb.outputs) - i,
-    #             ": ",
-    #             tb.outputs[len(tb.outputs) - i],
-    #         )
-    #         i -= 1
-    #     await RisingEdge(dut.clk_i)
+    # continue after everything checked. Ideally, we should perform
+    # the check twice.
+    muxout_ctr = 0
+    while muxout_ctr < 2:
+        await RisingEdge(dut.adf_muxout_i)
+        muxout_ctr += 1

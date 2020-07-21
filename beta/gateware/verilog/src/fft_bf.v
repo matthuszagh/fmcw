@@ -14,6 +14,7 @@ module fft_bf #(
 ) (
    input wire                     clk,
    input wire                     srst_n,
+   input wire                     en,
    input wire                     carry_in,
    output wire                    carry_out,
    input wire [$clog2(N)-1:0]     ctr_i,
@@ -29,8 +30,6 @@ module fft_bf #(
    wire                           sel1;
    wire                           sel2;
    reg [$clog2(N)-1:0]            ctrii = {$clog2(N){1'b0}};
-   reg                            start_ctrii = 1'b0;
-   reg                            start_ctr_o = 1'b0;
 
    wire signed [WIDTH-1:0]        z_re;
    wire signed [WIDTH-1:0]        z_im;
@@ -38,7 +37,7 @@ module fft_bf #(
    assign sel1 = ctr_i[$clog2(N)-1-2*STAGE];
    assign sel2 = ctrii[$clog2(N)-2-2*STAGE];
 
-   wire                          carry_int;
+   wire carry_int;
 
    fft_bfi #(
       .WIDTH         (WIDTH                   ),
@@ -72,10 +71,17 @@ module fft_bf #(
    );
 
    always @(posedge clk) begin
-      if (sel1)                start_ctrii <= 1'b1;
-      if (sel1 || start_ctrii) ctrii       <= ctrii + 1'b1;
-      if (sel2)                start_ctr_o <= 1'b1;
-      if (sel2 || start_ctr_o) ctr_o       <= ctr_o + 1'b1;
+      if (ctrii == {$clog2(N){1'b0}}) begin
+         if (sel1) ctrii <= {{$clog2(N)-1{1'b0}}, 1'b1};
+      end else begin
+         ctrii <= ctrii + 1'b1;
+      end
+
+      if (ctr_o == {$clog2(N){1'b0}}) begin
+         if (sel2) ctr_o <= {{$clog2(N)-1{1'b0}}, 1'b1};
+      end else begin
+         ctr_o <= ctr_o + 1'b1;
+      end
    end
 
 endmodule

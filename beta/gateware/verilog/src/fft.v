@@ -469,10 +469,12 @@ module fft #(
    /* verilator lint_on WIDTH */
 
    always @(posedge clk) begin
-      data_re_o  <= data_bf_last_re;
-      data_im_o  <= data_bf_last_im;
-      stage0_ctr <= stage0_ctr + 1'b1;
-      valid      <= valid_next;
+      data_re_o <= data_bf_last_re;
+      data_im_o <= data_bf_last_im;
+      valid     <= valid_next;
+
+      if (en) stage0_ctr <= stage0_ctr + 1'b1;
+      else    stage0_ctr <= {$clog2(N){1'b0}};
 
       if (valid) data_ctr_bit_nrml <= data_ctr_bit_nrml + 1'b1;
       else       data_ctr_bit_nrml <= {$clog2(N){1'b0}};
