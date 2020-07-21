@@ -51,6 +51,11 @@ lint:
 		$(realpath src/$(TOP_MODULE).v)
 
 # cocotb simulations
+.PHONY: test_top
+test_top:
+	$(eval TOP_MODULE = top)
+	$(MAKE) -C $(TEST_DIR) cocotb
+
 .PHONY: test_fft
 test_fft:
 	$(eval TOP_MODULE = fft)

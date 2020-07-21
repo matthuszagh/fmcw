@@ -28,7 +28,11 @@ module top #(
    parameter WINDOW_COEFF_WIDTH = 16,
    parameter FFT_TWIDDLE_WIDTH  = 18
 ) (
-`ifdef TOP_SIMULATE
+`ifdef TOP
+   input wire clk10,
+   input wire clk20,
+   input wire clk80,
+`elsif TOP_SIMULATE
    input wire clk10,
    input wire clk20,
    input wire clk80,
@@ -116,7 +120,11 @@ module top #(
    assign adc_oe_o     = 2'b00;
    assign adc_shdn_o   = 2'b00;
 
-`ifndef TOP_SIMULATE
+`ifdef TOP
+   reg pll_lock = 1'b1;
+`elsif TOP_SIMULATE
+   reg pll_lock = 1'b1;
+`else
    wire clk80;
    wire clk20;
    wire clk10;
@@ -131,18 +139,16 @@ module top #(
       .CLKOUT2_DIVIDE (96 ),
       .CLKIN1_PERIOD  (25 )
    ) main_pll (
-      .CLKOUT0  (clk80      ),
-      .CLKOUT1  (clk20      ),
-      .CLKOUT2  (clk10      ),
-      .LOCKED   (pll_lock   ),
-      .CLKIN1   (clk_i      ),
-      .RST      (1'b0       ),
-      .CLKFBOUT (pll_fb     ),
-      .CLKFBIN  (pll_fb     )
+      .CLKOUT0  (clk80    ),
+      .CLKOUT1  (clk20    ),
+      .CLKOUT2  (clk10    ),
+      .LOCKED   (pll_lock ),
+      .CLKIN1   (clk_i    ),
+      .RST      (1'b0     ),
+      .CLKFBOUT (pll_fb   ),
+      .CLKFBIN  (pll_fb   )
    );
    /* verilator lint_on DECLFILENAME */
-`else
-   reg pll_lock = 1'b1;
 `endif
 
    // pll lock is asynchronous
@@ -601,9 +607,9 @@ module top #(
         end
       state[PROC_FFT]:
         begin
-           if (stop)                           next[IDLE]     = 1'b1;
+           if (stop)                          next[IDLE]     = 1'b1;
            else if (out < FFT | fft_ram_full) next[TX_LOAD]  = 1'b1;
-           else                                next[PROC_FFT] = 1'b1;
+           else                               next[PROC_FFT] = 1'b1;
         end
       state[TX_LOAD]:
         begin
@@ -1019,6 +1025,20 @@ module top #(
    assign ext2_io[2] = 1'b0;
    assign ext2_io[5] = state[TX];
 
+`ifdef COCOTB_SIM
+   `ifdef TOP
+      integer i;
+      initial begin
+         $dumpfile ("build/top_tb.vcd");
+         $dumpvars (0, top);
+         // for (i=0; i<18; i=i+1) $dumpvars(0, fir.shift_reg[i]);
+         // for (i=0; i<19; i=i+1) $dumpvars(0, fir.bank_decimated_in[i]);
+         // for (i=0; i<19; i=i+1) $dumpvars(0, fir.bank_dout[i]);
+         #1;
+      end
+   `endif
+`endif
+
 endmodule
 
 `ifdef TOP_SIMULATE
@@ -1031,21 +1051,30 @@ module top_tb;
    reg clk60  = 1'b0;
    reg clk80  = 1'b0;
 
-   reg muxout = 1'b0;
+   reg muxout = 1'b1;
 
-   localparam MUXOUT_ASSERT_CTR = 120000;
-   reg [$clog2(MUXOUT_ASSERT_CTR)-1:0] muxout_ctr = 0;
+   localparam MUXOUT_LOW_MAX = 40000;
+   localparam MUXOUT_HIGH_MAX = 2 * MUXOUT_LOW_MAX;
+   reg [$clog2(MUXOUT_HIGH_MAX)-1:0] muxout_ctr = 0;
 
    reg [`USB_DATA_WIDTH-1:0]           adc_ctr = 0;
 
    always @(posedge clk40) begin
       adc_ctr <= adc_ctr + 1'b1;
-      if (muxout_ctr == MUXOUT_ASSERT_CTR) begin
-         muxout_ctr <= 0;
-         muxout     <= 1'b1;
+      if (~muxout) begin
+         if (muxout_ctr == MUXOUT_LOW_MAX - 1) begin
+            muxout     <= ~muxout;
+            muxout_ctr <= 0;
+         end else begin
+            muxout_ctr <= muxout_ctr + 1;
+         end
       end else begin
-         muxout_ctr <= muxout_ctr + 1;
-         muxout     <= 1'b0;
+         if (muxout_ctr == MUXOUT_HIGH_MAX - 1) begin
+            muxout     <= ~muxout;
+            muxout_ctr <= 0;
+         end else begin
+            muxout_ctr <= muxout_ctr + 1;
+         end
       end
    end
 

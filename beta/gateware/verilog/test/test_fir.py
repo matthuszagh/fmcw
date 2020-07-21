@@ -21,7 +21,7 @@ class FIRTB:
 
     def __init__(self, dut, num_samples, input_width, tap_width):
         self.clk = Clock(dut.clk, 40)
-        self.clk_en = ClockEnable(dut.clk, dut.clk_pos_en, dut.srst_n, 20)
+        self.clk_en = ClockEnable(dut.clk, dut.clk_pos_en, 20)
         self.dut = dut
         self.inputs = random_samples(input_width, num_samples)
         self.downsample_factor = 20

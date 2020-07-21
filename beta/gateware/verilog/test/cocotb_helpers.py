@@ -16,7 +16,9 @@ def random_samples(bit_width, num_samples):
     """
     seq = np.zeros(num_samples, dtype=int)
     for i, _ in enumerate(seq):
-        seq[i] = np.random.randint(-2 ** (bit_width - 1), 2 ** (bit_width - 1))
+        seq[i] = np.random.randint(
+            -(2 ** (bit_width - 1)), 2 ** (bit_width - 1) - 1
+        )
     return seq.astype(int)
 
 
@@ -41,7 +43,7 @@ class Clock:
         phase: phase in ps
         """
         self.clk = clk
-        self.period = 1e6 / freq
+        self.period = round(1e6 / freq)
         self.phase = 1e3 * phase
 
     def scale(self, factor):
@@ -57,12 +59,12 @@ class Clock:
         of this Clock class.
         """
         self.clk <= 0
-        await Timer(self.period / 2 - self.phase)
+        await Timer(round(self.period / 2) - self.phase)
         while True:
             self.clk <= 1
-            await Timer(self.period / 2)
+            await Timer(round(self.period / 2))
             self.clk <= 0
-            await Timer(self.period / 2)
+            await Timer(round(self.period / 2))
 
 
 class ClockEnable:
@@ -71,7 +73,7 @@ class ClockEnable:
     signal.
     """
 
-    def __init__(self, clk, clk_en, rst_n, freq_ratio):
+    def __init__(self, clk, clk_en, freq_ratio):
         """
         @clk is the underlying base Clock object.
 
@@ -82,13 +84,12 @@ class ClockEnable:
         """
         self.clk = clk
         self.clk_en = clk_en
-        self.rst_n = rst_n
         self.freq_ratio = freq_ratio
 
     @cocotb.coroutine
     async def start(self):
         ctr = 0
-        await RisingEdge(self.rst_n)
+        # await RisingEdge(self.rst_n)
         while True:
             if ctr == self.freq_ratio - 1:
                 ctr = 0
