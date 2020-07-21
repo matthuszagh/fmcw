@@ -314,6 +314,14 @@ module top #(
 
    wire signed [FIR_OUTPUT_WIDTH-1:0] fir_out;
    wire                               fir_dvalid;
+   reg                                fir_en = 1'b0;
+   always @(posedge clk_i) begin
+      if (clk2_pos_en) begin
+         if (state[SAMPLE]) fir_en <= 1'b1;
+         else               fir_en <= 1'b0;
+      end
+   end
+
    fir #(
       .INPUT_WIDTH    (`ADC_DATA_WIDTH  ),
       .TAP_WIDTH      (FIR_TAP_WIDTH    ),
@@ -322,7 +330,7 @@ module top #(
    ) fir (
       .clk        (clk_i           ),
       .arst_n     (~stop_ftclk     ),
-      .en         (state[SAMPLE]   ),
+      .en         (fir_en          ),
       .clk_pos_en (clk2_pos_en     ),
       .din        (adc_single_chan ),
       .dout       (fir_out         ),
@@ -631,7 +639,7 @@ module top #(
    always @(posedge clk_i) begin
       raw_sample_ctr <= {RAW_SAMPLES{1'b0}};
       case (1'b1)
-      state[SAMPLE] : raw_sample_ctr <= raw_sample_ctr + 1'b1;
+      state[SAMPLE] : if (fir_en) raw_sample_ctr <= raw_sample_ctr + 1'b1;
       endcase
 
       ft_fifo_wen     <= 1'b0;

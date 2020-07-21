@@ -66,16 +66,26 @@ class FIRTB:
         """
         sample_ctr = 0
         num_samples = len(self.inputs)
-        # self.dut.en <= 0
-        # await RisingEdge(self.dut.clk)
+        input_valid = False
+        self.dut.en <= 0
+        await RisingEdge(self.dut.clk)
+
         while True:
-            if sample_ctr < num_samples:
-                self.dut.en <= 1
-                self.dut.din <= self.inputs[sample_ctr].item()
-            else:
-                self.dut.en <= 0
-                self.dut.din <= 0
-            sample_ctr += 1
+            if (
+                self.dut.clk_pos_en.value.is_resolvable
+                and self.dut.clk_pos_en.value.integer == 1
+            ):
+                input_valid = True
+
+            if input_valid:
+                if sample_ctr < num_samples:
+                    self.dut.en <= 1
+                    self.dut.din <= self.inputs[sample_ctr].item()
+                else:
+                    self.dut.en <= 0
+                    self.dut.din <= 0
+                sample_ctr += 1
+
             await RisingEdge(self.dut.clk)
 
     def gen_outputs(self):
@@ -92,9 +102,7 @@ class FIRTB:
             for i in range(len(out_pre_dec))
             if i % self.downsample_factor == 0
         ]
-        # Drop the first value. This ensures that the first output
-        # gets the full 2MHz cycle of inputs.
-        return outputs[1:]
+        return outputs
 
 
 @cocotb.test()

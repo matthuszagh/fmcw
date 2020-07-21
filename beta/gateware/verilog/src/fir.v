@@ -62,7 +62,8 @@ module fir #(
    initial for (i=0; i<M-1; i=i+1) shift_reg[i] = {INPUT_WIDTH{1'b0}};
 
    always @(posedge clk) begin
-      shift_reg[0] <= din;
+      if (en) shift_reg[0] <= din;
+      else    shift_reg[0] <= {INPUT_WIDTH{1'b0}};
       for (i=1; i<M-1; i=i+1) shift_reg[i] <= shift_reg[i-1];
    end
 
@@ -80,7 +81,8 @@ module fir #(
 
    always @(posedge clk) begin
       if (tap_addr == 5'd0) begin
-         bank_decimated_in[0] <= din;
+         if (en) bank_decimated_in[0] <= din;
+         else    bank_decimated_in[0] <= {INPUT_WIDTH{1'b0}};
          for (i3=1; i3<M; i3=i3+1) bank_decimated_in[i3] <= shift_reg[i3-1];
       end
    end
@@ -798,7 +800,7 @@ module fir #(
       trunc_to_out = expr[INTERNAL_MIN_MSB-1:INTERNAL_MIN_MSB-OUTPUT_WIDTH];
    endfunction
 
-   localparam LATENCY = 2;
+   localparam LATENCY = 1;
    integer i2;
    reg dvalid_sync [0:LATENCY-1];
    initial for (i2=0; i2<LATENCY; i2=i2+1) dvalid_sync[i2] = 1'b0;
