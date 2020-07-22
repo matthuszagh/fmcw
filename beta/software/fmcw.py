@@ -548,7 +548,7 @@ class Configuration:
                 getter=self._get_time,
                 setter=self._set_time,
                 possible=self._time_possible,
-                init="10",
+                init="35",
             ),
             Parameter(
                 name="plot type",
@@ -580,7 +580,7 @@ class Configuration:
                 getter=self._get_plot_dir,
                 setter=self._set_plot_dir,
                 possible=self._plot_dir_possible,
-                init="",
+                init="plots",
             ),
             Parameter(
                 name="subtract last",
@@ -1220,8 +1220,7 @@ class Proc:
 
         nbits = data_nbits(self.indata)
         if self.output == Data.FFT:
-            # seq = db_arr(seq, 2 ** (nbits - 1), self.db_min, self.db_max)
-            seq = db_arr(seq, 2 ** (13 - 1), self.db_min, self.db_max)
+            seq = db_arr(seq, 2 ** (12 - 1), self.db_min, self.db_max)
         elif self.spectrum:
             seq = self.perform_fft(seq)
             seq = db_arr(seq, 2 ** (nbits - 1), self.db_min, self.db_max)
