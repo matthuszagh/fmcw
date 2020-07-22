@@ -26,7 +26,6 @@
 
 static struct ftdi_context *ftdi = NULL;
 static pthread_t producer_thread;
-static pthread_t consumer_thread;
 pthread_mutex_t *mutex = NULL;
 struct ProducerData *prod_data = NULL;
 struct ConsumerData *cons_data = NULL;
@@ -428,13 +427,6 @@ sample_t sample_val(uint64_t uval)
 	uint64_t uuval = (uval & uumask) >> _sample_bits;
 	sample_t upval = (sample_t)(-(uuval & mask) + (uuval & ~mask));
 
-	/* printf("uval : %012llX\n", uval); */
-	/* printf("luval: %06llX\n", luval); */
-	/* printf("lval : %d\n", lval); */
-	/* printf("uuval: %06llX\n", uuval); */
-	/* printf("upval: %d\n", upval); */
-	/* printf("res  : %d\n", (sample_t)round(sqrt(pow(lval, 2) + pow(upval, 2)))); */
-	/* printf("\n"); */
 	return (sample_t)round(sqrt(pow(lval, 2) + pow(upval, 2)));
 }
 
