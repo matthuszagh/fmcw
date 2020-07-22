@@ -1,6 +1,5 @@
 # options
 USE_NMIGEN	= 0
-LOG		= 0
 
 # constants
 GATEWARE_DIR	= gateware
