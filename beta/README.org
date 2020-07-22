@@ -1,4 +1,0 @@
-There are a number of critical issues with the prior
-implementation. Rather than modifying the old version, I think it's
-easier to rewrite the implementation, largely from scratch here. This
-will eventually replace the old implementation.

@@ -79,3 +79,7 @@ beta/software/read
 **/*.o
 **/*.a
 **/*.svf
+/software/src/device
+/software/cdevice.c
+/software/device.c
+/software/device.so
