@@ -130,17 +130,25 @@ def data_nbits(data: Data) -> int:
     raise ValueError("Invalid Data value.")
 
 
-def data_nbytes(data: Data) -> int:
+def pow2ceil(val: int) -> int:
     """
     """
-    bits = data_nbits(data)
-    bytes = bits // BYTE_BITS
-    if not bits % BYTE_BITS == 0:
-        bytes += 1
-    return bytes
+    res = 1
+    while val > res:
+        res *= 2
+    return res
 
 
-def num_flags(num_bits: int) -> int:
+def data_nbytes(nbits: int) -> int:
+    """
+    """
+    nbytes = nbits // 8
+    if nbits % nbytes != 0:
+        nbytes += 1
+    return pow2ceil(nbytes)
+
+
+def data_nflags(data: Data) -> int:
     """
     The number of start and stop flag bytes for a payload with a given
     number of bits.  Each sample is MSB-padded with 0s until it is
@@ -150,8 +158,11 @@ def num_flags(num_bits: int) -> int:
     flag length is therefore equal to the number of bytes of the
     sample + padding.
     """
-    full_bytes = num_bits // BYTE_BITS
-    return full_bytes + 1
+    sample_bits = data_nbits(data)
+    if data == Data.FFT:
+        sample_bits *= 2
+    nbytes = sample_bits // 8 + 1
+    return pow2ceil(nbytes)
 
 
 def write(txt: str, newline: bool = True):
@@ -215,6 +226,42 @@ def max_bin(fs: float, tsweep: float, nsample: int, bandwidth: float) -> int:
     """
     """
     return int(DIST_MAX / dbin(fs, tsweep, nsample, bandwidth))
+
+
+def plot_rate(nsweep: int, sec: float) -> str:
+    """
+    :param nsweep: Number of complete sweeps.
+    :param sec: Total plot duration in seconds.
+    """
+    return "Plot rate     : {} sweeps/s".format(int(round(nsweep / sec)))
+
+
+def usb_bandwidth(nbytes: int, sec: float) -> str:
+    """
+    :param nbytes: Total number of bytes (including headers and
+        padding) transmitted over USB channel.
+    :param sec: Total plot duration in seconds.
+    """
+    bwidth = nbytes / sec
+    for unit in ["B", "kB", "MB", "GB"]:
+        if bwidth < 10 ** 3:
+            return "USB Bandwidth : {} {}/s\n".format(round(bwidth, 3), unit)
+        bwidth /= 10 ** 3
+
+    return "USB Bandwidth : {} GB/s\n".format(round(bwidth, 3))
+
+
+def sweep_total_bytes(fpga_output: Data) -> int:
+    """
+    """
+    sample_bits = data_nbits(fpga_output)
+    if fpga_output == Data.FFT:
+        sample_bits *= 2
+
+    sample_bytes = data_nbytes(sample_bits)
+    sweep_len = data_sweep_len(fpga_output)
+    flag_bytes = data_nflags(fpga_output)
+    return sample_bytes * sweep_len + 2 * flag_bytes
 
 
 class PlotType(IntEnum):
@@ -1374,11 +1421,10 @@ class Shell:
                     nseq += 1
                 current_time = clock_gettime(CLOCK_MONOTONIC)
 
+        write(plot_rate(nseq, current_time - start_time))
+        tbytes = sweep_total_bytes(self.configuration._fpga_output)
         write(
-            self._bandwidth(
-                nseq * RAW_LEN * data_nbytes(self.configuration._fpga_output),
-                current_time - start_time,
-            ),
+            usb_bandwidth(nseq * tbytes, current_time - start_time),
             newline=True,
         )
 
@@ -1386,17 +1432,6 @@ class Shell:
         """
         """
         return sys.stdin.readline()[:-1]
-
-    def _bandwidth(self, nbytes: int, nsec: float) -> str:
-        """
-        """
-        bwidth = nbytes / nsec
-        for unit in ["B", "kB", "MB", "GB"]:
-            if bwidth < 10 ** 3:
-                return "Bandwidth: {} {}/s\n".format(round(bwidth, 3), unit)
-            bwidth /= 10 ** 3
-
-        return "Bandwidth: {} GB/s\n".format(round(bwidth, 3))
 
 
 if __name__ == "__main__":
