@@ -650,7 +650,7 @@ class Configuration:
                 init="B",
             ),
             Parameter(
-                name="ADF start frequency",
+                name="ADF start frequency (Hz)",
                 number=self._get_inc_ctr(),
                 getter=self._get_adf_fstart,
                 setter=self._set_adf_fstart,
@@ -658,7 +658,7 @@ class Configuration:
                 init="5.6e9",
             ),
             Parameter(
-                name="ADF bandwidth",
+                name="ADF bandwidth (Hz)",
                 number=self._get_inc_ctr(),
                 getter=self._get_adf_bandwidth,
                 setter=self._set_adf_bandwidth,
@@ -666,7 +666,7 @@ class Configuration:
                 init="300e6",
             ),
             Parameter(
-                name="ADF sweep time",
+                name="ADF sweep time (s)",
                 number=self._get_inc_ctr(),
                 getter=self._get_adf_tsweep,
                 setter=self._set_adf_tsweep,
@@ -674,7 +674,7 @@ class Configuration:
                 init="1e-3",
             ),
             Parameter(
-                name="ADF delay time",
+                name="ADF delay time (s)",
                 number=self._get_inc_ctr(),
                 getter=self._get_adf_tdelay,
                 setter=self._set_adf_tdelay,
