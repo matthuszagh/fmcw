@@ -38,7 +38,7 @@ WINDOW_BITS = 13
 FFT_BITS = FIR_BITS + 1 + int(np.ceil(np.log2(DECIMATED_LEN)))
 HIST_RANGE = 3000
 # dB min and max if no other value is set
-DB_MIN = -120
+DB_MIN = -140
 DB_MAX = 0
 DIST_MAX = 235
 
@@ -402,6 +402,10 @@ class Plot:
             "Range-Time Histogram (" + self._output.name + ")"
         )
         self._imv.setPredefinedGradient("flame")
+        hist_widget = self._imv.getHistogramWidget()
+        hist_widget.region.setBounds([self.db_min, self.db_max])
+        # TODO available in v0.11 (I think this is the correct method)
+        # hist_widget.region.setSpan([self.db_min, self.db_max])
 
     def _close_plot(self) -> None:
         """
@@ -443,7 +447,7 @@ class Plot:
         self._tvals.append(clock_gettime(CLOCK_MONOTONIC) - self.tstart)
         self._img_view.getAxis("bottom").setTicks(self._x_ticks())
         xrg = self._data.shape[0]
-        self._imv.setImage(self._data, xvals=[i for i in range(xrg)])
+        self._imv.setImage(self._data, xvals=[i for i in range(xrg)], autoRange=False, autoHistogramRange=False)
 
         # speeds up bandwidth somewhat by reducing the burden of
         # updating the plot.
@@ -611,7 +615,7 @@ class Configuration:
                 getter=self._get_db_min,
                 setter=self._set_db_min,
                 possible=self._db_min_possible,
-                init="-50",
+                init="-120",
             ),
             Parameter(
                 name="dB max",
@@ -619,7 +623,7 @@ class Configuration:
                 getter=self._get_db_max,
                 setter=self._set_db_max,
                 possible=self._db_max_possible,
-                init="0",
+                init="-20",
             ),
             Parameter(
                 name="plot save dir",
@@ -1262,15 +1266,26 @@ class Proc:
             seq = proc_func[i](seq)
             i += 1
 
+        # normally, we should normalize the FFT FPGA output by
+        # dividing by N and then divide our maxval by N. However,
+        # these effects cancel and collectively have no net
+        # effect. Therefore, we omit both steps.
         if self.indata == Data.FFT:
             seq = seq[0 : spectrum_len(self.indata)]
+            seq = seq.astype(np.double)
 
         nbits = data_nbits(self.indata)
+        maxval = 2 ** (nbits - 1)
+        # sub_last has a much greater effect on the FFT output than
+        # time-series outputs.
+        if self.indata == Data.FFT and self.sub_last:
+            maxval /= (2<<5)
+
         if self.output == Data.FFT:
-            seq = db_arr(seq, 2 ** (12 - 1), self.db_min, self.db_max)
+            seq = db_arr(seq, maxval, self.db_min, self.db_max)
         elif self.spectrum:
             seq = self.perform_fft(seq)
-            seq = db_arr(seq, 2 ** (nbits - 1), self.db_min, self.db_max)
+            seq = db_arr(seq, maxval, self.db_min, self.db_max)
 
         return seq
 
@@ -1296,6 +1311,7 @@ class Proc:
         """
         """
         fft = np.fft.rfft(seq)
+        fft /= len(fft)
         return np.abs(fft)
 
 
