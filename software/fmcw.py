@@ -232,8 +232,8 @@ def subdivide_range(rg: int, divider: int) -> List[Tuple[int, int]]:
 
 
 def db_arr(indata, maxval, db_min, db_max):
-    # log(0) is undefined. Replace with the smallest value (1).
-    indata = np.where(indata == 0, 1, indata)
+    """
+    """
     arr = 20 * np.log10(indata / maxval)
     return np.clip(arr, db_min, db_max)
 
@@ -1524,6 +1524,7 @@ class Proc:
                 seq = np.abs(seq)
 
         i = self.indata.value
+        seq = seq.astype(np.double)
         proc_func = [
             self.perform_fir,
             self.perform_decimate,
@@ -1540,7 +1541,6 @@ class Proc:
         # effect. Therefore, we omit both steps.
         if self.indata == Data.FFT:
             seq = seq[0 : spectrum_len(self.indata)]
-            seq = seq.astype(np.double)
 
         nbits = data_nbits(self.indata)
         maxval = 2 ** (nbits - 1)
