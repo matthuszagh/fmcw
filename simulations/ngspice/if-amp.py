@@ -21,7 +21,7 @@ lib_search_paths[SPICE].append(spicelib)
 
 rcm_val = 50e6
 v5 = Part("pyspice", "V", value=5)
-v33 = Part("pyspice", "V", value=33)
+v33 = Part("pyspice", "V", value=3.3)
 v15 = Part("pyspice", "V", value=1.5)
 vs = Part("pyspice", "SINEV", amplitude=1)
 # component declaration
