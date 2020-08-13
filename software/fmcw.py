@@ -100,15 +100,15 @@ def data_from_str(strval: str) -> Data:
     """
     """
     strval = strval.lower()
-    if strval == "raw":
+    if strval == "raw" or strval == "r":
         return Data.RAW
-    elif strval == "fir":
+    elif strval == "fir" or strval == "fi":
         return Data.FIR
-    elif strval == "decimate":
+    elif strval == "decimate" or strval == "d":
         return Data.DECIMATE
-    elif strval == "window":
+    elif strval == "window" or strval == "w":
         return Data.WINDOW
-    elif strval == "fft":
+    elif strval == "fft" or strval == "ff":
         return Data.FFT
 
     raise RuntimeError("Invalid Data string.")
@@ -307,11 +307,11 @@ def plot_type_from_str(strval: str) -> PlotType:
     """
     """
     strval = strval.lower()
-    if strval == "time":
+    if strval == "time" or strval == "t":
         return PlotType.TIME
-    elif strval == "spectrum":
+    elif strval == "spectrum" or strval == "s":
         return PlotType.SPECTRUM
-    elif strval == "hist":
+    elif strval == "hist" or strval == "h":
         return PlotType.HIST
 
     raise RuntimeError("Invalid Data string.")
@@ -1108,12 +1108,17 @@ class Configuration:
     def _set_sub_last(self, newval: str):
         """
         """
-        if newval.lower() == "true":
+        newval_lower = newval.lower()
+        if newval_lower == "true" or newval_lower == "t":
             self.sub_last = True
-        elif newval.lower() == "false":
+        elif newval_lower == "false" or newval_lower == "f":
             self.sub_last = False
         else:
-            raise ValueError("Invalid value for subtract last.")
+            print(
+                "Invalid value for subtract last. Setting it to False. "
+                "Please reconfigure it with a permissible entry."
+            )
+            self.sub_last = False
 
         self.proc.sub_last = self.sub_last
 
@@ -1144,7 +1149,11 @@ class Configuration:
         elif newval.lower() == "b":
             self.channel = "B"
         else:
-            raise ValueError("Invalid channel.")
+            print(
+                "Invalid channel. Setting it to channel B. Please "
+                "reconfigure it with a permissible entry."
+            )
+            self.channel = "B"
 
     def _channel_possible(self) -> str:
         """
@@ -1413,12 +1422,17 @@ class Configuration:
     def _set_spectrum_axis(self, newval: str):
         """
         """
-        if newval.lower() == "freq":
+        newval_lower = newval.lower()
+        if newval_lower == "freq" or newval_lower == "f":
             self.spectrum_axis = "freq"
-        elif newval.lower() == "dist":
+        elif newval_lower == "dist" or newval_lower == "d":
             self.spectrum_axis = "dist"
         else:
-            raise ValueError("Invalid spectrum axis specified.")
+            print(
+                "Invalid spectrum axis specified. Setting it to dist. "
+                "Please reconfigure it with a permissible entry."
+            )
+            self.spectrum_axis = "dist"
 
     def _spectrum_axis_possible(self) -> str:
         """
@@ -1670,7 +1684,10 @@ class Shell:
         param_str = (
             ("Parameter       : {}\n".format(param.name))
             + ("Current Value   : {}\n".format(param.getter(strval=True)))
-            + ("Possible Values : {}\n".format(param.possible()))
+            + ("Possible Values : {}\n\n".format(param.possible()))
+            + "**Note that when setting selection options (e.g. plot type),\n"
+            + "it is only necessary to type the first characters that fully\n"
+            + "differentiate the selection from all other choices.\n"
         )
         write(param_str)
         write("new value > ", newline=False)
