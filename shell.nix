@@ -67,6 +67,7 @@ pkgs.mkShell {
     valgrind
     asymptote
     imagemagick
+    clang
 
     # pcb cad
     kicad

@@ -341,6 +341,8 @@ class Plot:
         self.min_axis_val = None
         # maximum axis value for spectrum and hist plots
         self.max_axis_val = None
+        # records saved plot number
+        self._fname = 0
 
     @property
     def ptype(self) -> PlotType:
@@ -389,6 +391,7 @@ class Plot:
     def initialize_plot(self) -> None:
         """
         """
+        self._fname = 0
         if self._ptype == PlotType.TIME:
             self._data = np.zeros(data_sweep_len(self._output))
             self._initialize_time_plot()
@@ -406,24 +409,27 @@ class Plot:
     def _initialize_time_plot(self) -> None:
         """
         """
-        self._win = pg.PlotWidget()
-        self._win.setWindowTitle("Time Plot (" + self._output.name + ")")
-        self._win.setXRange(0, self._data.shape[0])
+        self._win = QtGui.QMainWindow()
+        self._plt = pg.PlotWidget()
+        self._plt.setWindowTitle("Time Plot (" + self._output.name + ")")
+        self._plt.setXRange(0, self._data.shape[0])
+        self._win.setCentralWidget(self._plt)
         self._win.show()
 
     def _initialize_spectrum_plot(self) -> None:
         """
         """
-        self._win = pg.PlotWidget()
-        self._win.setWindowTitle("Spectrum Plot (" + self._output.name + ")")
-        self._win.getAxis("bottom").setTicks(self._freq_dist_ticks())
-        self._win.setYRange(self.db_min, self.db_max)
+        self._win = QtGui.QMainWindow()
+        self._plt = pg.PlotWidget()
+        self._plt.setWindowTitle("Spectrum Plot (" + self._output.name + ")")
+        self._plt.getAxis("bottom").setTicks(self._freq_dist_ticks())
+        self._plt.setYRange(self.db_min, self.db_max)
+        self._win.setCentralWidget(self._plt)
         self._win.show()
 
     def _initialize_hist_plot(self) -> None:
         """
         """
-        self._fname = 0
         self._xval = 0
         self._tvals = []
         self._win = QtGui.QMainWindow()
@@ -465,17 +471,22 @@ class Plot:
             self._win.autoRange()
             self._app.processEvents()
 
+        if self._save_plotsp():
+            self._save_plot()
+
         self._data = np.zeros(self._data.shape)
 
     def _add_spectrum_sweep(self, sweep: np.array) -> None:
         """
         """
-        self._win.plot(
+        self._plt.plot(
             np.linspace(0, self._data.shape[0] - 1, self._data.shape[0]),
             sweep,
             clear=True,
         )
         self._app.processEvents()
+        if self._save_plotsp():
+            self._save_plot()
 
     def _add_hist_sweep(self, sweep: np.array) -> None:
         """
@@ -499,8 +510,7 @@ class Plot:
         self._xval += 1
         if self._xval == xrg:
             if self._save_plotsp():
-                self._save_hist()
-                self._fname += 1
+                self._save_plot()
             self._data = np.zeros(np.shape(self._data))
             self._xval = 0
             self._tvals = []
@@ -544,7 +554,7 @@ class Plot:
 
         return [ret]
 
-    def _save_hist(self) -> None:
+    def _save_plot(self) -> None:
         """
         """
         # diffs = np.diff(self._tvals)
@@ -556,6 +566,7 @@ class Plot:
         if not plot_dir[-1] == "/":
             plot_dir += "/"
         pixmap.save(plot_dir + str(self._fname) + ".png")
+        self._fname += 1
 
     def _save_plotsp(self) -> bool:
         """
