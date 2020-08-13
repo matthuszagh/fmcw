@@ -36,11 +36,27 @@ ADC_BITS = 12
 FIR_BITS = 13
 WINDOW_BITS = 13
 FFT_BITS = FIR_BITS + 1 + int(np.ceil(np.log2(DECIMATED_LEN)))
+# TODO should be configuration option
 HIST_RANGE = 3000
 # dB min and max if no other value is set
 DB_MIN = -140
 DB_MAX = 0
-DIST_MAX = 235
+DIST_INIT = 235
+
+
+def dist_to_freq(dist: float, bw: float, ts: float) -> float:
+    """
+    """
+    return int(2 * dist * bw / (299792458 * ts))
+
+
+FREQ_INIT = dist_to_freq(DIST_INIT, BANDWIDTH, TSWEEP)
+
+
+def freq_to_dist(freq: float, bw: float, ts: float) -> float:
+    """
+    """
+    return int(299792458 * freq * ts / (2 * bw))
 
 
 def _reverse_bits(val: int, nbits: int) -> int:
@@ -111,6 +127,14 @@ def spectrum_len(data: Data) -> int:
     """
     """
     return data_sweep_len(data) // 2 + 1
+
+
+def nyquist_freq(data: Data) -> float:
+    """
+    """
+    if data == Data.RAW or data == Data.FIR:
+        return FS // 2
+    return FS // 2 // DECIMATE
 
 
 # TODO: this should be in sync with the FPGA configuration. Currently,
@@ -216,16 +240,11 @@ def db_arr(indata, maxval, db_min, db_max):
 
 def dbin(fs: float, tsweep: float, nsample: int, bandwidth: float) -> float:
     """
+    Distance (in m) for each DFT frequency bin.
     """
     fbin = fs / nsample
     d = 299792458 * tsweep * fbin / (2 * bandwidth)
     return d
-
-
-def max_bin(fs: float, tsweep: float, nsample: int, bandwidth: float) -> int:
-    """
-    """
-    return int(DIST_MAX / dbin(fs, tsweep, nsample, bandwidth))
 
 
 def plot_rate(nsweep: int, sec: float) -> str:
@@ -301,6 +320,13 @@ class Plot:
         self.tstart = None
         self.tplot_start = None
         self.tcurrent = None
+        # min and max data bins
+        self.min_bin = None
+        self.max_bin = None
+        # minimum axis value for spectrum and hist plots
+        self.min_axis_val = None
+        # maximum axis value for spectrum and hist plots
+        self.max_axis_val = None
 
     @property
     def ptype(self) -> PlotType:
@@ -353,10 +379,10 @@ class Plot:
             self._data = np.zeros(data_sweep_len(self._output))
             self._initialize_time_plot()
         elif self._ptype == PlotType.SPECTRUM:
-            self._data = np.zeros(spectrum_len(self._output))
+            self._data = np.zeros(self.max_bin - self.min_bin)
             self._initialize_spectrum_plot()
         elif self._ptype == PlotType.HIST:
-            self._data = np.zeros((HIST_RANGE, spectrum_len(self._output)))
+            self._data = np.zeros((HIST_RANGE, self.max_bin - self.min_bin))
             self._initialize_hist_plot()
         else:
             raise ValueError("Invalid plot type.")
@@ -376,7 +402,7 @@ class Plot:
         """
         self._win = pg.PlotWidget()
         self._win.setWindowTitle("Spectrum Plot (" + self._output.name + ")")
-        self._win.setXRange(0, self._data.shape[0])
+        self._win.getAxis("bottom").setTicks(self._freq_dist_ticks())
         self._win.setYRange(self.db_min, self.db_max)
         self._win.show()
 
@@ -390,11 +416,8 @@ class Plot:
         self._imv = pg.ImageView(view=pg.PlotItem())
         self._img_view = self._imv.getView()
         self._img_view.invertY(False)
-        self.max_bin = max_bin(
-            FS // DECIMATE, TSWEEP, DECIMATED_LEN, BANDWIDTH
-        )
-        self._img_view.setLimits(yMin=0, yMax=self.max_bin)
-        self._img_view.getAxis("left").setTicks(self._y_ticks())
+        self._img_view.setAspectLocked(lock=False)
+        self._img_view.getAxis("left").setTicks(self._freq_dist_ticks())
         self._imv.setLevels(self.db_min, self.db_max)
         self._win.setCentralWidget(self._imv)
         self._win.show()
@@ -445,9 +468,14 @@ class Plot:
         """
         self._data[self._xval] = sweep
         self._tvals.append(clock_gettime(CLOCK_MONOTONIC) - self.tstart)
-        self._img_view.getAxis("bottom").setTicks(self._x_ticks())
+        self._img_view.getAxis("bottom").setTicks(self._time_ticks())
         xrg = self._data.shape[0]
-        self._imv.setImage(self._data, xvals=[i for i in range(xrg)], autoRange=False, autoHistogramRange=False)
+        self._imv.setImage(
+            self._data,
+            xvals=[i for i in range(xrg)],
+            autoRange=False,
+            autoHistogramRange=False,
+        )
 
         # speeds up bandwidth somewhat by reducing the burden of
         # updating the plot.
@@ -463,8 +491,9 @@ class Plot:
             self._xval = 0
             self._tvals = []
 
-    def _x_ticks(self) -> List[List[Tuple[int, float]]]:
+    def _time_ticks(self) -> List[List[Tuple[int, float]]]:
         """
+        X-Axis ticks for hist plot.
         """
         ret = []
         tval_len = len(self._tvals)
@@ -474,16 +503,31 @@ class Plot:
             i += HIST_RANGE // 10
         return [ret]
 
-    def _y_ticks(self) -> List[List[Tuple[int, float]]]:
+    def _freq_dist_ticks(self) -> List[List[Tuple[int, float]]]:
         """
         """
         ret = []
-        last_dist = None
-        for i in range(self.max_bin):
-            dist = int(DIST_MAX / self.max_bin * i)
-            if dist % 10 == 0 and not dist == last_dist:
-                ret.append((i, str(dist)))
-                last_dist = dist
+        slope = (self.max_axis_val - self.min_axis_val) / (
+            self.max_bin - self.min_bin
+        )
+        approx_num_ticks = 20
+        rg = self.max_axis_val - self.min_axis_val
+        inc = int(10 ** np.round(np.log10((rg / approx_num_ticks))))
+        if self.min_axis_val <= inc:
+            first_act_val = inc
+        else:
+            inc_val = inc
+            while inc_val < self.min_axis_val:
+                inc_val += inc
+            first_act_val = inc_val
+
+        act_vals = np.arange(first_act_val, self.max_axis_val, inc)
+        bin_vals = [int(np.round(act_val / slope)) for act_val in act_vals]
+        bin_vals = np.subtract(bin_vals, self.min_bin)
+
+        for i, j in zip(bin_vals, act_vals):
+            ret.append((i, "{:.3g}".format(j)))
+
         return [ret]
 
     def _save_hist(self) -> None:
@@ -568,6 +612,11 @@ class Configuration:
         self.adf_bandwidth = None
         self.adf_tsweep = None
         self.adf_tdelay = None
+        self.min_freq = None
+        self.max_freq = None
+        self.min_dist = None
+        self.max_dist = None
+        self.spectrum_axis = None
         self.params = [
             Parameter(
                 name="FPGA output",
@@ -680,6 +729,46 @@ class Configuration:
                 setter=self._set_adf_tdelay,
                 possible=self._adf_tdelay_possible,
                 init="2e-3",
+            ),
+            Parameter(
+                name="Min Plotting Frequency (Hz)",
+                number=self._get_inc_ctr(),
+                getter=self._get_min_freq,
+                setter=self._set_min_freq,
+                possible=self._min_freq_possible,
+                init="0",
+            ),
+            Parameter(
+                name="Max Plotting Frequency (Hz)",
+                number=self._get_inc_ctr(),
+                getter=self._get_max_freq,
+                setter=self._set_max_freq,
+                possible=self._max_freq_possible,
+                init=str(FREQ_INIT),
+            ),
+            Parameter(
+                name="Min Plotting Distance (m)",
+                number=self._get_inc_ctr(),
+                getter=self._get_min_dist,
+                setter=self._set_min_dist,
+                possible=self._min_dist_possible,
+                init="0",
+            ),
+            Parameter(
+                name="Max Plotting Distance (m)",
+                number=self._get_inc_ctr(),
+                getter=self._get_max_dist,
+                setter=self._set_max_dist,
+                possible=self._max_dist_possible,
+                init=str(DIST_INIT),
+            ),
+            Parameter(
+                name="Spectrum X-Axis",
+                number=self._get_inc_ctr(),
+                getter=self._get_spectrum_axis,
+                setter=self._set_spectrum_axis,
+                possible=self._spectrum_axis_possible,
+                init="dist",
             ),
         ]
         self._param_name_width = self._max_param_name_width()
@@ -1083,6 +1172,15 @@ class Configuration:
         """
         """
         self.adf_bandwidth = float(newval)
+        if not self.adf_tsweep is None:
+            if not self.min_freq is None:
+                self.min_dist = freq_to_dist(
+                    self.min_freq, self.adf_bandwidth, self.adf_tsweep
+                )
+            if not self.max_freq is None:
+                self.max_dist = freq_to_dist(
+                    self.max_freq, self.adf_bandwidth, self.adf_tsweep
+                )
 
     def _adf_bandwidth_possible(self) -> str:
         """
@@ -1108,9 +1206,19 @@ class Configuration:
         """
         """
         self.adf_tsweep = float(newval)
+        if not self.adf_bandwidth is None:
+            if not self.min_freq is None:
+                self.min_dist = freq_to_dist(
+                    self.min_freq, self.adf_bandwidth, self.adf_tsweep
+                )
+            if not self.max_freq is None:
+                self.max_dist = freq_to_dist(
+                    self.max_freq, self.adf_bandwidth, self.adf_tsweep
+                )
 
     def _adf_tsweep_possible(self) -> str:
         """
+        TODO should correctly report supported values.
         """
         return "1e-3"
 
@@ -1136,10 +1244,165 @@ class Configuration:
 
     def _adf_tdelay_possible(self) -> str:
         """
+        TODO should correctly report supported values.
         """
         return "2e-3"
 
     def _check_adf_tdelay(self) -> bool:
+        """
+        """
+        return True
+
+    def _get_min_freq(self, strval: bool = False):
+        """
+        """
+        if strval:
+            return str(self.min_freq)
+        return self.min_freq
+
+    def _set_min_freq(self, newval: str):
+        """
+        """
+        self.min_freq = int(float(newval))
+        self.min_dist = freq_to_dist(
+            self.min_freq, self.adf_bandwidth, self.adf_tsweep
+        )
+
+    def _min_freq_possible(self) -> str:
+        """
+        """
+        return "Any non-negative integer less than the max frequency."
+
+    def _check_min_freq(self) -> bool:
+        """
+        """
+        if self.min_freq < self.max_freq and self.min_freq >= 0:
+            return True
+        return False
+
+    def _get_max_freq(self, strval: bool = False):
+        """
+        """
+        if strval:
+            return str(self.max_freq)
+        return self.max_freq
+
+    def _set_max_freq(self, newval: str):
+        """
+        """
+        self.max_freq = int(float(newval))
+        self.max_dist = freq_to_dist(
+            self.max_freq, self.adf_bandwidth, self.adf_tsweep
+        )
+
+    def _max_freq_possible(self) -> str:
+        """
+        """
+        return (
+            "Any non-negative integer greater than the min frequency "
+            "and no greater than the max frequency supported by the "
+            "display output."
+        )
+
+    def _check_max_freq(self) -> bool:
+        """
+        """
+        display_output_max_f = 1e6
+        if self._display_output == Data.RAW:
+            display_output_max_f = 20e6
+        if (
+            self.max_freq > self.min_freq
+            and self.max_freq <= display_output_max_f
+        ):
+            return True
+        return False
+
+    def _get_min_dist(self, strval: bool = False):
+        """
+        """
+        if strval:
+            return str(self.min_dist)
+        return self.min_dist
+
+    def _set_min_dist(self, newval: str):
+        """
+        """
+        self.min_dist = int(newval)
+        self.min_freq = dist_to_freq(
+            self.min_dist, self.adf_bandwidth, self.adf_tsweep
+        )
+
+    def _min_dist_possible(self) -> str:
+        """
+        """
+        return "Any non-negative integer less than the max distance."
+
+    def _check_min_dist(self) -> bool:
+        """
+        """
+        if self.min_dist < self.max_dist and self.min_dist >= 0:
+            return True
+        return False
+
+    def _get_max_dist(self, strval: bool = False):
+        """
+        """
+        if strval:
+            return str(self.max_dist)
+        return self.max_dist
+
+    def _set_max_dist(self, newval: str):
+        """
+        """
+        self.max_dist = int(newval)
+        self.max_freq = dist_to_freq(
+            self.max_dist, self.adf_bandwidth, self.adf_tsweep
+        )
+
+    def _max_dist_possible(self) -> str:
+        """
+        """
+        return (
+            "Any non-negative integer greater than the min distance "
+            "and no greater than the max distance supported by the "
+            "display output and ADF configuration."
+        )
+
+    def _check_max_dist(self) -> bool:
+        """
+        """
+        display_output_max_f = 1e6
+        if self._display_output == Data.RAW:
+            display_output_max_f = 20e6
+        dist_max = freq_to_dist(
+            display_output_max_f, self.adf_bandwidth, self.adf_tsweep
+        )
+
+        if self.max_dist > self.min_dist and self.max_dist <= dist_max:
+            return True
+        return False
+
+    def _get_spectrum_axis(self, strval: bool = False):
+        """
+        """
+        return self.spectrum_axis
+
+    def _set_spectrum_axis(self, newval: str):
+        """
+        """
+        if newval.lower() == "freq":
+            self.spectrum_axis = "freq"
+        elif newval.lower() == "dist":
+            self.spectrum_axis = "dist"
+        else:
+            raise ValueError("Invalid spectrum axis specified.")
+
+    def _spectrum_axis_possible(self) -> str:
+        """
+        """
+        return "freq or dist (case-insensitive)"
+
+    def _check_spectrum_axis(self) -> bool:
         """
         """
         return True
@@ -1162,6 +1425,11 @@ class Configuration:
         valid &= self._check_adf_bandwidth()
         valid &= self._check_adf_tsweep()
         valid &= self._check_adf_tdelay()
+        valid &= self._check_min_freq()
+        valid &= self._check_max_freq()
+        valid &= self._check_min_dist()
+        valid &= self._check_max_dist()
+        valid &= self._check_spectrum_axis()
 
         return valid
 
@@ -1279,7 +1547,7 @@ class Proc:
         # sub_last has a much greater effect on the FFT output than
         # time-series outputs.
         if self.indata == Data.FFT and self.sub_last:
-            maxval /= (2<<5)
+            maxval /= 2 << 5
 
         if self.output == Data.FFT:
             seq = db_arr(seq, maxval, self.db_min, self.db_max)
@@ -1368,6 +1636,28 @@ class Shell:
         elif uinput == "run":
             if not self.configuration._check_parameters():
                 raise RuntimeError("Invalid configuration. Exiting.")
+            if self.configuration.spectrum_axis == "freq":
+                self.plot.min_axis_val = self.configuration.min_freq
+                self.plot.max_axis_val = self.configuration.max_freq
+            else:
+                self.plot.min_axis_val = self.configuration.min_dist
+                self.plot.max_axis_val = self.configuration.max_dist
+            min_bin = int(
+                np.round(
+                    spectrum_len(self.configuration._display_output)
+                    / nyquist_freq(self.configuration._display_output)
+                    * self.configuration.min_freq
+                )
+            )
+            max_bin = int(
+                np.round(
+                    spectrum_len(self.configuration._display_output)
+                    / nyquist_freq(self.configuration._display_output)
+                    * self.configuration.max_freq
+                )
+            )
+            self.plot.min_bin = min_bin
+            self.plot.max_bin = max_bin
             self.plot.initialize_plot()
             self.proc.set_last_seq()
             self.run()
@@ -1433,7 +1723,9 @@ class Shell:
                 sweep = radar.read_sweep(sweep_len)
                 if sweep is not None:
                     proc_sweep = self.proc.process_sequence(sweep)
-                    self.plot.add_sweep(proc_sweep)
+                    self.plot.add_sweep(
+                        proc_sweep[self.plot.min_bin : self.plot.max_bin]
+                    )
                     nseq += 1
                 current_time = clock_gettime(CLOCK_MONOTONIC)
 
