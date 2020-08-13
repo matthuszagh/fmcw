@@ -233,6 +233,14 @@ def subdivide_range(rg: int, divider: int) -> List[Tuple[int, int]]:
 
 def db_arr(indata, maxval, db_min, db_max):
     """
+    Convert an array of input data giving amplitude values to the
+    full-scale decibel equivalent. Additionally, clip the results to a
+    desired range.
+
+    :param indata: Input array of amplitude values.
+    :param maxval: Maximum amplitude denoting the full-scale value.
+    :param db_min: Minimum dB value to clip to.
+    :param db_max: Maximum dB value to clip to.
     """
     arr = 20 * np.log10(indata / maxval)
     return np.clip(arr, db_min, db_max)
@@ -763,7 +771,7 @@ class Configuration:
                 init=str(DIST_INIT),
             ),
             Parameter(
-                name="Spectrum X-Axis",
+                name="Dist/Freq Axis",
                 number=self._get_inc_ctr(),
                 getter=self._get_spectrum_axis,
                 setter=self._set_spectrum_axis,
