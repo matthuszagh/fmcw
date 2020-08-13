@@ -39,7 +39,7 @@ FFT_BITS = FIR_BITS + 1 + int(np.ceil(np.log2(DECIMATED_LEN)))
 # TODO should be configuration option
 HIST_RANGE = 3000
 # dB min and max if no other value is set
-DB_MIN = -140
+DB_MIN = -180
 DB_MAX = 0
 DIST_INIT = 235
 
@@ -611,6 +611,36 @@ class Parameter:
         return "{}. {}".format(self.number, self.name)
 
 
+class Menu:
+    """
+    """
+
+    def __init__(
+        self,
+        name: str,
+        number: int,
+        parameter_configuration: List[Tuple[Parameter, str]],
+        message_func: Callable[[], str],
+    ):
+        """
+        """
+        self.name = name
+        self.number = number
+        self.parameter_configuration = parameter_configuration
+        self.message_func = message_func
+
+    def display_number_menu(self) -> str:
+        """
+        """
+        return "{}. {}".format(self.number, self.name)
+
+    def set_parameters(self) -> None:
+        """
+        """
+        for ptuple in self.parameter_configuration:
+            ptuple[0].setter(ptuple[1])
+
+
 class Configuration:
     """
     """
@@ -621,6 +651,7 @@ class Configuration:
         self.plot = plot
         self.proc = proc
         self._param_ctr = 0
+        self._menu_ctr = 0
 
         # parameter variables
         self._fpga_output = None
@@ -646,7 +677,7 @@ class Configuration:
         self.params = [
             Parameter(
                 name="FPGA output",
-                number=self._get_inc_ctr(),
+                number=self._get_inc_param_ctr(),
                 getter=self._get_fpga_output,
                 setter=self._set_fpga_output,
                 possible=self._fpga_output_possible,
@@ -654,7 +685,7 @@ class Configuration:
             ),
             Parameter(
                 name="display output",
-                number=self._get_inc_ctr(),
+                number=self._get_inc_param_ctr(),
                 getter=self._get_display_output,
                 setter=self._set_display_output,
                 possible=self._display_output_possible,
@@ -662,7 +693,7 @@ class Configuration:
             ),
             Parameter(
                 name="log file",
-                number=self._get_inc_ctr(),
+                number=self._get_inc_param_ctr(),
                 getter=self._get_log_file,
                 setter=self._set_log_file,
                 possible=self._log_file_possible,
@@ -670,7 +701,7 @@ class Configuration:
             ),
             Parameter(
                 name="capture time (s)",
-                number=self._get_inc_ctr(),
+                number=self._get_inc_param_ctr(),
                 getter=self._get_time,
                 setter=self._set_time,
                 possible=self._time_possible,
@@ -678,7 +709,7 @@ class Configuration:
             ),
             Parameter(
                 name="plot type",
-                number=self._get_inc_ctr(),
+                number=self._get_inc_param_ctr(),
                 getter=self._get_plot_type,
                 setter=self._set_plot_type,
                 possible=self._plot_type_possible,
@@ -686,7 +717,7 @@ class Configuration:
             ),
             Parameter(
                 name="dB min",
-                number=self._get_inc_ctr(),
+                number=self._get_inc_param_ctr(),
                 getter=self._get_db_min,
                 setter=self._set_db_min,
                 possible=self._db_min_possible,
@@ -694,7 +725,7 @@ class Configuration:
             ),
             Parameter(
                 name="dB max",
-                number=self._get_inc_ctr(),
+                number=self._get_inc_param_ctr(),
                 getter=self._get_db_max,
                 setter=self._set_db_max,
                 possible=self._db_max_possible,
@@ -702,7 +733,7 @@ class Configuration:
             ),
             Parameter(
                 name="plot save dir",
-                number=self._get_inc_ctr(),
+                number=self._get_inc_param_ctr(),
                 getter=self._get_plot_dir,
                 setter=self._set_plot_dir,
                 possible=self._plot_dir_possible,
@@ -710,15 +741,15 @@ class Configuration:
             ),
             Parameter(
                 name="subtract last",
-                number=self._get_inc_ctr(),
+                number=self._get_inc_param_ctr(),
                 getter=self._get_sub_last,
                 setter=self._set_sub_last,
                 possible=self._sub_last_possible,
                 init="true",
             ),
             Parameter(
-                name="Receiver channel",
-                number=self._get_inc_ctr(),
+                name="receiver channel",
+                number=self._get_inc_param_ctr(),
                 getter=self._get_channel,
                 setter=self._set_channel,
                 possible=self._channel_possible,
@@ -726,7 +757,7 @@ class Configuration:
             ),
             Parameter(
                 name="ADF start frequency (Hz)",
-                number=self._get_inc_ctr(),
+                number=self._get_inc_param_ctr(),
                 getter=self._get_adf_fstart,
                 setter=self._set_adf_fstart,
                 possible=self._adf_fstart_possible,
@@ -734,7 +765,7 @@ class Configuration:
             ),
             Parameter(
                 name="ADF bandwidth (Hz)",
-                number=self._get_inc_ctr(),
+                number=self._get_inc_param_ctr(),
                 getter=self._get_adf_bandwidth,
                 setter=self._set_adf_bandwidth,
                 possible=self._adf_bandwidth_possible,
@@ -742,7 +773,7 @@ class Configuration:
             ),
             Parameter(
                 name="ADF sweep time (s)",
-                number=self._get_inc_ctr(),
+                number=self._get_inc_param_ctr(),
                 getter=self._get_adf_tsweep,
                 setter=self._set_adf_tsweep,
                 possible=self._adf_tsweep_possible,
@@ -750,55 +781,55 @@ class Configuration:
             ),
             Parameter(
                 name="ADF delay time (s)",
-                number=self._get_inc_ctr(),
+                number=self._get_inc_param_ctr(),
                 getter=self._get_adf_tdelay,
                 setter=self._set_adf_tdelay,
                 possible=self._adf_tdelay_possible,
                 init="2e-3",
             ),
             Parameter(
-                name="Min Plotting Frequency (Hz)",
-                number=self._get_inc_ctr(),
+                name="min plotting frequency (Hz)",
+                number=self._get_inc_param_ctr(),
                 getter=self._get_min_freq,
                 setter=self._set_min_freq,
                 possible=self._min_freq_possible,
                 init="0",
             ),
             Parameter(
-                name="Max Plotting Frequency (Hz)",
-                number=self._get_inc_ctr(),
+                name="max plotting frequency (Hz)",
+                number=self._get_inc_param_ctr(),
                 getter=self._get_max_freq,
                 setter=self._set_max_freq,
                 possible=self._max_freq_possible,
                 init=str(FREQ_INIT),
             ),
             Parameter(
-                name="Min Plotting Distance (m)",
-                number=self._get_inc_ctr(),
+                name="min plotting distance (m)",
+                number=self._get_inc_param_ctr(),
                 getter=self._get_min_dist,
                 setter=self._set_min_dist,
                 possible=self._min_dist_possible,
                 init="0",
             ),
             Parameter(
-                name="Max Plotting Distance (m)",
-                number=self._get_inc_ctr(),
+                name="max plotting distance (m)",
+                number=self._get_inc_param_ctr(),
                 getter=self._get_max_dist,
                 setter=self._set_max_dist,
                 possible=self._max_dist_possible,
                 init=str(DIST_INIT),
             ),
             Parameter(
-                name="Dist/Freq Axis",
-                number=self._get_inc_ctr(),
+                name="dist/freq axis",
+                number=self._get_inc_param_ctr(),
                 getter=self._get_spectrum_axis,
                 setter=self._set_spectrum_axis,
                 possible=self._spectrum_axis_possible,
                 init="dist",
             ),
             Parameter(
-                name="Report Average",
-                number=self._get_inc_ctr(),
+                name="report average",
+                number=self._get_inc_param_ctr(),
                 getter=self._get_report_avg,
                 setter=self._set_report_avg,
                 possible=self._report_avg_possible,
@@ -806,6 +837,61 @@ class Configuration:
             ),
         ]
         self._param_name_width = self._max_param_name_width()
+        param_by_name = lambda x: [
+            param for param in self.params if param.name == x
+        ][0]
+        self.menus = [
+            Menu(
+                name="Range Plot (235m)",
+                number=self._get_inc_menu_ctr(),
+                parameter_configuration=[
+                    (param_by_name("FPGA output"), "RAW"),
+                    (param_by_name("display output"), "FFT"),
+                    (param_by_name("log file"), ""),
+                    (param_by_name("capture time (s)"), "35"),
+                    (param_by_name("plot type"), "hist"),
+                    (param_by_name("dB min"), "-120"),
+                    (param_by_name("dB max"), "-20"),
+                    (param_by_name("plot save dir"), "plots"),
+                    (param_by_name("subtract last"), "true"),
+                    (param_by_name("receiver channel"), "B"),
+                    (param_by_name("ADF start frequency (Hz)"), "5.6e9"),
+                    (param_by_name("ADF bandwidth (Hz)"), "300e6"),
+                    (param_by_name("ADF sweep time (s)"), "1e-3"),
+                    (param_by_name("ADF delay time (s)"), "2e-3"),
+                    (param_by_name("min plotting distance (m)"), "0"),
+                    (param_by_name("max plotting distance (m)"), "235"),
+                    (param_by_name("dist/freq axis"), "dist"),
+                    (param_by_name("report average"), "false"),
+                ],
+                message_func=self._range_plot_235_message,
+            ),
+            Menu(
+                name="Noise Floor",
+                number=self._get_inc_menu_ctr(),
+                parameter_configuration=[
+                    (param_by_name("FPGA output"), "RAW"),
+                    (param_by_name("display output"), "RAW"),
+                    (param_by_name("log file"), ""),
+                    (param_by_name("capture time (s)"), "10"),
+                    (param_by_name("plot type"), "spectrum"),
+                    (param_by_name("dB min"), "-120"),
+                    (param_by_name("dB max"), "-20"),
+                    (param_by_name("plot save dir"), ""),
+                    (param_by_name("subtract last"), "false"),
+                    (param_by_name("receiver channel"), "B"),
+                    (param_by_name("ADF start frequency (Hz)"), "5.6e9"),
+                    (param_by_name("ADF bandwidth (Hz)"), "300e6"),
+                    (param_by_name("ADF sweep time (s)"), "1e-3"),
+                    (param_by_name("ADF delay time (s)"), "2e-3"),
+                    (param_by_name("min plotting frequency (Hz)"), "50e3"),
+                    (param_by_name("max plotting frequency (Hz)"), "1e6"),
+                    (param_by_name("dist/freq axis"), "freq"),
+                    (param_by_name("report average"), "true"),
+                ],
+                message_func=self._noise_floor_message,
+            ),
+        ]
 
     def display(self) -> str:
         """
@@ -833,6 +919,19 @@ class Configuration:
 
         return display_str
 
+    def display_menu(self) -> str:
+        """
+        """
+        display_str = (
+            "Menu options (enter the corresponding number):\n"
+            + HORIZONTAL_LINES
+        )
+        for menu in self.menus:
+            display_str += menu.display_number_menu()
+            display_str += "\n"
+
+        return display_str
+
     def param_for_number(self, number: int) -> Parameter:
         """
         """
@@ -842,6 +941,15 @@ class Configuration:
 
         raise RuntimeError("Invalid Parameter number.")
 
+    def menu_for_number(self, number: int) -> Menu:
+        """
+        """
+        for menu in self.menus:
+            if number == menu.number:
+                return menu
+
+        raise RuntimeError("Invalid Menu number.")
+
     def logp(self) -> bool:
         """
         True if data should be logged.  False otherwise.  This simply
@@ -850,11 +958,18 @@ class Configuration:
         # The empty string resolves to the current working directory.
         return not self.log_file.is_dir()
 
-    def _get_inc_ctr(self):
+    def _get_inc_param_ctr(self):
         """
         """
         ret = self._param_ctr
         self._param_ctr += 1
+        return ret
+
+    def _get_inc_menu_ctr(self):
+        """
+        """
+        ret = self._menu_ctr
+        self._menu_ctr += 1
         return ret
 
     def _set_fpga_output(self, newval: str):
@@ -1516,6 +1631,19 @@ class Configuration:
 
         return valid
 
+    def _noise_floor_message(self) -> str:
+        """
+        """
+        return (
+            "Ensure transmission port and receiver channel {} are "
+            "terminated with 50ohm loads."
+        ).format(self._get_channel(True))
+
+    def _range_plot_235_message(self) -> str:
+        """
+        """
+        return ""
+
     def _max_param_name_width(self) -> int:
         """
         """
@@ -1706,20 +1834,34 @@ class Shell:
         param.setter(uinput)
         write("New value set.\n")
 
+    def menu_prompt(self):
+        """
+        """
+        write("menu > ", newline=False)
+        uinput = self._readline()
+        int_input = int(uinput)
+        menu = self.configuration.menu_for_number(int_input)
+        menu.set_parameters()
+        menu.message_func()
+        write("Menu selected.\n")
+
     def read_input(self):
         """
         """
         uinput = self._readline()
-        if uinput == "exit":
+        if uinput == "exit" or uinput == "e":
             return
-        elif uinput == "help":
+        elif uinput == "help" or uinput == "h":
             self.help()
-        elif uinput == "conf":
+        elif uinput == "conf" or uinput == "c":
             write(self.configuration.display(), newline=True)
-        elif uinput == "set":
+        elif uinput == "set" or uinput == "s":
             write(self.configuration.display_number_menu(), newline=True)
             self.set_prompt()
-        elif uinput == "run":
+        elif uinput == "menu" or uinput == "m":
+            write(self.configuration.display_menu(), newline=True)
+            self.menu_prompt()
+        elif uinput == "run" or uinput == "r":
             if not self.configuration._check_parameters():
                 raise RuntimeError("Invalid configuration. Exiting.")
             if self.configuration.spectrum_axis == "freq":
@@ -1769,6 +1911,10 @@ class Shell:
             + (
                 "set  : Change the value of a configuration \n"
                 "       variable.\n"
+            )
+            + (
+                "menu : Automatically set configuration variables \n"
+                "       based on one of several common tasks.\n"
             )
             # + "stop : Terminate the current data acquisition early.\n"
         )
