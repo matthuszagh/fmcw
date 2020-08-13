@@ -278,6 +278,12 @@ def usb_bandwidth(nbytes: int, sec: float) -> str:
     return "USB Bandwidth : {} GB/s\n".format(round(bwidth, 3))
 
 
+def avg_value(avg: float) -> str:
+    """
+    """
+    return "Average Value : {:.2f}".format(avg)
+
+
 def sweep_total_bytes(fpga_output: Data) -> int:
     """
     """
@@ -625,6 +631,7 @@ class Configuration:
         self.min_dist = None
         self.max_dist = None
         self.spectrum_axis = None
+        self.report_avg = None
         self.params = [
             Parameter(
                 name="FPGA output",
@@ -777,6 +784,14 @@ class Configuration:
                 setter=self._set_spectrum_axis,
                 possible=self._spectrum_axis_possible,
                 init="dist",
+            ),
+            Parameter(
+                name="Report Average",
+                number=self._get_inc_ctr(),
+                getter=self._get_report_avg,
+                setter=self._set_report_avg,
+                possible=self._report_avg_possible,
+                init="false",
             ),
         ]
         self._param_name_width = self._max_param_name_width()
@@ -1415,6 +1430,40 @@ class Configuration:
         """
         return True
 
+    def _get_report_avg(self, strval: bool = False):
+        """
+        """
+        if strval:
+            if self.report_avg:
+                return "True"
+            return "False"
+        return self.report_avg
+
+    def _set_report_avg(self, newval: str):
+        """
+        """
+        newval_lower = newval.lower()
+        if newval_lower == "true" or newval_lower == "t":
+            self.report_avg = True
+        elif newval_lower == "false" or newval_lower == "f":
+            self.report_avg = False
+        else:
+            print(
+                "Invalid value for report average. Setting it to False. "
+                "Please reconfigure it with a permissible entry."
+            )
+            self.report_avg = False
+
+    def _report_avg_possible(self) -> str:
+        """
+        """
+        return "True or false (case-insensitive)"
+
+    def _check_report_avg(self) -> bool:
+        """
+        """
+        return True
+
     def _check_parameters(self) -> bool:
         """
         """
@@ -1438,6 +1487,7 @@ class Configuration:
         valid &= self._check_min_dist()
         valid &= self._check_max_dist()
         valid &= self._check_spectrum_axis()
+        valid &= self._check_report_avg()
 
         return valid
 
@@ -1710,6 +1760,9 @@ class Shell:
         else:
             log_file = None
 
+        if self.configuration.report_avg:
+            avg = []
+
         with Device() as radar:
             radar.adf.fstart = self.configuration.adf_fstart
             radar.adf.tsweep = self.configuration.adf_tsweep
@@ -1731,12 +1784,17 @@ class Shell:
                 sweep = radar.read_sweep(sweep_len)
                 if sweep is not None:
                     proc_sweep = self.proc.process_sequence(sweep)
-                    self.plot.add_sweep(
-                        proc_sweep[self.plot.min_bin : self.plot.max_bin]
-                    )
+                    clipped_sweep = proc_sweep[
+                        self.plot.min_bin : self.plot.max_bin
+                    ]
+                    self.plot.add_sweep(clipped_sweep)
+                    if self.configuration.report_avg:
+                        avg.append(np.average(clipped_sweep))
                     nseq += 1
                 current_time = clock_gettime(CLOCK_MONOTONIC)
 
+        if self.configuration.report_avg:
+            write(avg_value(np.average(avg)))
         write(plot_rate(nseq, current_time - start_time))
         tbytes = sweep_total_bytes(self.configuration._fpga_output)
         write(
