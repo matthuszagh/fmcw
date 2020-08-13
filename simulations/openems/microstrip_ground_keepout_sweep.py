@@ -46,12 +46,12 @@ def func(gnd_gap: float):
         sim=sim,
         metal_res=1 / 80,
         nonmetal_res=1 / 10,
-        min_lines=5,
+        min_lines=9,
         expand_bounds=((0, 0), (0, 0), (10, 40)),
     )
 
     sim.run(csx=False)
-    return np.abs(sim.ports[0].impedance())
+    return np.abs(sim.ports[0].impedance(freq=ref_freq))
 
 
 # res = optimize_parameter(
@@ -64,11 +64,9 @@ def func(gnd_gap: float):
 # )
 # print("Minimum ground gap: {}".format(res))
 
-# gaps = np.arange(0.5 * trace_width, 10 * trace_width, 0.25 * trace_width)
-gaps = np.arange(0.5 * trace_width, 1 * trace_width, 0.25 * trace_width)
-res = sweep(func, gaps, processes=1)
+gaps = np.arange(0.5 * trace_width, 3 * trace_width, 0.1 * trace_width)
+sim_vals = sweep(func, gaps, processes=11)
 
-data = np.concatenate(([freq / 1e9], res))
-col_names = ["freq"] + [format(gap, ":.4f") for gap in gaps]
-prec = [2] + [4 for _ in gaps]
-print_table(data=data, col_names=col_names, prec=prec)
+norm_gaps = gaps/trace_width
+
+print_table(data=[norm_gaps, sim_vals], col_names=["gap", "z0"], prec=[4, 4])

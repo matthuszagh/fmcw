@@ -14,11 +14,11 @@ unit = 1e-3
 ref_freq = 5.6e9
 sim = Simulation(freq=freq, unit=unit, reference_frequency=ref_freq)
 
-pcb_len = 30
+pcb_len = 10
 pcb_width = 10
 
 trace_width = 0.85
-trace_gap = mil_to_mm(6)
+trace_gap = mil_to_mm(5)
 
 pcb_prop = common_pcbs["oshpark4"]
 pcb = PCB(
@@ -46,7 +46,7 @@ Mesh(
     sim=sim,
     metal_res=1 / 80,
     nonmetal_res=1 / 10,
-    min_lines=19,
+    min_lines=9,
     expand_bounds=((0, 0), (0, 0), (10, 40)),
 )
 

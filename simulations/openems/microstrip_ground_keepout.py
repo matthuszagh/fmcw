@@ -15,9 +15,7 @@ pcb_len = 10
 pcb_width = 10
 trace_width = 0.38
 pcb_prop = common_pcbs["oshpark4"]
-# gnd_gap = 0.425
-gnd_gap = 0.31
-# gnd_gap = 4 * trace_width
+gnd_gap = 0.900 * trace_width
 
 sim = Simulation(freq=freq, unit=unit, reference_frequency=ref_freq)
 pcb = PCB(
@@ -26,7 +24,6 @@ pcb = PCB(
     length=pcb_len,
     width=pcb_width,
     layers=range(3),
-    # omit_copper=[0],
 )
 
 Microstrip(
@@ -45,7 +42,7 @@ Mesh(
     sim=sim,
     metal_res=1 / 80,
     nonmetal_res=1 / 10,
-    min_lines=19,
+    min_lines=9,
     expand_bounds=((0, 0), (0, 0), (10, 40)),
 )
 

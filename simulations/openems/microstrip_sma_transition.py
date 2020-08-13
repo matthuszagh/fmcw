@@ -194,9 +194,8 @@ mesh = Mesh(
     sim=sim,
     metal_res=1 / 120,
     nonmetal_res=1 / 10,
-    # smooth=(1.1, 1.5, 1.5),
     min_lines=5,
-    expand_bounds=((0, 0), (0, 0), (20, 40)),
+    expand_bounds=((0, 0), (0, 0), (20, 20)),
 )
 
 box = mesh.sim_box(include_pml=False)
