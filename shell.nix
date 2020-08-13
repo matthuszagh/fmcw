@@ -4,17 +4,25 @@
   sha256 = "0qxajv68s08m0fsyf4q6dscdn5c4j98hnhz4cls3hhiqvzz86cd1";
 }) {})
 , openems-pkgs ? (import (builtins.fetchTarball {
-  name = "matthuszagh-unstable-2020-04-06";
-  url = "https://github.com/matthuszagh/nixpkgs/archive/ad725f423cd187034e70ee639ae9eea751112c58.tar.gz";
-  sha256 = "0pdyzv4yzb8hscrsqmf3qshzsry0gx5mzc98gkbgab13yvhj35qp";
+  name = "matthuszagh-unstable-2020-08-10";
+  url = "https://github.com/matthuszagh/nixpkgs/archive/6b8a978a80e863c6f164fe199b8cd7c616da1639.tar.gz";
+  sha256 = "173i1sms6j3waiab2108nbxjqwmbsjdz8v6ymkmgipg80mxjkx30";
+}) {
+  overlays = [ (import /home/matt/src/dotfiles/nixos/overlays/csxcad.nix) ];
+})
+, pyspice-pkgs ? (import (builtins.fetchTarball {
+    name = "matthuszagh-nixpkgs-pyspice-2020-08-10";
+    url = "https://github.com/matthuszagh/nixpkgs/archive/2a3efcd190262ea50b714c8dcc47e0a9767f0cfa.tar.gz";
+    sha256 = "0krxh0skf12iidfsk14jymy53as0ccayzccy7hss6mfakz81hp38";
 }) {})
 }:
 
 let
   pkgs = nixpkgs;
   custompkgs = import <custompkgs> {};
-  pythonEnv = (pkgs.python3Full.buildEnv.override {
-    extraLibs = (with pkgs.python3Packages; [
+  pythonEnv-pkgs = pyspice-pkgs;
+  pythonEnv = (pythonEnv-pkgs.python3.buildEnv.override {
+    extraLibs = (with pythonEnv-pkgs.python3Packages; [
       matplotlib
       bitstring
       numpy
@@ -25,9 +33,8 @@ let
       # TODO fix
       # nmigen
       cython
-      # migen
-    ]) ++ (with custompkgs; [
-      # skidl
+    ]) ++ (with custompkgs.python3.pkgs; [
+      skidl
       pyems
     ]) ++ (with openems-pkgs.python3Packages; [
       python-openems
@@ -39,7 +46,7 @@ in
 pkgs.mkShell {
   buildInputs = with pkgs; [
     pythonEnv
-    custompkgs.pyems
+    texlive.combined.scheme-full
     pkg-config
 
     # fpga
@@ -58,12 +65,15 @@ pkgs.mkShell {
 
     # software
     valgrind
+    asymptote
+    imagemagick
 
     # pcb cad
     kicad
 
     # ems
     qucs
+    paraview
 
     # 3d printing
     openscad
