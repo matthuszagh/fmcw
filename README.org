@@ -1,27 +1,259 @@
+* Table of Contents
+1. [[https://github.com/matthuszagh/fmcw#about][About]]
+2. [[https://github.com/matthuszagh/fmcw#capabilities][Capabilities]]
+3. [[https://github.com/matthuszagh/fmcw#installation][Installation]]
+4. [[https://github.com/matthuszagh/fmcw#usage][Usage]]
+
 * About
 :PROPERTIES:
 :ID:       20ff1c28-cfc6-4280-8501-83314fee390d
 :END:
-This repo includes the custom PCBs and PC control software necessary
-to build and operate a 6GHz FMCW radar. It also includes a number of
-other useful additions, such as RF and SPICE simulations (in progress)
-as well as CAD designs for the horn antennas and PCB cases.
+This repo includes the custom PCBs, PC control software and FPGA
+gateware necessary to build and operate a 6GHz FMCW radar. It also
+includes a number of other useful additions, such as RF and SPICE
+simulations (in progress) as well as CAD designs for useful additions
+(e.g. to build the horn antennas).
 
 The project is a fork of [[https://github.com/Ttl/fmcw3][Henrik's excellent design]]. Although I've made
-a number of [[id:8f78da8c-ec0c-40f3-9b8b-6c1af11f4bb2][significant changes]], most of the main PCB (as of this
+a number of [[id:8f78da8c-ec0c-40f3-9b8b-6c1af11f4bb2][significant changes]], most of the PCB design (as of this
 writing) is still identical to Henrik's. Despite the fact that Henrik
 deserves a large share of the credit for this project, he is in no way
 affiliated with this fork.
 
-This project is still in its early stages. In particular, there are a
-number of hardware issues that make this version inferior to
-Henrik's. These will be fixed in a future version, but I would hold
-off building this version until these issues are fixed.
+This project is still a work in progress. While [[https://github.com/matthuszagh/fmcw/tree/master/hardware/boards/rev1][rev1]] achieves good
+results, the noise floor is higher than it should be. In particular,
+this version suffers from an excessively noisy switching
+converter. [[https://github.com/matthuszagh/fmcw/tree/master/hardware/boards/rev2][Rev2]] has been designed to fix these issues, but still
+requires a few changes before it's ready to be built. In the meantime,
+if you're able to track down the power amplifier Henrik used in his
+design (it's deprecated, but some people have had luck on Ebay), I
+would recommend that over rev1.
 
 * TODO Capabilites
 Briefly mention the radar's capabilities.
 
 * TODO Installation
+:PROPERTIES:
+:ID:       fe23bc7f-9bcf-4526-9d7e-bded4078111d
+:END:
+Using the radar requires an installation of [[https://sourceforge.net/projects/openocd/][OpenOCD]] (for loading the
+bitstream onto the FPGA), [[https://www.intra2net.com/en/developer/libftdi/][libFTDI1]] for communicating between the host
+Linux machine and the radar and a Python3 installation including
+[[https://numpy.org/][NumPy]], [[https://www.scipy.org/][SciPy]], [[http://www.pyqtgraph.org/][PyQtGraph]], as well as a [[https://cython.org/][Cython compiler]] to compile a
+small amount of optimized C code.
+
+There are a number of additional dependencies if you need to perform
+other tasks, such as compiling the FPGA code, running microwave or
+lower-frequency analog simulations, viewing and modifying the PCB
+design, viewing and modifying the CAD designs, etc. This installation
+section will be updated to specify these dependencies at a later time.
+
+Finally, it is necessary to have unprivileged access to the radar in
+order to use it. Add the following to ~/etc/udev~ (for instance, in
+~/etc/udev/rules.d/99-local.rules~):
+
+#+begin_src txt
+# FMCW Radar
+ENV{ID_VENDOR_ID}=="0403", ENV{ID_MODEL_ID}=="6010", MODE:="666"
+#+end_src
+
+To register the changes, run:
+
+#+begin_src sh
+sudo udevadm control --reload-rules && udevadm trigger
+#+end_src
+
+* Usage
+When the radar is setup and plugged in, administer power to the PCB,
+navigate to the top-level directory and type ~make~. This will program
+the bitstream to the FPGA and invoke a custom shell for interacting
+with the radar. If everything so far has worked, you will be presented
+with the following output:
+
+#+begin_example
+Available commands:
+----------
+conf : Display current configuration.
+exit : Exit.
+help : This display.
+run  : Instantiate the current configuration,
+       begin data acquisition, and display output.
+set  : Change the value of a configuration
+       variable.
+menu : Automatically set configuration variables
+       based on one of several common tasks.
+
+fmcw >
+#+end_example
+
+We can redisplay this menu at any point by typing ~fmcw > help~, and
+we can exit with ~fmcw > exit~.
+
+The set of possible commands appears in the left column, with their
+associated descriptions to the right. All commands can be typed
+exactly as displayed, or you can type the minimum number of letters
+that uniquely differentiates a menu entry from the other entries. So,
+for instance, if I wanted to see the current configuration I could
+type ~fmcw > c~.
+
+#+begin_example
+fmcw > c
+Configuration:
+----------
+FPGA output                 : RAW
+display output              : FFT
+log file                    : /home/matt/src/fmcw/software
+capture time (s)            : 35
+plot type                   : HIST
+dB min                      : -120.0
+dB max                      : -20.0
+plot save dir               : /home/matt/src/fmcw/software/plots
+subtract last               : True
+receiver channel            : B
+ADF start frequency (Hz)    : 5600000000.0
+ADF bandwidth (Hz)          : 300000000.0
+ADF sweep time (s)          : 0.001
+ADF delay time (s)          : 0.002
+min plotting frequency (Hz) : 0
+max plotting frequency (Hz) : 470325
+min plotting distance (m)   : 0
+max plotting distance (m)   : 235
+dist/freq axis              : dist
+report average              : False
+#+end_example
+
+If I wanted to view, say, a spectrum plot instead of a histogram, I
+would start by typing ~fmcw > s~ or ~fmcw > set~.
+
+This presents the configuration options
+
+#+begin_example
+fmcw > set
+Set options (enter the corresponding number):
+----------
+0. FPGA output
+1. display output
+2. log file
+3. capture time (s)
+4. plot type
+5. dB min
+6. dB max
+7. plot save dir
+8. subtract last
+9. receiver channel
+10. ADF start frequency (Hz)
+11. ADF bandwidth (Hz)
+12. ADF sweep time (s)
+13. ADF delay time (s)
+14. min plotting frequency (Hz)
+15. max plotting frequency (Hz)
+16. min plotting distance (m)
+17. max plotting distance (m)
+18. dist/freq axis
+19. report average
+#+end_example
+
+Since I wanted to change ~plot type~, which is entry 4, I'd type ~fmcw
+> 4~,
+
+#+begin_example
+set > 4
+Parameter       : plot type
+Current Value   : HIST
+Possible Values : {TIME (except FFT output), SPECTRUM, HIST} (case insensitive)
+
+**Note that when setting selection options (e.g. plot type),
+it is only necessary to type the first characters that fully
+differentiate the selection from all other choices.
+#+end_example
+
+This tells me the available selections for this parameter. Like
+before, I'm allwed to just type the first differentiating letters,
+which in this case is simpy ~new value > s~
+
+#+begin_example
+new value > s
+New value set.
+#+end_example
+
+which presents a comfirmation that the value has been correctly
+set. Indeed, if we redisplay the current configuration, we see that
+plot type is now SPECTRUM:
+
+#+begin_example
+fmcw > conf
+Configuration:
+----------
+FPGA output                 : RAW
+display output              : FFT
+log file                    : /home/matt/src/fmcw/software
+capture time (s)            : 35
+plot type                   : SPECTRUM
+dB min                      : -120.0
+dB max                      : -20.0
+plot save dir               : /home/matt/src/fmcw/software/plots
+subtract last               : True
+receiver channel            : B
+ADF start frequency (Hz)    : 5600000000.0
+ADF bandwidth (Hz)          : 300000000.0
+ADF sweep time (s)          : 0.001
+ADF delay time (s)          : 0.002
+min plotting frequency (Hz) : 0
+max plotting frequency (Hz) : 470325
+min plotting distance (m)   : 0
+max plotting distance (m)   : 235
+dist/freq axis              : dist
+report average              : False
+#+end_example
+
+Tweaking all of these values can become a bit of a pain, so the shell
+can conveniently set all values for a number of commonly-needed
+setups. For instance, imagine we'd like to measure the receiver noise
+floor. We can select the menu option, ~fmcw > m~.
+
+#+begin_example
+fmcw > menu
+Menu options (enter the corresponding number):
+----------
+0. Range Plot (235m)
+1. Noise Floor
+#+end_example
+
+This currently just provides two configurations, but the list will
+grow over time. We'd select ~fmcw > 1~. Now, if we view the
+configuration we will see that many values are different from the
+defaults.
+
+#+begin_example
+fmcw > conf
+Configuration:
+----------
+FPGA output                 : RAW
+display output              : RAW
+log file                    : /home/matt/src/fmcw/software
+capture time (s)            : 10
+plot type                   : SPECTRUM
+dB min                      : -120.0
+dB max                      : -20.0
+plot save dir               : /home/matt/src/fmcw/software
+subtract last               : False
+receiver channel            : B
+ADF start frequency (Hz)    : 5600000000.0
+ADF bandwidth (Hz)          : 300000000.0
+ADF sweep time (s)          : 0.001
+ADF delay time (s)          : 0.002
+min plotting frequency (Hz) : 50000
+max plotting frequency (Hz) : 1000000
+min plotting distance (m)   : 24
+max plotting distance (m)   : 499
+dist/freq axis              : freq
+report average              : True
+#+end_example
+
+Finally, when we're satisfied with the configuration we can type ~fmcw
+> r~ (run), which will perform additional FPGA configuration and begin
+acquiring and plotting data.
+
 * TODO Additional hardware
 * Modifications from the original
 :PROPERTIES:
