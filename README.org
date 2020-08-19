@@ -252,7 +252,9 @@ report average              : True
 
 Finally, when we're satisfied with the configuration we can type ~fmcw
 > r~ (run), which will perform additional FPGA configuration and begin
-acquiring and plotting data.
+acquiring and plotting data. The configuration settings specify a
+capture time. Currently, it is set to 10s. So, after 10s the plot will
+end and we will be represented with the prompt.
 
 * TODO Additional hardware
 * Modifications from the original
