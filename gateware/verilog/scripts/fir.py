@@ -305,7 +305,7 @@ fir = FIR(
 # fir.write_poly_taps_files(
 #     ["../roms/fir/"], tap_bits, downsample_factor, True, False
 # )
-# # fir.plot_response("fir_response.png")
+fir.plot_response("fir_response.png")
 fir.print_response("freq_response.dat")
 # set_env("FIR_TAP_WIDTH", tap_bits)
 # set_env("FIR_NORM_SHIFT", fir.tap_normalization_shift())
