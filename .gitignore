@@ -46,7 +46,6 @@ openems/octave-workspace
 **/.Xil
 **/tb
 **/_autosave*
-**/*.bit
 **/usage_statistics_webtalk*
 **/*.bin
 **/compile_commands.json
@@ -78,7 +77,6 @@ beta/software/read
 **/plots
 **/*.o
 **/*.a
-**/*.svf
 /software/src/device
 /software/cdevice.c
 /software/device.c
