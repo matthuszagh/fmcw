@@ -13,10 +13,14 @@ TOP_MODULE	= top
 TOP_MODULE_SRC	= $(realpath src/$(TOP_MODULE).v)
 
 .PHONY: prog
-prog: top.svf bscan_spi_xc7a15t.bit scripts/openocd/*
+prog:
 	openocd -s scripts/openocd -f openocd.cfg
-	# openocd -s scripts/openocd -f interface.cfg -f program_flash.cfg
-	# openocd -s scripts/openocd -f interface.cfg -f program_fpga.cfg -f program_flash.cfg -f openocd.cfg
+
+# dont regenerate bitstream automatically, prevents users from needed
+# to generate bitstream.
+# .PHONY: prog
+# prog: top.svf scripts/openocd/*
+# 	openocd -s scripts/openocd -f openocd.cfg
 
 top.svf: top.bit scripts/vivado/svf.tcl
 	vivado -nolog -nojournal -mode batch -source scripts/vivado/svf.tcl

@@ -9,10 +9,6 @@ SOFTWARE_DIR	= software
 run: prog
 	$(MAKE) -C $(SOFTWARE_DIR) run
 
-.PHONY: pc
-pc:
-	$(MAKE) -C $(SOFTWARE_DIR) fmcw
-
 .PHONY: prog
 prog:
 ifeq ($(USE_NMIGEN), 1)
