@@ -55,6 +55,9 @@ lint:
 		$(realpath src/$(TOP_MODULE).v)
 
 # cocotb simulations
+.PHONY: test
+test: test_top test_fft test_fir
+
 .PHONY: test_top
 test_top:
 	$(eval TOP_MODULE = top)
@@ -88,6 +91,9 @@ sim_async_fifo:
 	iverilog -DFIFO_SIMULATE=1 -s async_fifo_tb src/async_fifo.v -Isrc && ./a.out
 
 # formal verification
+.PHONY: formal
+formal: formal_dual_ff formal_pll_sync_ctr
+
 .PHONY: formal_dual_ff
 formal_dual_ff:
 	$(eval TOP_MODULE = dual_ff)
