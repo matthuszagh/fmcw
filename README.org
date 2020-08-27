@@ -41,7 +41,7 @@ if you're able to track down the power amplifier Henrik used in his
 design (it's deprecated, but some people have had luck on Ebay), I
 would recommend that over rev1.
 
-* Capabilites
+* Capabilities
 This radar (and associated software) can display the range of remote
 objects in real-time out to at least 250m. The radar should be capable
 of ranges up to 1km, but this has not yet been tested. The radar code
