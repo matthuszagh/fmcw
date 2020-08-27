@@ -12,6 +12,9 @@ relative to the max ADC input.
 2. [[https://github.com/matthuszagh/fmcw#capabilities][Capabilities]]
 3. [[https://github.com/matthuszagh/fmcw#installation][Installation]]
 4. [[https://github.com/matthuszagh/fmcw#usage][Usage]]
+5. [[https://github.com/matthuszagh/fmcw#additional-hardware][Additional Hardware]]
+6. [[https://github.com/matthuszagh/fmcw#contributing][Contributing]]
+7. [[https://github.com/matthuszagh/fmcw#thanks][Thanks]]
 
 * About
 :PROPERTIES:
@@ -47,7 +50,7 @@ data at any intermediary processing step (including the raw receiver
 channel data) without recompiling the FPGA code. All display
 configurations support real-time plotting. The many configuration
 options can be viewed by invoking the software shell environment (see
-[[https://github.com/matthuszagh/fmcw#usage][usage]]).
+[[https://github.com/matthuszagh/fmcw#usage][usage]])
 
 The PCB is capable of angle detection as well, but the associated FPGA
 and software code has not yet been written to support this. A future
@@ -282,7 +285,7 @@ acquiring and plotting data. The configuration settings specify a
 capture time. Currently, it is set to 10s. So, after 10s the plot will
 end and we will be represented with the prompt.
 
-* Additional hardware
+* Additional Hardware
 The KiCAD PCB files contain a full BOM of components needed to build
 the circuit board. You will, of course, need a way to assemble it (or
 you can have a 3rd party assemble the board for you). This design
