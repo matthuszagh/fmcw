@@ -95,9 +95,9 @@ menu : Automatically set configuration variables
 fmcw >
 #+end_example
 
-We can redisplay this menu at any point by typing ~fmcw > help~ (~fmcw
-> ~ is prompted as part of the shell display, so you only need to type
-~help~), and we can exit with ~fmcw > exit~.
+We can redisplay this menu at any point by typing ~fmcw > help~
+(~fmcw >~ is prompted as part of the shell display, so you only need to
+type ~help~), and we can exit with ~fmcw > exit~.
 
 The set of possible commands appears in the left column, with their
 associated descriptions to the right. All commands can be typed
