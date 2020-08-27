@@ -104,7 +104,7 @@ associated descriptions to the right. All commands can be typed
 exactly as displayed, or you can type the minimum number of letters
 that uniquely differentiates a menu entry from the other entries. So,
 for instance, if I wanted to see the current configuration I could
-type ~fmcw > c~ (~conf~ is the only menu command that begins with the
+type ~fmcw > c~ (~conf~ is the only command that begins with the
 letter ~c~).
 
 #+begin_example
