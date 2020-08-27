@@ -45,7 +45,9 @@ of ranges up to 1km, but this has not yet been tested. The radar code
 is also designed to be quite flexible. For instance, you can display
 data at any intermediary processing step (including the raw receiver
 channel data) without recompiling the FPGA code. All display
-configurations support real-time plotting.
+configurations support real-time plotting. The many configuration
+options can be viewed by invoking the software shell environment (see
+[[https://github.com/matthuszagh/fmcw#usage][usage]]).
 
 The PCB is capable of angle detection as well, but the associated FPGA
 and software code has not yet been written to support this. A future
