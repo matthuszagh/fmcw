@@ -1,3 +1,12 @@
+#+caption: Real-time range detection performed by radar. Distance
+#+caption: (y-axis) is in meters and the time (x-axis) is in
+#+caption: seconds. Magnitude is in dBFS relative to the max ADC
+#+caption: input.
+#+NAME: fig:bridge raw-fft
+#+ATTR_ORG: :width 1000
+#+ATTR_HTML: :width 100%
+[[file:data/bridge_raw.png][file:.img/bridge_raw.png]]
+
 * Table of Contents
 1. [[https://github.com/matthuszagh/fmcw#about][About]]
 2. [[https://github.com/matthuszagh/fmcw#capabilities][Capabilities]]
