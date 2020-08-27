@@ -38,10 +38,21 @@ if you're able to track down the power amplifier Henrik used in his
 design (it's deprecated, but some people have had luck on Ebay), I
 would recommend that over rev1.
 
-* TODO Capabilites
-Briefly mention the radar's capabilities.
+* Capabilites
+This radar (and associated software) can display the range of remote
+objects in real-time out to at least 250m. The radar should be capable
+of ranges up to 1km, but this has not yet been tested. The radar code
+is also designed to be quite flexible. For instance, you can display
+data at any intermediary processing step (including the raw receiver
+channel data) without recompiling the FPGA code. All display
+configurations support real-time plotting.
 
-* TODO Installation
+The PCB is capable of angle detection as well, but the associated FPGA
+and software code has not yet been written to support this. A future
+update will also add an RF switch to multiplex the receiver channels
+for better angular resolution.
+
+* Installation
 :PROPERTIES:
 :ID:       fe23bc7f-9bcf-4526-9d7e-bded4078111d
 :END:
@@ -269,75 +280,47 @@ acquiring and plotting data. The configuration settings specify a
 capture time. Currently, it is set to 10s. So, after 10s the plot will
 end and we will be represented with the prompt.
 
-* TODO Additional hardware
-* Modifications from the original
-:PROPERTIES:
-:ID:       8f78da8c-ec0c-40f3-9b8b-6c1af11f4bb2
-:END:
-The FPGA code has been completely rewritten and expanded so that
-nearly all data processing is now done on the FPGA. This was done
-while keeping the same FPGA chip. This allows the fully processed
-output to be plotted in realtime and simplifies the data processing
-requirements of the host PC code. The FPGA code also includes
-automated tests and, in some cases, formal verification.
+* Additional hardware
+The KiCAD PCB files contain a full BOM of components needed to build
+the circuit board. You will, of course, need a way to assemble it (or
+you can have a 3rd party assemble the board for you). This design
+contains a lot of small components. Therefore, I highly recommend you
+use a reflow process if you intend to assemble this yourself.
 
-Because the FPGA responsibilities were expanded, the PC software had
-new requirements and had to be rewritten as well. The software is
-multithreaded and separates out the task of acquiring data from
-plotting it. Additionally, the software and FPGA gateware have been
-designed to make the radar easier to debug. For instance, data
-processing can be shared in any way between the software and FPGA,
-which makes gateware bugs easier to isolate. It's also possible to
-request data from the FPGA in any intermediate form.
+The PCB board requires a 12V DC power supply (it is not
+USB-powered). Also ensure you get the right size barrel jack connector
+for the port. A USB cable is required to connect to a host PC. A gen2
+cable is sufficient because the PCB USB chip does not support
+gen3. Similarly, the host PC should support at least USB 2.0 High
+Speed. Otherwise, this may limit the realtime performance of your
+radar.
 
-I completely redid the PCB layout because of the need for a new power
-amplifier (note that this introduced at least [[id:0246fbe1-ba4a-4bf6-b551-a896264dea3a][one significant issue]]).
-
-I've added horn antennas that can be built by anyone with access to a
-3D printer. There's also a 3D-printable mount to hold the entire
-structure.
-
-I've greatly expanded the documentation, which should be useful to
-anyone who wants to understand how the radar works in detail.
-
-I've added a number of RF simulations (using [[https://openems.de/start/][OpenEMS]]) and spice
-simulations (using [[http://ngspice.sourceforge.net/][Ngspice]]).
-
-Finally, I have plans to multiplex 8 receiver antennas across the 2
-receiver channels for better angular resolution. The PCB has already
-been built (though is untested), but I haven't yet had the time to
-write the FPGA code and software to support it.
-
-* Issues and To-Do
-:PROPERTIES:
-:ID:       0246fbe1-ba4a-4bf6-b551-a896264dea3a
-:END:
-The power circuitry that was added to accommodate a new power
-amplifier (the original was deprecated) adds noise that shows up in
-the final output. Because of this problem, if you're able to track
-down the old power amplifier I'd recommend using Henrik's design
-instead. My FPGA code and software (at least for now) should be fully
-compatible with the original hardware. I intend to fix this problem in
-a future version.
-
-I'm currently working on a number of RF simulations that will
-eventually lead to a replacement of some of the RF PCB
-layout. Currently, I have very limited information on whether these
-parts of the PCB actually work the way they should. Areas of focus
-include transmission line characteristic impedance, transmission line
-to SMA transitions, and replacement of discrete components such as
-couplers, attenuators, etc. with the equivalent components etched
-directly onto the PCB. Once the RF simulations are complete, I'd like
-to prototype these before actually building them into the
-radar. Unfortunately, I don't yet have the proper testing equipment
-for this (building a VNA is the next project...).
+The radar requires at least 2 antennas to operate. The choice of
+antennas is up to you, but you should at least make sure that their
+bandwidth includes the 5.3 to 5.9GHz range. I'm using [[https://antennatestlab.com/3dprinting][3D-printed]] horn
+antennas, which work quite well. If you'd like to take full advantage
+of the radar's range, the horn antennas are a good choice because they
+have a high directivity. The design files to print these are included
+in the CAD designs of this repo. If your 3D printer does not support
+the z height, you can print the antenna in 2 parts and then glue the
+parts together. Finally, if you're using the horn antennas you'll
+additionally need WR159 waveguide-coax adapters. These can be picked
+up on Ebay or other similar sites. The ones I purchased were $60
+each. The PCB uses SMA connectors, so if the waveguide coax port is
+not SMA you will additionally need an adapter for that (or an
+asymmetric cable that supports the port it uses). Painting the
+antennas require a number of other materials specified in the link
+above. I personally achieved a better result using a traditional paint
+jar than the recommended spray paint, but either should work. Another
+option which I haven't tried but could work is coating the antenna in
+copper foil.
 
 * Contributing
 Pull requests and issues welcome. I'm open to suggestions for hardware
 modification, although may or may not be able to merge those commits
 depending on whether I can test the change.
 
-* TODO Attribution
+* Thanks
 + Henrik, of course (see [[id:20ff1c28-cfc6-4280-8501-83314fee390d][About]]).
 + An additional thanks to AlexBdx for finding a way to 3D print horn
   antennas.
