@@ -77,7 +77,7 @@ When the radar is setup and plugged in, administer power to the PCB,
 navigate to the top-level directory and type ~make~. This will program
 the bitstream to the FPGA and invoke a custom shell for interacting
 with the radar. If everything so far has worked, you will be presented
-with the following output:
+with the following shell environment:
 
 #+begin_example
 Available commands:
@@ -95,15 +95,17 @@ menu : Automatically set configuration variables
 fmcw >
 #+end_example
 
-We can redisplay this menu at any point by typing ~fmcw > help~, and
-we can exit with ~fmcw > exit~.
+We can redisplay this menu at any point by typing ~fmcw > help~ (~fmcw
+> ~ is prompted as part of the shell display, so you only need to type
+~help~), and we can exit with ~fmcw > exit~.
 
 The set of possible commands appears in the left column, with their
 associated descriptions to the right. All commands can be typed
 exactly as displayed, or you can type the minimum number of letters
 that uniquely differentiates a menu entry from the other entries. So,
 for instance, if I wanted to see the current configuration I could
-type ~fmcw > c~.
+type ~fmcw > c~ (~conf~ is the only menu command that begins with the
+letter ~c~).
 
 #+begin_example
 fmcw > c
@@ -132,7 +134,7 @@ report average              : False
 #+end_example
 
 If I wanted to view, say, a spectrum plot instead of a histogram, I
-would start by typing ~fmcw > s~ or ~fmcw > set~.
+would start by typing ~fmcw > s~.
 
 This presents the configuration options
 
@@ -162,7 +164,7 @@ Set options (enter the corresponding number):
 19. report average
 #+end_example
 
-Since I wanted to change ~plot type~, which is entry 4, I'd type ~fmcw
+Since I wanted to change ~plot type~, which is entry 4, I'd type ~set
 > 4~,
 
 #+begin_example
@@ -177,7 +179,7 @@ differentiate the selection from all other choices.
 #+end_example
 
 This tells me the available selections for this parameter. Like
-before, I'm allwed to just type the first differentiating letters,
+before, I'm allowed to just type the first differentiating letters,
 which in this case is simpy ~new value > s~
 
 #+begin_example
@@ -215,8 +217,8 @@ dist/freq axis              : dist
 report average              : False
 #+end_example
 
-Tweaking all of these values can become a bit of a pain, so the shell
-can conveniently set all values for a number of commonly-needed
+Tweaking all of these values can become a bit tedius, so the shell can
+conveniently set all values for a number of commonly-needed
 setups. For instance, imagine we'd like to measure the receiver noise
 floor. We can select the menu option, ~fmcw > m~.
 
@@ -230,8 +232,10 @@ Menu options (enter the corresponding number):
 
 This currently just provides two configurations, but the list will
 grow over time. We'd select ~fmcw > 1~. Now, if we view the
-configuration we will see that many values are different from the
-defaults.
+configuration we will see that many values have been updated. Indeed,
+this is precisely the configuration we want to compute the noise floor
+(if you're following along, make sure you've terminated your
+transmission and reception ports with 50ohm loads before proceeding).
 
 #+begin_example
 fmcw > conf
