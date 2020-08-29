@@ -42,6 +42,7 @@
             # nextpnr
             gtkwave
             vivado
+            yices
 
             # ftdi
             openocd
