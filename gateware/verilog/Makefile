@@ -24,11 +24,6 @@ prog:
 
 top.svf: top.bit scripts/vivado/svf.tcl
 	vivado -nolog -nojournal -mode batch -source scripts/vivado/svf.tcl
-	# sh scripts/winbond_flash.sh
-
-bscan_spi_xc7a15t.bit: scripts/xilinx_bscan_spi.py
-	python scripts/xilinx_bscan_spi.py xc7a15t
-	cp build/bscan_spi_xc7a15t.bit .
 
 flash.bin: top.bit
 	vivado -nolog -nojournal -mode batch -source scripts/vivado/flash_bitstream.tcl
