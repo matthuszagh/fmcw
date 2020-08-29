@@ -241,7 +241,7 @@ class TopTb:
                 (
                     "Actual fir output differs from expected."
                     " Actual: %d, expected: %d, difference: %d."
-                    " Tolerance set at %d. Counter value %d."
+                    " Tolerance set at +/-%d. Counter value %d."
                 )
                 % (act_val, exp_val, act_val - exp_val, tol, ctr)
             )
@@ -256,7 +256,7 @@ class TopTb:
                 (
                     "Actual window output differs from expected."
                     " Actual: %d, expected: %d, difference: %d."
-                    " Tolerance set at %d. Counter value %d."
+                    " Tolerance set at +/-%d. Counter value %d."
                 )
                 % (act_val, exp_val, act_val - exp_val, tol, ctr)
             )
@@ -277,7 +277,7 @@ class TopTb:
                 (
                     "Actual real fft output differs from expected."
                     " Actual: %d, expected: %d, difference: %d."
-                    " Tolerance set at %d. Counter value %d."
+                    " Tolerance set at +/-%d. Counter value %d."
                 )
                 % (re_act_val, re_exp_val, re_act_val - re_exp_val, tol, ctr)
             )
@@ -287,7 +287,7 @@ class TopTb:
                 (
                     "Actual imaginary fft output differs from expected."
                     " Actual: %d, expected: %d, difference: %d."
-                    " Tolerance set at %d. Counter value %d."
+                    " Tolerance set at +/-%d. Counter value %d."
                 )
                 % (im_act_val, im_exp_val, im_act_val - im_exp_val, tol, ctr)
             )

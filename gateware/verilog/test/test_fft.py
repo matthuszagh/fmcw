@@ -97,7 +97,7 @@ class FFTTB:
                 (
                     "Actual real output differs from expected."
                     " Actual: %d, expected: %d, difference: %d."
-                    " Tolerance set at %d."
+                    " Tolerance set at +/-%d."
                 )
                 % (rval, rexp, rval - rexp, tolerance)
             )
@@ -107,7 +107,7 @@ class FFTTB:
                 (
                     "Actual imaginary output differs from expected."
                     " Actual: %d, expected: %d, difference: %d."
-                    " Tolerance set at %d."
+                    " Tolerance set at +/-%d."
                 )
                 % (ival, iexp, ival - iexp, tolerance)
             )

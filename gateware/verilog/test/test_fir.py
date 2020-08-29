@@ -133,7 +133,7 @@ async def check_sequence(dut):
                 raise TestFailure(
                     (
                         "Actual output differs from expected."
-                        " Actual: %d, expected: %d. Tolerance set at %d."
+                        " Actual: %d, expected: %d. Tolerance set at +/-%d."
                     )
                     % (out_val, out_exp, tol)
                 )
