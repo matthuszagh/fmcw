@@ -120,26 +120,26 @@ module fir #(
    reg signed [TAP_WIDTH-1:0] taps19 [0:BANK_LEN-1];
 
    initial begin
-      $readmemh("/home/matt/src/fmcw/gateware/verilog/src/roms/fir/taps0.hex", taps0);
-      $readmemh("/home/matt/src/fmcw/gateware/verilog/src/roms/fir/taps1.hex", taps1);
-      $readmemh("/home/matt/src/fmcw/gateware/verilog/src/roms/fir/taps2.hex", taps2);
-      $readmemh("/home/matt/src/fmcw/gateware/verilog/src/roms/fir/taps3.hex", taps3);
-      $readmemh("/home/matt/src/fmcw/gateware/verilog/src/roms/fir/taps4.hex", taps4);
-      $readmemh("/home/matt/src/fmcw/gateware/verilog/src/roms/fir/taps5.hex", taps5);
-      $readmemh("/home/matt/src/fmcw/gateware/verilog/src/roms/fir/taps6.hex", taps6);
-      $readmemh("/home/matt/src/fmcw/gateware/verilog/src/roms/fir/taps7.hex", taps7);
-      $readmemh("/home/matt/src/fmcw/gateware/verilog/src/roms/fir/taps8.hex", taps8);
-      $readmemh("/home/matt/src/fmcw/gateware/verilog/src/roms/fir/taps9.hex", taps9);
-      $readmemh("/home/matt/src/fmcw/gateware/verilog/src/roms/fir/taps10.hex", taps10);
-      $readmemh("/home/matt/src/fmcw/gateware/verilog/src/roms/fir/taps11.hex", taps11);
-      $readmemh("/home/matt/src/fmcw/gateware/verilog/src/roms/fir/taps12.hex", taps12);
-      $readmemh("/home/matt/src/fmcw/gateware/verilog/src/roms/fir/taps13.hex", taps13);
-      $readmemh("/home/matt/src/fmcw/gateware/verilog/src/roms/fir/taps14.hex", taps14);
-      $readmemh("/home/matt/src/fmcw/gateware/verilog/src/roms/fir/taps15.hex", taps15);
-      $readmemh("/home/matt/src/fmcw/gateware/verilog/src/roms/fir/taps16.hex", taps16);
-      $readmemh("/home/matt/src/fmcw/gateware/verilog/src/roms/fir/taps17.hex", taps17);
-      $readmemh("/home/matt/src/fmcw/gateware/verilog/src/roms/fir/taps18.hex", taps18);
-      $readmemh("/home/matt/src/fmcw/gateware/verilog/src/roms/fir/taps19.hex", taps19);
+      $readmemh("taps0.hex", taps0);
+      $readmemh("taps1.hex", taps1);
+      $readmemh("taps2.hex", taps2);
+      $readmemh("taps3.hex", taps3);
+      $readmemh("taps4.hex", taps4);
+      $readmemh("taps5.hex", taps5);
+      $readmemh("taps6.hex", taps6);
+      $readmemh("taps7.hex", taps7);
+      $readmemh("taps8.hex", taps8);
+      $readmemh("taps9.hex", taps9);
+      $readmemh("taps10.hex", taps10);
+      $readmemh("taps11.hex", taps11);
+      $readmemh("taps12.hex", taps12);
+      $readmemh("taps13.hex", taps13);
+      $readmemh("taps14.hex", taps14);
+      $readmemh("taps15.hex", taps15);
+      $readmemh("taps16.hex", taps16);
+      $readmemh("taps17.hex", taps17);
+      $readmemh("taps18.hex", taps18);
+      $readmemh("taps19.hex", taps19);
    end
 
    wire signed [TAP_WIDTH-1:0] tap0 = taps0[tap_addr_pipe[$clog2(BANK_LEN)-1:0]];

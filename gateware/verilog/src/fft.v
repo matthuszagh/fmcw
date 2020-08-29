@@ -17,8 +17,6 @@
 // en : Input data treated as valid. valid and data_ctr_o are based on
 //      when this is asserted.
 
-// TODO fix rom paths
-
 // TODO last rom file doesn't appear to be needed. Verify and remove
 // from generation script.
 
@@ -59,9 +57,9 @@ module fft #(
    // twiddle factors
    wire signed [TWIDDLE_WIDTH-1:0]      w_s0_re;
    ram #(
-      .INITFILE ("/home/matt/src/fmcw/gateware/verilog/src/roms/fft/s0_re.hex" ),
-      .WIDTH    (TWIDDLE_WIDTH    ),
-      .SIZE     (N                )
+      .INITFILE ("s0_re.hex"   ),
+      .WIDTH    (TWIDDLE_WIDTH ),
+      .SIZE     (N             )
    ) rom_s0_re (
       .rdclk  (clk                   ),
       .rden   (1'b1                  ),
@@ -75,9 +73,9 @@ module fft #(
 
    wire signed [TWIDDLE_WIDTH-1:0]      w_s0_im;
    ram #(
-      .INITFILE ("/home/matt/src/fmcw/gateware/verilog/src/roms/fft/s0_im.hex" ),
-      .WIDTH    (TWIDDLE_WIDTH    ),
-      .SIZE     (N                )
+      .INITFILE ("s0_im.hex"   ),
+      .WIDTH    (TWIDDLE_WIDTH ),
+      .SIZE     (N             )
    ) rom_s0_im (
       .rdclk  (clk                   ),
       .rden   (1'b1                  ),
@@ -91,9 +89,9 @@ module fft #(
 
    wire signed [TWIDDLE_WIDTH-1:0]      w_s1_re;
    ram #(
-      .INITFILE ("/home/matt/src/fmcw/gateware/verilog/src/roms/fft/s1_re.hex" ),
-      .WIDTH    (TWIDDLE_WIDTH    ),
-      .SIZE     (N/4              )
+      .INITFILE ("s1_re.hex"   ),
+      .WIDTH    (TWIDDLE_WIDTH ),
+      .SIZE     (N/4           )
    ) rom_s1_re (
       .rdclk  (clk                          ),
       .rden   (1'b1                         ),
@@ -107,9 +105,9 @@ module fft #(
 
    wire signed [TWIDDLE_WIDTH-1:0]      w_s1_im;
    ram #(
-      .INITFILE ("/home/matt/src/fmcw/gateware/verilog/src/roms/fft/s1_im.hex" ),
-      .WIDTH    (TWIDDLE_WIDTH    ),
-      .SIZE     (N/4              )
+      .INITFILE ("s1_im.hex"   ),
+      .WIDTH    (TWIDDLE_WIDTH ),
+      .SIZE     (N/4           )
    ) rom_s1_im (
       .rdclk  (clk                          ),
       .rden   (1'b1                         ),
@@ -123,9 +121,9 @@ module fft #(
 
    wire signed [TWIDDLE_WIDTH-1:0]      w_s2_re;
    ram #(
-      .INITFILE ("/home/matt/src/fmcw/gateware/verilog/src/roms/fft/s2_re.hex" ),
-      .WIDTH    (TWIDDLE_WIDTH    ),
-      .SIZE     (N/16             )
+      .INITFILE ("s2_re.hex"   ),
+      .WIDTH    (TWIDDLE_WIDTH ),
+      .SIZE     (N/16          )
    ) rom_s2_re (
       .rdclk  (clk                          ),
       .rden   (1'b1                         ),
@@ -139,9 +137,9 @@ module fft #(
 
    wire signed [TWIDDLE_WIDTH-1:0]      w_s2_im;
    ram #(
-      .INITFILE ("/home/matt/src/fmcw/gateware/verilog/src/roms/fft/s2_im.hex" ),
-      .WIDTH    (TWIDDLE_WIDTH    ),
-      .SIZE     (N/16             )
+      .INITFILE ("s2_im.hex"   ),
+      .WIDTH    (TWIDDLE_WIDTH ),
+      .SIZE     (N/16          )
    ) rom_s2_im (
       .rdclk  (clk                          ),
       .rden   (1'b1                         ),
@@ -155,9 +153,9 @@ module fft #(
 
    wire signed [TWIDDLE_WIDTH-1:0]      w_s3_re;
    ram #(
-      .INITFILE ("/home/matt/src/fmcw/gateware/verilog/src/roms/fft/s3_re.hex" ),
-      .WIDTH    (TWIDDLE_WIDTH    ),
-      .SIZE     (N/64             )
+      .INITFILE ("s3_re.hex"   ),
+      .WIDTH    (TWIDDLE_WIDTH ),
+      .SIZE     (N/64          )
    ) rom_s3_re (
       .rdclk  (clk                          ),
       .rden   (1'b1                         ),
@@ -171,9 +169,9 @@ module fft #(
 
    wire signed [TWIDDLE_WIDTH-1:0]      w_s3_im;
    ram #(
-      .INITFILE ("/home/matt/src/fmcw/gateware/verilog/src/roms/fft/s3_im.hex" ),
-      .WIDTH    (TWIDDLE_WIDTH    ),
-      .SIZE     (N/64             )
+      .INITFILE ("s3_im.hex"   ),
+      .WIDTH    (TWIDDLE_WIDTH ),
+      .SIZE     (N/64          )
    ) rom_s3_im (
       .rdclk  (clk                          ),
       .rden   (1'b1                         ),

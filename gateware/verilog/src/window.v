@@ -49,9 +49,8 @@ module window #(
    reg [COEFF_WIDTH-1:0]              coeffs [0:N-1];
    reg [$clog2(N)-1:0]                ctr = {$clog2(N){1'b0}};
 
-   // TODO shouldn't use a full path
    initial begin
-      $readmemh("/home/matt/src/fmcw/gateware/verilog/src/roms/window/coeffs.hex", coeffs);
+      $readmemh("coeffs.hex", coeffs);
    end
 
    localparam LATENCY = 2;
