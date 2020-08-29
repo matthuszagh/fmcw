@@ -41,6 +41,7 @@
             verilog
             # nextpnr
             gtkwave
+            vivado
 
             # ftdi
             openocd
