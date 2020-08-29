@@ -84,3 +84,4 @@ beta/software/read
 **/ibom.html
 /gateware/verilog/scripts/yosys/formal/
 /gateware/verilog/scripts/freq_response.dat
+simulations/**/*.kicad_mod
