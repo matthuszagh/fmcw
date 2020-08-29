@@ -22,6 +22,9 @@ prog:
 # prog: top.svf scripts/openocd/*
 # 	openocd -s scripts/openocd -f openocd.cfg
 
+.PHONY: bitstream
+bitstream: top.svf
+
 top.svf: top.bit scripts/vivado/svf.tcl
 	vivado -nolog -nojournal -mode batch -source scripts/vivado/svf.tcl
 
