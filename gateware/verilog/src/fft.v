@@ -240,45 +240,41 @@ module fft #(
    wire                           carry_11;
    wire                           carry_12;
 
-   generate
-      if (N_STAGES > 1) begin
-         fft_wm #(
-            .WIDTH         (OUTPUT_WIDTH  ),
-            .TWIDDLE_WIDTH (TWIDDLE_WIDTH ),
-            .N             (N             )
-         ) stage0_wm (
-            .clk       (clk           ),
-            .srst_n    (srst_n        ),
-            .carry_in  (carry_0       ),
-            .carry_out (carry_11      ),
-            .ctr_i     (stage1_ctr_wm ),
-            .ctr_o     (stage1_ctr    ),
-            .x_re_i    (bf0_re        ),
-            .x_im_i    (bf0_im        ),
-            .w_re_i    (w_s0_re       ),
-            .w_im_i    (w_s0_im       ),
-            .z_re_o    (w0_re         ),
-            .z_im_o    (w0_im         )
-         );
+   fft_wm #(
+      .WIDTH         (OUTPUT_WIDTH  ),
+      .TWIDDLE_WIDTH (TWIDDLE_WIDTH ),
+      .N             (N             )
+   ) stage0_wm (
+      .clk       (clk           ),
+      .srst_n    (srst_n        ),
+      .carry_in  (carry_0       ),
+      .carry_out (carry_11      ),
+      .ctr_i     (stage1_ctr_wm ),
+      .ctr_o     (stage1_ctr    ),
+      .x_re_i    (bf0_re        ),
+      .x_im_i    (bf0_im        ),
+      .w_re_i    (w_s0_re       ),
+      .w_im_i    (w_s0_im       ),
+      .z_re_o    (w0_re         ),
+      .z_im_o    (w0_im         )
+   );
 
-         fft_bf #(
-            .WIDTH (OUTPUT_WIDTH ),
-            .N     (N            ),
-            .STAGE (1            )
-         ) stage1_bf (
-            .clk       (clk           ),
-            .srst_n    (srst_n        ),
-            .carry_in  (carry_11      ),
-            .carry_out (carry_12      ),
-            .ctr_i     (stage1_ctr    ),
-            .ctr_o     (stage2_ctr_wm ),
-            .x_re_i    (w0_re         ),
-            .x_im_i    (w0_im         ),
-            .z_re_o    (bf1_re        ),
-            .z_im_o    (bf1_im        )
-         );
-      end
-   endgenerate
+   fft_bf #(
+      .WIDTH (OUTPUT_WIDTH ),
+      .N     (N            ),
+      .STAGE (1            )
+   ) stage1_bf (
+      .clk       (clk           ),
+      .srst_n    (srst_n        ),
+      .carry_in  (carry_11      ),
+      .carry_out (carry_12      ),
+      .ctr_i     (stage1_ctr    ),
+      .ctr_o     (stage2_ctr_wm ),
+      .x_re_i    (w0_re         ),
+      .x_im_i    (w0_im         ),
+      .z_re_o    (bf1_re        ),
+      .z_im_o    (bf1_im        )
+   );
 
    // stage 2
    wire signed [OUTPUT_WIDTH-1:0] bf2_re;
@@ -288,45 +284,41 @@ module fft #(
    wire                           carry_21;
    wire                           carry_22;
 
-   generate
-      if (N_STAGES > 2) begin
-         fft_wm #(
-            .WIDTH         (OUTPUT_WIDTH  ),
-            .TWIDDLE_WIDTH (TWIDDLE_WIDTH ),
-            .N             (N             )
-         ) stage1_wm (
-            .clk       (clk           ),
-            .srst_n    (srst_n        ),
-            .carry_in  (carry_12      ),
-            .carry_out (carry_21      ),
-            .ctr_i     (stage2_ctr_wm ),
-            .ctr_o     (stage2_ctr    ),
-            .x_re_i    (bf1_re        ),
-            .x_im_i    (bf1_im        ),
-            .w_re_i    (w_s1_re       ),
-            .w_im_i    (w_s1_im       ),
-            .z_re_o    (w1_re         ),
-            .z_im_o    (w1_im         )
-         );
+   fft_wm #(
+      .WIDTH         (OUTPUT_WIDTH  ),
+      .TWIDDLE_WIDTH (TWIDDLE_WIDTH ),
+      .N             (N             )
+   ) stage1_wm (
+      .clk       (clk           ),
+      .srst_n    (srst_n        ),
+      .carry_in  (carry_12      ),
+      .carry_out (carry_21      ),
+      .ctr_i     (stage2_ctr_wm ),
+      .ctr_o     (stage2_ctr    ),
+      .x_re_i    (bf1_re        ),
+      .x_im_i    (bf1_im        ),
+      .w_re_i    (w_s1_re       ),
+      .w_im_i    (w_s1_im       ),
+      .z_re_o    (w1_re         ),
+      .z_im_o    (w1_im         )
+   );
 
-         fft_bf #(
-            .WIDTH (OUTPUT_WIDTH ),
-            .N     (N            ),
-            .STAGE (2            )
-         ) stage2_bf (
-            .clk       (clk           ),
-            .srst_n    (srst_n        ),
-            .carry_in  (carry_21      ),
-            .carry_out (carry_22      ),
-            .ctr_i     (stage2_ctr    ),
-            .ctr_o     (stage3_ctr_wm ),
-            .x_re_i    (w1_re         ),
-            .x_im_i    (w1_im         ),
-            .z_re_o    (bf2_re        ),
-            .z_im_o    (bf2_im        )
-         );
-      end
-   endgenerate
+   fft_bf #(
+      .WIDTH (OUTPUT_WIDTH ),
+      .N     (N            ),
+      .STAGE (2            )
+   ) stage2_bf (
+      .clk       (clk           ),
+      .srst_n    (srst_n        ),
+      .carry_in  (carry_21      ),
+      .carry_out (carry_22      ),
+      .ctr_i     (stage2_ctr    ),
+      .ctr_o     (stage3_ctr_wm ),
+      .x_re_i    (w1_re         ),
+      .x_im_i    (w1_im         ),
+      .z_re_o    (bf2_re        ),
+      .z_im_o    (bf2_im        )
+   );
 
    // stage 3
    wire signed [OUTPUT_WIDTH-1:0] bf3_re;
@@ -336,45 +328,41 @@ module fft #(
    wire                           carry_31;
    wire                           carry_32;
 
-   generate
-      if (N_STAGES > 3) begin
-         fft_wm #(
-            .WIDTH         (OUTPUT_WIDTH  ),
-            .TWIDDLE_WIDTH (TWIDDLE_WIDTH ),
-            .N             (N             )
-         ) stage2_wm (
-            .clk       (clk           ),
-            .srst_n    (srst_n        ),
-            .carry_in  (carry_22      ),
-            .carry_out (carry_31      ),
-            .ctr_i     (stage3_ctr_wm ),
-            .ctr_o     (stage3_ctr    ),
-            .x_re_i    (bf2_re        ),
-            .x_im_i    (bf2_im        ),
-            .w_re_i    (w_s2_re       ),
-            .w_im_i    (w_s2_im       ),
-            .z_re_o    (w2_re         ),
-            .z_im_o    (w2_im         )
-         );
+   fft_wm #(
+      .WIDTH         (OUTPUT_WIDTH  ),
+      .TWIDDLE_WIDTH (TWIDDLE_WIDTH ),
+      .N             (N             )
+   ) stage2_wm (
+      .clk       (clk           ),
+      .srst_n    (srst_n        ),
+      .carry_in  (carry_22      ),
+      .carry_out (carry_31      ),
+      .ctr_i     (stage3_ctr_wm ),
+      .ctr_o     (stage3_ctr    ),
+      .x_re_i    (bf2_re        ),
+      .x_im_i    (bf2_im        ),
+      .w_re_i    (w_s2_re       ),
+      .w_im_i    (w_s2_im       ),
+      .z_re_o    (w2_re         ),
+      .z_im_o    (w2_im         )
+   );
 
-         fft_bf #(
-            .WIDTH (OUTPUT_WIDTH ),
-            .N     (N            ),
-            .STAGE (3            )
-         ) stage3_bf (
-            .clk       (clk           ),
-            .srst_n    (srst_n        ),
-            .carry_in  (carry_31      ),
-            .carry_out (carry_32      ),
-            .ctr_i     (stage3_ctr    ),
-            .ctr_o     (stage4_ctr_wm ),
-            .x_re_i    (w2_re         ),
-            .x_im_i    (w2_im         ),
-            .z_re_o    (bf3_re        ),
-            .z_im_o    (bf3_im        )
-         );
-      end
-   endgenerate
+   fft_bf #(
+      .WIDTH (OUTPUT_WIDTH ),
+      .N     (N            ),
+      .STAGE (3            )
+   ) stage3_bf (
+      .clk       (clk           ),
+      .srst_n    (srst_n        ),
+      .carry_in  (carry_31      ),
+      .carry_out (carry_32      ),
+      .ctr_i     (stage3_ctr    ),
+      .ctr_o     (stage4_ctr_wm ),
+      .x_re_i    (w2_re         ),
+      .x_im_i    (w2_im         ),
+      .z_re_o    (bf3_re        ),
+      .z_im_o    (bf3_im        )
+   );
 
    // stage 4
    wire signed [OUTPUT_WIDTH-1:0] bf4_re;
@@ -382,85 +370,50 @@ module fft #(
    wire                           carry_41;
    wire                           carry_42;
 
-   generate
-      if (N_STAGES > 4) begin
-         fft_wm #(
-            .WIDTH         (OUTPUT_WIDTH  ),
-            .TWIDDLE_WIDTH (TWIDDLE_WIDTH ),
-            .N             (N             )
-         ) stage3_wm (
-            .clk       (clk           ),
-            .srst_n    (srst_n        ),
-            .carry_in  (carry_32      ),
-            .carry_out (carry_41      ),
-            .ctr_i     (stage4_ctr_wm ),
-            .ctr_o     (stage4_ctr    ),
-            .x_re_i    (bf3_re        ),
-            .x_im_i    (bf3_im        ),
-            .w_re_i    (w_s3_re       ),
-            .w_im_i    (w_s3_im       ),
-            .z_re_o    (w3_re         ),
-            .z_im_o    (w3_im         )
-         );
+   fft_wm #(
+      .WIDTH         (OUTPUT_WIDTH  ),
+      .TWIDDLE_WIDTH (TWIDDLE_WIDTH ),
+      .N             (N             )
+   ) stage3_wm (
+      .clk       (clk           ),
+      .srst_n    (srst_n        ),
+      .carry_in  (carry_32      ),
+      .carry_out (carry_41      ),
+      .ctr_i     (stage4_ctr_wm ),
+      .ctr_o     (stage4_ctr    ),
+      .x_re_i    (bf3_re        ),
+      .x_im_i    (bf3_im        ),
+      .w_re_i    (w_s3_re       ),
+      .w_im_i    (w_s3_im       ),
+      .z_re_o    (w3_re         ),
+      .z_im_o    (w3_im         )
+   );
 
-         /* verilator lint_off PINMISSING */
-         fft_bf #(
-            .WIDTH (OUTPUT_WIDTH ),
-            .N     (N            ),
-            .STAGE (4            )
-         ) stage4_bf (
-            .clk       (clk        ),
-            .srst_n    (srst_n     ),
-            .carry_in  (carry_41   ),
-            .carry_out (carry_42   ),
-            .ctr_i     (stage4_ctr ),
-            .x_re_i    (w3_re      ),
-            .x_im_i    (w3_im      ),
-            .z_re_o    (bf4_re     ),
-            .z_im_o    (bf4_im     )
-         );
-         /* verilator lint_on PINMISSING */
-      end
-   endgenerate
+   /* verilator lint_off PINMISSING */
+   fft_bf #(
+      .WIDTH (OUTPUT_WIDTH ),
+      .N     (N            ),
+      .STAGE (4            )
+   ) stage4_bf (
+      .clk       (clk        ),
+      .srst_n    (srst_n     ),
+      .carry_in  (carry_41   ),
+      .carry_out (carry_42   ),
+      .ctr_i     (stage4_ctr ),
+      .x_re_i    (w3_re      ),
+      .x_im_i    (w3_im      ),
+      .z_re_o    (bf4_re     ),
+      .z_im_o    (bf4_im     )
+   );
+   /* verilator lint_on PINMISSING */
 
    wire signed [OUTPUT_WIDTH-1:0] data_bf_last_re;
    wire signed [OUTPUT_WIDTH-1:0] data_bf_last_im;
    wire                           valid_next;
 
-   generate
-      case (N_STAGES)
-      5:
-        begin
-           assign data_bf_last_re = bf4_re;
-           assign data_bf_last_im = bf4_im;
-           assign valid_next      = carry_42;
-        end
-      4:
-        begin
-           assign data_bf_last_re = bf3_re;
-           assign data_bf_last_im = bf3_im;
-           assign valid_next      = carry_32;
-        end
-      3:
-        begin
-           assign data_bf_last_re = bf2_re;
-           assign data_bf_last_im = bf2_im;
-           assign valid_next      = carry_22;
-        end
-      2:
-        begin
-           assign data_bf_last_re = bf1_re;
-           assign data_bf_last_im = bf1_im;
-           assign valid_next      = carry_12;
-        end
-      1:
-        begin
-           assign data_bf_last_re = bf0_re;
-           assign data_bf_last_im = bf0_im;
-           assign valid_next      = carry_0;
-        end
-      endcase
-   endgenerate
+   assign data_bf_last_re = bf4_re;
+   assign data_bf_last_im = bf4_im;
+   assign valid_next      = carry_42;
 
    /* verilator lint_off WIDTH */
    localparam [$clog2(N)-1:0] SYNC_STAGE = N_STAGES-2;
