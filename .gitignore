@@ -53,7 +53,6 @@ openems/octave-workspace
 /fpga/fir/np
 **/tmp*
 *.edif
-*.stl
 /fpga/hdl/dist/scripts/read_bytes
 /fpga/hdl/dist/read
 /fpga/hdl/dist/scripts/data

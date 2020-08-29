@@ -4,3 +4,4 @@
 *.zip filter=lfs diff=lfs merge=lfs -text
 *.bit filter=lfs diff=lfs merge=lfs -text
 *.svf filter=lfs diff=lfs merge=lfs -text
+*.stl filter=lfs diff=lfs merge=lfs -text
