@@ -67,12 +67,6 @@ Linux machine and the radar and a Python3 installation including
 [[https://numpy.org/][NumPy]], [[https://www.scipy.org/][SciPy]], [[http://www.pyqtgraph.org/][PyQtGraph]], as well as a [[https://cython.org/][Cython compiler]] to compile a
 small amount of optimized C code.
 
-There are a number of additional dependencies if you need to perform
-other tasks, such as compiling the FPGA code, running microwave or
-lower-frequency analog simulations, viewing and modifying the PCB
-design, viewing and modifying the CAD designs, etc. This installation
-section will be updated to specify these dependencies at a later time.
-
 Finally, it is necessary to have unprivileged access to the radar in
 order to use it. Add the following to ~/etc/udev~ (for instance, in
 ~/etc/udev/rules.d/99-local.rules~):
@@ -87,6 +81,55 @@ To register the changes, run:
 #+begin_src sh
 sudo udevadm control --reload-rules && udevadm trigger
 #+end_src
+
+** FPGA Bitstream Generation
+The FPGA bitstream is updated in this repo whenever the Verilog code
+changes. As a result, if you just want to use the radar you should
+never need to compile the bitstream yourself. If you do want to modify
+the FPGA configuration, you can edit the Verilog source files to your
+liking (located in [[https://github.com/matthuszagh/fmcw/tree/master/gateware/verilog/src][gateware/verilog/src]]) and then recompile the
+bitstream with ~make bitstream~ in the [[https://github.com/matthuszagh/fmcw/tree/master/gateware/verilog][gateware/verilog]]
+directory. This requires an installation of Vivado. I've only tested
+this with v2017.2, although it should work with newer versions as
+well. If this is not the case please file a bug report.
+
+** Tests and Formal Verification
+Verilog functional tests and formal verification can be run from
+[[https://github.com/matthuszagh/fmcw/tree/master/gateware/verilog][gateware/verilog]] directory with ~make test~ (for [[https://docs.cocotb.org/en/latest/][Cocotb]] tests), ~make
+sim~ for more traditional Verilog testbenches, and ~make formal~ for
+formal verification. There are also subtargets for specific
+modules. Cocotb tests require an installation of Cocotb and
+traditional Verilog testbenches require an installation of [[https://github.com/steveicarus/iverilog][Icarus
+Verilog]]. Formal verification requires [[https://github.com/YosysHQ/SymbiYosys][SymbiYosys]], [[https://github.com/YosysHQ/yosys][yosys]], and the [[https://github.com/SRI-CSL/yices2][yices]]
+SMT solver.
+
+** Microwave Simulations
+Microwave simulations are performed with [[https://openems.de/start/][OpenEMS]], using my own python
+interface tool, [[https://github.com/matthuszagh/pyems][pyems]]. These are located in the [[https://github.com/matthuszagh/fmcw/tree/master/simulations/openems][simulations/openems]]
+directory and can be run individually.
+
+** Ngspice Simulations
+Ngspice simulations are a work-in-progress. Nevertheless, if you'd
+like to test them they can be found in the [[https://github.com/matthuszagh/fmcw/tree/master/simulations/ngspice][simulations/ngspice]]
+directory and the python files can be run individually. They require
+an installation of [[https://github.com/xesscorp/skidl][SKiDL]], [[https://github.com/FabriceSalvaire/PySpice][PySpice]], and, of course, [[http://ngspice.sourceforge.net/][Ngspice]].
+
+** CAD Designs
+The antenna mount and horn antenna CAD designs are available in the
+[[https://github.com/matthuszagh/fmcw/tree/master/hardware/cad][hardware/cad]] directory. The [[https://www.openscad.org/][OpenSCAD]] source files as well as the
+generated STL files are available there. If you only want to 3D print
+the objects, the STL files are sufficient. If, however, you'd like to
+modify them, you'll need an installation of OpenSCAD (or you can
+modify the STL files in another CAD program like FreeCAD).
+
+** PCB Design
+The KiCAD PCB design files are located in subdirectories of
+[[https://github.com/matthuszagh/fmcw/tree/master/hardware/boards][hardware/boards]]. They require KiCAD to view and modify. The gerbers
+are available as zip files here. Note that because rev2 is not yet
+complete, those gerbers are not up-to-date. The hardware directory
+also contains some projects which are in development, such as an
+antenna switch and various prototype boards. These are not, in
+general, complete and are thus not recommended for use.
 
 * Usage
 When the radar is setup and plugged in, administer power to the PCB,
