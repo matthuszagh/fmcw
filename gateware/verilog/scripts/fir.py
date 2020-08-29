@@ -289,7 +289,6 @@ class FIR:
         fig.savefig(savefile)
 
 
-# os.remove("env.sh")
 fir = FIR(
     numtaps=120,
     bands=[0, 0.5e6, 1.00e6, 20e6],
@@ -299,30 +298,5 @@ fir = FIR(
     stop_db=-40,
 )
 
-# tap_bits = 16
-# input_bits = 12
-# downsample_factor = 20
-# fir.write_poly_taps_files(
-#     ["../roms/fir/"], tap_bits, downsample_factor, True, False
-# )
-fir.plot_response("fir_response.png")
+# fir.plot_response("fir_response.png")
 fir.print_response("freq_response.dat")
-# set_env("FIR_TAP_WIDTH", tap_bits)
-# set_env("FIR_NORM_SHIFT", fir.tap_normalization_shift())
-# set_env("FIR_OUTPUT_WIDTH", fir.output_bit_width(input_bits))
-
-# # Henrik's filters
-# with open("coeff40_2.dat") as f:
-#     taps = [float(line.rstrip("\n")) for line in f]
-#     fir.taps = taps
-#     fir.write_poly_taps_files(
-#         ["../roms/fir/"], tap_bits, downsample_factor, True, False
-#     )
-#     fir_response("40_2_response.dat", taps=taps, fs=40e6)
-#     set_env("FIR_TAP_WIDTH", tap_bits)
-#     set_env("FIR_NORM_SHIFT", fir.tap_normalization_shift())
-#     set_env("FIR_OUTPUT_WIDTH", fir.output_bit_width(input_bits))
-
-# with open("coeff2_1.dat") as f:
-#     taps = [float(line.rstrip("\n")) for line in f]
-#     fir_response("2_1_response.dat", taps=taps, fs=2e6)
