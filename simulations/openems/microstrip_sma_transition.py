@@ -4,12 +4,20 @@ import numpy as np
 from pyems.pcb import common_pcbs
 from pyems.structure import Microstrip, PCB, Coax, priorities
 from pyems.simulation import Simulation
-from pyems.coordinate import Coordinate2, Axis, Coordinate3
+from pyems.coordinate import Coordinate2, Axis, Coordinate3, Box3
 from pyems.calc import coax_core_diameter
 from pyems.material import common_dielectrics
 from pyems.mesh import Mesh
 from pyems.field_dump import FieldDump, DumpType
 from pyems.utilities import print_table, mil_to_mm
+from pyems.csxcad import (
+    add_metal,
+    add_material,
+    add_conducting_sheet,
+    colors,
+    construct_box,
+    construct_cylinder,
+)
 
 freq = np.arange(0, 18e9, 1e7)
 ref_freq = 5.6e9
@@ -66,112 +74,127 @@ Microstrip(
 )
 
 # Mueller BU-1420701851 edge mount SMA
-pad = sim.csx.AddConductingSheet(
-    "pad",
+pad = add_conducting_sheet(
+    csx=sim.csx,
+    name="pad",
     conductivity=pcb_prop.metal_conductivity(),
     thickness=pcb_prop.copper_thickness(0),
 )
-pad.AddBox(
+construct_box(
+    prop=pad,
+    box=Box3(
+        (pcb_len / 2 - sma_lead_len / 2, -sma_lead_width / 2, 0),
+        (pcb_len / 2, sma_lead_width / 2, 0),
+    ),
     priority=priorities["trace"],
-    start=[pcb_len / 2 - sma_lead_len / 2, -sma_lead_width / 2, 0],
-    stop=[pcb_len / 2, sma_lead_width / 2, 0],
 )
 
-pad_keepout = sim.csx.AddMaterial(
-    "pad_keepout",
+pad_keepout = add_material(
+    csx=sim.csx,
+    name="pad_keepout",
     epsilon=pcb_prop.substrate.epsr_at_freq(ref_freq),
     kappa=pcb_prop.substrate.kappa_at_freq(ref_freq),
+    color=colors["soldermask"],
 )
-# pad_keepout.AddBox(
-#     priority=priorities["keepout"],
-#     start=[pcb_len / 2 - sma_lead_len / 2, -sma_keepout_width / 2, 0],
-#     stop=[pcb_len / 2, sma_keepout_width / 2, 0],
-# )
-# pad_keepout.AddBox(
-#     priority=priorities["keepout"],
-#     start=[
-#         pcb_len / 2 - sma_lead_len / 2,
-#         -sma_cutout_width / 2,
-#         pcb.copper_layer_elevation(1),
-#     ],
-#     stop=[pcb_len / 2, sma_cutout_width / 2, pcb.copper_layer_elevation(1)],
-# )
 
-sma_box = sim.csx.AddMetal("sma_box")
-sma_box.AddBox(
+sma_box = add_metal(csx=sim.csx, name="sma_box")
+construct_box(
+    prop=sma_box,
+    box=Box3(
+        (
+            pcb_len / 2,
+            -sma_rect_width / 2,
+            -sma_rect_height / 2 + sma_lead_height / 2,
+        ),
+        (
+            pcb_len / 2 + sma_rect_length,
+            sma_rect_width / 2,
+            sma_rect_height / 2 + sma_lead_height / 2,
+        ),
+    ),
     priority=priorities["ground"],
-    start=[
-        pcb_len / 2,
-        -sma_rect_width / 2,
-        -sma_rect_height / 2 + sma_lead_height / 2,
-    ],
-    stop=[
-        pcb_len / 2 + sma_rect_length,
-        sma_rect_width / 2,
-        sma_rect_height / 2 + sma_lead_height / 2,
-    ],
 )
-sma_keepout = sim.csx.AddMaterial(
-    "sma_keepout",
+sma_keepout = add_material(
+    csx=sim.csx,
+    name="sma_keepout",
     epsilon=coax_dielectric.epsr_at_freq(ref_freq),
     kappa=coax_dielectric.kappa_at_freq(ref_freq),
+    color=colors["ptfe"],
+    alpha=200,
 )
-sma_keepout.AddCylinder(
-    priority=priorities["keepout"],
-    start=[pcb_len / 2, 0, sma_lead_height / 2],
-    stop=[pcb_len / 2 + sma_rect_length, 0, sma_lead_height / 2],
+construct_cylinder(
+    prop=sma_keepout,
     radius=coax_rad,
+    start=(pcb_len / 2, 0, sma_lead_height / 2),
+    stop=(pcb_len / 2 + sma_rect_length, 0, sma_lead_height / 2),
+    priority=priorities["keepout"],
 )
-sma_box.AddBox(
+construct_box(
+    prop=sma_box,
     priority=priorities["ground"],
-    start=[pcb_len / 2 - sma_gnd_prong_len, -sma_rect_width / 2, 0],
-    stop=[
-        pcb_len / 2,
-        -sma_rect_width / 2 + sma_gnd_prong_width,
-        sma_gnd_prong_height,
-    ],
+    box=Box3(
+        (pcb_len / 2 - sma_gnd_prong_len, -sma_rect_width / 2, 0),
+        (
+            pcb_len / 2,
+            -sma_rect_width / 2 + sma_gnd_prong_width,
+            sma_gnd_prong_height,
+        ),
+    ),
 )
-sma_box.AddBox(
+construct_box(
+    prop=sma_box,
     priority=priorities["ground"],
-    start=[
-        pcb_len / 2 - sma_gnd_prong_len,
-        sma_rect_width / 2 - sma_gnd_prong_width,
-        0,
-    ],
-    stop=[pcb_len / 2, sma_rect_width / 2, sma_gnd_prong_height],
+    box=Box3(
+        (
+            pcb_len / 2 - sma_gnd_prong_len,
+            sma_rect_width / 2 - sma_gnd_prong_width,
+            0,
+        ),
+        (pcb_len / 2, sma_rect_width / 2, sma_gnd_prong_height),
+    ),
 )
-sma_box.AddBox(
+construct_box(
+    prop=sma_box,
     priority=priorities["ground"],
-    start=[
-        pcb_len / 2 - sma_gnd_prong_len,
-        -sma_rect_width / 2,
-        pcb.copper_layer_elevation(1),
-    ],
-    stop=[
-        pcb_len / 2,
-        -sma_rect_width / 2 + sma_gnd_prong_width,
-        pcb.copper_layer_elevation(1) - sma_gnd_prong_height,
-    ],
+    box=Box3(
+        (
+            pcb_len / 2 - sma_gnd_prong_len,
+            -sma_rect_width / 2,
+            pcb.copper_layer_elevation(1),
+        ),
+        (
+            pcb_len / 2,
+            -sma_rect_width / 2 + sma_gnd_prong_width,
+            pcb.copper_layer_elevation(1) - sma_gnd_prong_height,
+        ),
+    ),
 )
-sma_box.AddBox(
+construct_box(
+    prop=sma_box,
     priority=priorities["ground"],
-    start=[
-        pcb_len / 2 - sma_gnd_prong_len,
-        sma_rect_width / 2 - sma_gnd_prong_width,
-        pcb.copper_layer_elevation(1),
-    ],
-    stop=[
-        pcb_len / 2,
-        sma_rect_width / 2,
-        pcb.copper_layer_elevation(1) - sma_gnd_prong_height,
-    ],
+    box=Box3(
+        (
+            pcb_len / 2 - sma_gnd_prong_len,
+            sma_rect_width / 2 - sma_gnd_prong_width,
+            pcb.copper_layer_elevation(1),
+        ),
+        (
+            pcb_len / 2,
+            sma_rect_width / 2,
+            pcb.copper_layer_elevation(1) - sma_gnd_prong_height,
+        ),
+    ),
 )
 
-lead = sim.csx.AddMetal("lead")
-lead.AddBox(
+lead = add_metal(csx=sim.csx, name="lead")
+
+construct_box(
+    prop=lead,
+    box=Box3(
+        (pcb_len / 2 - sma_lead_len / 2, -sma_lead_width / 2, 0),
+        (pcb_len / 2 + sma_rect_length, sma_lead_width / 2, sma_lead_height),
+    ),
     priority=priorities["trace"],
-    start=[pcb_len / 2 - sma_lead_len / 2, -sma_lead_width / 2, 0],
-    stop=[pcb_len / 2 + sma_rect_length, sma_lead_width / 2, sma_lead_height],
 )
 
 # coax port
