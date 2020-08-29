@@ -1,25 +1,36 @@
-{ nixpkgs ? (import (builtins.fetchTarball {
-  name = "nixos-unstable-2020-07-06";
-  url = "https://github.com/nixos/nixpkgs/archive/44fd570d7344fb31d7dd92a42d6e1ef872b5f76b.tar.gz";
-  sha256 = "0qxajv68s08m0fsyf4q6dscdn5c4j98hnhz4cls3hhiqvzz86cd1";
-}) {})
-, openems-pkgs ? (import (builtins.fetchTarball {
-  name = "matthuszagh-unstable-2020-08-10";
-  url = "https://github.com/matthuszagh/nixpkgs/archive/6b8a978a80e863c6f164fe199b8cd7c616da1639.tar.gz";
-  sha256 = "173i1sms6j3waiab2108nbxjqwmbsjdz8v6ymkmgipg80mxjkx30";
-}) {
-  overlays = [ (import /home/matt/src/dotfiles/nixos/overlays/csxcad.nix) ];
-})
-, pyspice-pkgs ? (import (builtins.fetchTarball {
-    name = "matthuszagh-nixpkgs-pyspice-2020-08-10";
-    url = "https://github.com/matthuszagh/nixpkgs/archive/2a3efcd190262ea50b714c8dcc47e0a9767f0cfa.tar.gz";
-    sha256 = "0krxh0skf12iidfsk14jymy53as0ccayzccy7hss6mfakz81hp38";
-}) {})
+{ nixpkgs ? (import
+    (builtins.fetchTarball {
+      name = "nixos-unstable-2020-07-06";
+      url = "https://github.com/nixos/nixpkgs/archive/44fd570d7344fb31d7dd92a42d6e1ef872b5f76b.tar.gz";
+      sha256 = "0qxajv68s08m0fsyf4q6dscdn5c4j98hnhz4cls3hhiqvzz86cd1";
+    })
+    { })
+, openems-pkgs ? (import
+    (builtins.fetchTarball {
+      name = "matthuszagh-unstable-2020-08-10";
+      url = "https://github.com/matthuszagh/nixpkgs/archive/6b8a978a80e863c6f164fe199b8cd7c616da1639.tar.gz";
+      sha256 = "173i1sms6j3waiab2108nbxjqwmbsjdz8v6ymkmgipg80mxjkx30";
+    })
+    {
+      overlays = [ (import /home/matt/src/dotfiles/nixos/overlays/csxcad.nix) ];
+    })
+, pyspice-pkgs ? (import
+    (builtins.fetchTarball {
+      name = "matthuszagh-nixpkgs-pyspice-2020-08-10";
+      url = "https://github.com/matthuszagh/nixpkgs/archive/2a3efcd190262ea50b714c8dcc47e0a9767f0cfa.tar.gz";
+      sha256 = "0krxh0skf12iidfsk14jymy53as0ccayzccy7hss6mfakz81hp38";
+    })
+    { })
+, paraview-pkgs ? (import
+    (builtins.fetchTarball {
+      name = "nixos-nixpkgs-paraview-2020-08-10";
+      url = "https://github.com/NixOS/nixpkgs/archive/72158c231ae46a34ec16b8134d2a8598506acd9c.tar.gz";
+      sha256 = "161h9d7y28il23z41928sx3y6vcr3kan3rhwhcg1akil2qybrybm";
+    })
+    { })
 }:
-
 let
   pkgs = nixpkgs;
-  custompkgs = import <custompkgs> {};
   pythonEnv-pkgs = pyspice-pkgs;
   pythonEnv = (pythonEnv-pkgs.python3.buildEnv.override {
     extraLibs = (with pythonEnv-pkgs.python3Packages; [
@@ -33,9 +44,6 @@ let
       # TODO fix
       # nmigen
       cython
-    ]) ++ (with custompkgs.python3.pkgs; [
-      skidl
-      pyems
     ]) ++ (with openems-pkgs.python3Packages; [
       python-openems
       python-csxcad
@@ -74,7 +82,7 @@ pkgs.mkShell {
 
     # ems
     qucs
-    paraview
+    octave
 
     # 3d printing
     openscad
@@ -83,14 +91,13 @@ pkgs.mkShell {
     # TODO fix
     # (cura.override { plugins = [ pkgs.curaPlugins.octoprint ]; })
     # curaengine
-  ] ++ (with custompkgs; [
-    ebase
-    vivado-2017-2
-  ]) ++ (with openems-pkgs; [
+  ] ++ (with openems-pkgs; [
     openems
     appcsxcad
     hyp2mat
+  ]) ++ (with paraview-pkgs; [
+    paraview
   ]);
 
-  KICAD_SYMBOL_DIR="/home/matt/src/kicad-symbols";
+  KICAD_SYMBOL_DIR = "/home/matt/src/kicad-symbols";
 }
