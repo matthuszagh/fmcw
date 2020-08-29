@@ -82,3 +82,5 @@ beta/software/read
 /software/device.c
 /software/device.so
 **/ibom.html
+/gateware/verilog/scripts/yosys/formal/
+/gateware/verilog/scripts/freq_response.dat
