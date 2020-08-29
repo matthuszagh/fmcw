@@ -85,3 +85,4 @@ beta/software/read
 /gateware/verilog/scripts/yosys/formal/
 /gateware/verilog/scripts/freq_response.dat
 simulations/**/*.kicad_mod
+gateware/verilog/top.bit
