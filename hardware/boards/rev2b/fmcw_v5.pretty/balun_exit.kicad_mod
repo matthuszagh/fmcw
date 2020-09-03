@@ -1,0 +1,23 @@
+(module balun_exit (layer F.Cu) (tedit 5EAA004D)
+  (fp_text reference REF** (at 0 1.8) (layer F.SilkS) hide
+    (effects (font (size 1 1) (thickness 0.15)))
+  )
+  (fp_text value balun_exit (at -0.01 -1.8) (layer F.Fab) hide
+    (effects (font (size 1 1) (thickness 0.15)))
+  )
+  (fp_poly (pts (xy 0.3238 -0.6762) (xy 0.3238 0.3238) (xy 0.4738 -0.5262)) (layer F.Cu) (width 0))
+  (pad 1 smd custom (at 0.8238 -0.1012) (size 0.1 0.1) (layers F.Cu)
+    (zone_connect 0)
+    (options (clearance outline) (anchor rect))
+    (primitives
+      (gr_poly (pts
+         (xy -0.35 -0.425) (xy -0.5 0.425) (xy 0.35 0.425) (xy 0.35 -0.425)) (width 0))
+    ))
+  (pad 1 smd custom (at 0.16 -0.37) (size 0.1 0.1) (layers F.Cu)
+    (zone_connect 0)
+    (options (clearance outline) (anchor rect))
+    (primitives
+      (gr_poly (pts
+         (xy -0.16 0.37) (xy 0.1638 0.6938) (xy 0.1638 -0.3062) (xy -0.16 -0.63)) (width 0))
+    ))
+)

@@ -1,0 +1,51 @@
+EESchema-DOCLIB  Version 2.0
+#
+$CMP ADA4940-1ACPZ
+D Ultralow Power, Low Distortion, Fully Differential ADC Drivers, LFCSP-16
+K differential amplifier
+F https://www.analog.com/media/en/technical-documentation/data-sheets/ADA4940-1_4940-2.pdf
+$ENDCMP
+#
+$CMP ADL5801
+D 10 MHz to 6 GHz Active Mixer, LFCSP-24
+K mixer active
+F https://www.analog.com/media/en/technical-documentation/data-sheets/ADL5801.pdf
+$ENDCMP
+#
+$CMP L7980A
+D 2A step down switching regulator, HSOP-8
+K step down buck regulator
+F https://www.st.com/resource/en/datasheet/l7980.pdf
+$ENDCMP
+#
+$CMP MX25L3233F
+D 32Mb Serial Flash Memory, Standard/Dual/Quad SPI, SOP-8
+K flash memory SPI
+F https://www.macronix.com/Lists/Datasheet/Attachments/7426/MX25L3233F%2c%203V%2c%2032Mb%2c%20v1.6.pdf
+$ENDCMP
+#
+$CMP OP1177AR
+D Precision Low Noise, Low Input Bias Current Operational Amplifier, SOIC-8
+K single operational amplifier
+F https://www.analog.com/media/en/technical-documentation/data-sheets/OP1177_2177_4177.pdf
+$ENDCMP
+#
+$CMP OP1177ARM
+D Precision Low Noise, Low Input Bias Current Operational Amplifier, MSOP-8
+K single operational amplifier
+F https://www.analog.com/media/en/technical-documentation/data-sheets/OP1177_2177_4177.pdf
+$ENDCMP
+#
+$CMP SD_Card_DM3BT
+D SD Card Reader
+K CONN SD
+F http://portal.fciconnect.com/Comergent//fci/drawing/10067847.pdf
+$ENDCMP
+#
+$CMP TRF37A73
+D 6GHz, 12dB RF Gain Block, WSON-8
+K gain block RF
+F http://www.ti.com/lit/ds/symlink/trf37a73.pdf
+$ENDCMP
+#
+#End Doc Library

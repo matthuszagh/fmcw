@@ -1,0 +1,18 @@
+(module "uwT0.50_0.38_0.50_0.38_0.50" (layer F.Cu) (tedit 5E9BA02A)
+  (attr virtual)
+  (fp_text reference "uwT*****" (at 0.25 -0.915) (layer F.SilkS)
+    (effects (font (size 1 1) (thickness 0.15)))
+  )
+  (fp_text value "uwT0.50_0.38_0.50_0.38_0.50" (at 0.25 1.415) (layer F.Fab)
+    (effects (font (size 1 1) (thickness 0.15)))
+  )
+  (pad "1" smd custom (at 0 0) (size 0.5 0.38) (layers "F.Cu")
+    (clearance 0.2)
+    (options (clearance outline) (anchor rect))
+    (primitives
+      (gr_poly (pts
+         (xy -0.25 -0.19) (xy 0.25 -0.19) (xy 0.5 -0.19) (xy 1 -0.19) (xy 1 0.19)
+         (xy 0.5 0.19) (xy 0.25 0.19) (xy -0.25 0.19)) (width 0))
+    ) (tstamp c1c77d8f-415a-4255-a5da-5b4ec57d39c2))
+  (pad "1" smd rect (at 0.75 0) (size 0.5 0.38) (layers "F.Cu") (tstamp 408b2bd7-8781-4c8c-aafd-aed48b202433))
+)

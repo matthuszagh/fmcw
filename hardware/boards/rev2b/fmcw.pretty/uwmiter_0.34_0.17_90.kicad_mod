@@ -1,0 +1,13 @@
+(module uwmiter_0.34_0.17_90 (layer F.Cu) (tedit 5E7FB260)
+  (attr virtual)
+  (fp_text reference uwM*** (at -0.17 1.425) (layer F.SilkS) hide
+    (effects (font (size 0.5 0.6) (thickness 0.125)))
+  )
+  (fp_text value uwM_0.34_0.17_90 (at -0.17 2.425) (layer F.SilkS) hide
+    (effects (font (size 0.5 0.6) (thickness 0.125)))
+  )
+  (fp_poly (pts (xy -0.17 0) (xy 0.17 0) (xy 0.17 0.34) (xy 0.51 0.34)
+    (xy 0.509999 0.68) (xy 0.210911 0.68) (xy -0.17 0.299088) (xy -0.17 0)) (layer F.Cu) (width 0))
+  (pad 2 smd rect (at 0.595 0.51) (size 0.17 0.34) (layers F.Cu))
+  (pad 1 smd rect (at 0 -0.085 90) (size 0.17 0.34) (layers F.Cu))
+)
