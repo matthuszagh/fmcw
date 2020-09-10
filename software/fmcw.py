@@ -1790,7 +1790,9 @@ class Proc:
         """
         """
         fft = np.fft.rfft(seq)
-        fft /= len(fft)
+        # scaling this way makes the output FFT represent the sinusoid
+        # amplitude at each frequency bin.
+        fft /= len(fft) - 1
         return np.abs(fft)
 
 
