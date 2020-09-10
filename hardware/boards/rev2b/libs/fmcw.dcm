@@ -36,6 +36,12 @@ K single operational amplifier
 F https://www.analog.com/media/en/technical-documentation/data-sheets/OP1177_2177_4177.pdf
 $ENDCMP
 #
+$CMP PS2012GT2-R50
+D Power splitter combiner, DC to 20 GHz, 50 ohm, Susumu
+K splitter combiner
+F https://www.susumu.co.jp/common/pdf/n_catalog_partition31_en.pdf
+$ENDCMP
+#
 $CMP SD_Card_DM3BT
 D SD Card Reader
 K CONN SD

@@ -40,8 +40,6 @@ Connection ~ 3450 5550
 Connection ~ 2200 5550
 Connection ~ 3050 5550
 Connection ~ 6800 6000
-Connection ~ 9950 5800
-Connection ~ 9950 6200
 Connection ~ 8150 5050
 Connection ~ 6200 5550
 Connection ~ 8050 4900
@@ -59,7 +57,6 @@ Connection ~ 11900 2650
 Connection ~ 8150 5250
 Connection ~ 8150 6400
 Connection ~ 9300 7450
-Connection ~ 9950 7150
 NoConn ~ 2900 5800
 NoConn ~ 12500 4800
 Wire Wire Line
@@ -205,8 +202,6 @@ Wire Wire Line
 Wire Wire Line
 	4000 6700 4000 6650
 Wire Wire Line
-	4400 7450 7400 7450
-Wire Wire Line
 	4450 4000 4300 4000
 Wire Wire Line
 	4450 4050 4450 4000
@@ -269,8 +264,6 @@ Wire Wire Line
 Wire Wire Line
 	7750 6400 8150 6400
 Wire Wire Line
-	7800 7850 7800 7900
-Wire Wire Line
 	7850 3800 7900 3800
 Wire Wire Line
 	7900 2900 7600 2900
@@ -302,8 +295,6 @@ Wire Wire Line
 	8150 6400 8150 6500
 Wire Wire Line
 	8200 5250 8150 5250
-Wire Wire Line
-	8200 7450 9300 7450
 Wire Wire Line
 	8250 3550 8250 3600
 Wire Wire Line
@@ -341,9 +332,7 @@ Wire Wire Line
 Wire Wire Line
 	9300 7450 9300 7550
 Wire Wire Line
-	9300 7450 9950 7450
-Wire Wire Line
-	9400 6350 9400 6300
+	9300 7450 10150 7450
 Wire Wire Line
 	9450 3550 9450 2900
 Wire Wire Line
@@ -355,17 +344,7 @@ Wire Wire Line
 Wire Wire Line
 	9550 3550 9450 3550
 Wire Wire Line
-	9800 5900 9850 5900
-Wire Wire Line
-	9800 6100 9850 6100
-Wire Wire Line
 	9850 4100 9950 4100
-Wire Wire Line
-	9850 5800 9850 5900
-Wire Wire Line
-	9850 6100 9850 6200
-Wire Wire Line
-	9850 6200 9950 6200
 Wire Wire Line
 	9950 3550 9850 3550
 Wire Wire Line
@@ -377,19 +356,9 @@ Wire Wire Line
 Wire Wire Line
 	9950 4450 9800 4450
 Wire Wire Line
-	9950 5100 9950 5800
-Wire Wire Line
 	9950 5100 10000 5100
 Wire Wire Line
-	9950 5800 9850 5800
-Wire Wire Line
-	9950 5800 9950 5850
-Wire Wire Line
-	9950 6150 9950 6200
-Wire Wire Line
-	9950 6200 9950 7150
-Wire Wire Line
-	9950 7150 9950 7450
+	10150 7150 10150 7450
 Wire Wire Line
 	10050 4100 10050 4300
 Wire Wire Line
@@ -514,8 +483,6 @@ Wire Wire Line
 	15450 5400 15450 5300
 Text Notes 1200 4700 0    50   ~ 0
 32 (23) mA
-Text Notes 3200 7450 0    50   ~ 0
--4 dBm
 Text Notes 4900 4250 2    50   ~ 0
 5 mA
 Text Notes 5700 5400 2    50   ~ 0
@@ -527,11 +494,11 @@ Text Notes 7800 3100 2    50   ~ 0
 Text Notes 8650 6100 0    50   ~ 0
 +2dBm
 Text Notes 8850 7450 0    50   ~ 0
--1 dBm
+-4 dBm
 Text Notes 9000 4000 0    50   ~ 0
 2.85V
 Text Notes 9600 5400 0    50   ~ 0
--1 dBm
+-4 dBm
 Text Notes 9900 2050 0    50   ~ 0
 800 (300) mA
 Text Notes 10700 5200 0    50   ~ 0
@@ -815,17 +782,6 @@ F 3 "" H 7450 6500 60  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L power:GND #PWR0115
-U 1 1 5CF6E09E
-P 7800 7900
-F 0 "#PWR0115" H 7800 7650 50  0001 C CNN
-F 1 "GND" H 7805 7727 50  0000 C CNN
-F 2 "" H 7800 7900 50  0001 C CNN
-F 3 "" H 7800 7900 50  0001 C CNN
-	1    7800 7900
-	1    0    0    -1  
-$EndComp
-$Comp
 L power:GND #PWR0101
 U 1 1 5C609590
 P 7900 4200
@@ -894,12 +850,12 @@ $EndComp
 $Comp
 L power:GND #PWR0121
 U 1 1 5CE085DA
-P 9400 6350
-F 0 "#PWR0121" H 9400 6100 50  0001 C CNN
-F 1 "GND" H 9405 6177 50  0000 C CNN
-F 2 "" H 9400 6350 50  0001 C CNN
-F 3 "" H 9400 6350 50  0001 C CNN
-	1    9400 6350
+P 9200 6450
+F 0 "#PWR0121" H 9200 6200 50  0001 C CNN
+F 1 "GND" H 9205 6277 50  0000 C CNN
+F 2 "" H 9200 6450 50  0001 C CNN
+F 3 "" H 9200 6450 50  0001 C CNN
+	1    9200 6450
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -1165,18 +1121,6 @@ F 4 "" H 200 950 50  0001 C CNN "MFN"
 	0    1    1    0   
 $EndComp
 $Comp
-L Device:R R47
-U 1 1 5CFA8165
-P 9950 6000
-F 0 "R47" H 10020 6046 50  0000 L CNN
-F 1 "100" H 10020 5955 50  0000 L CNN
-F 2 "fmcw_v5:R_0603b" V 9880 6000 50  0001 C CNN
-F 3 "~" H 9950 6000 50  0001 C CNN
-F 4 "" H 9950 6000 50  0001 C CNN "MFN"
-	1    9950 6000
-	1    0    0    -1  
-$EndComp
-$Comp
 L Device:R R114
 U 1 1 5E79D780
 P 10750 4300
@@ -1224,12 +1168,12 @@ $EndComp
 $Comp
 L fmcw:uwave T2
 U 1 1 5EB0CF7E
-P 10100 7150
-F 0 "T2" V 10055 7278 50  0000 L CNN
-F 1 "uwave" V 10145 7278 50  0000 L CNN
-F 2 "fmcw_v5:uwm_0.38_0.17_90" H 10100 7150 50  0001 C CNN
-F 3 "" H 10100 7150 50  0001 C CNN
-	1    10100 7150
+P 10300 7150
+F 0 "T2" V 10255 7278 50  0000 L CNN
+F 1 "uwave" V 10345 7278 50  0000 L CNN
+F 2 "fmcw_v5:uwm_0.38_0.17_90" H 10300 7150 50  0001 C CNN
+F 3 "" H 10300 7150 50  0001 C CNN
+	1    10300 7150
 	0    1    1    0   
 $EndComp
 $Comp
@@ -1640,42 +1584,16 @@ F 4 "LMV321ILT" H 9550 4100 50  0001 C CNN "MFN"
 	1    0    0    -1  
 $EndComp
 $Comp
-L RF:PAT1220-C-3DB U14
-U 1 1 5CF46E5A
-P 7800 7550
-AR Path="/5CF46E5A" Ref="U14"  Part="1" 
-AR Path="/59396B94/5CF46E5A" Ref="U14"  Part="1" 
-F 0 "U14" H 7800 7939 60  0000 C CNN
-F 1 "PAT1220-C-3DB" H 7800 7833 60  0000 C CNN
-F 2 "RF_Converter:RF_Attenuator_Susumu_PAT1220" H 7800 7550 60  0001 C CNN
-F 3 "" H 7800 7550 60  0000 C CNN
-F 4 "PAT1220-C-3DB-T5" H -3400 2550 50  0001 C CNN "MFN"
-	1    7800 7550
-	1    0    0    -1  
-$EndComp
-$Comp
-L RF:PD4859J5050S2HF U16
-U 1 1 5CDBB6B7
-P 9400 6000
-F 0 "U16" H 9400 6367 50  0000 C CNN
-F 1 "PD4859J5050S2HF" H 9400 6276 50  0000 C CNN
-F 2 "RF_Converter:Anaren_0805_2012Metric-6" H 9400 5600 50  0001 C CNN
-F 3 "" H 9150 6250 50  0001 C CNN
-F 4 "PD4859J5050S2HF" H 9400 6000 50  0001 C CNN "MFN"
-	1    9400 6000
-	1    0    0    -1  
-$EndComp
-$Comp
-L RF:PAT1220-C-5DB U17
+L RF:PAT1220-C-2DB U17
 U 1 1 54FB1677
 P 10400 5200
 AR Path="/54FB1677" Ref="U17"  Part="1" 
 AR Path="/59396B94/54FB1677" Ref="U17"  Part="1" 
 F 0 "U17" H 10150 4900 60  0000 C CNN
-F 1 "PAT1220-C-5DB" H 10800 4900 60  0000 C CNN
+F 1 "PAT1220-C-2DB" H 10800 4900 60  0000 C CNN
 F 2 "RF_Converter:RF_Attenuator_Susumu_PAT1220" H 10400 5200 60  0001 C CNN
 F 3 "" H 10400 5200 60  0000 C CNN
-F 4 "PAT1220-C-5DB-T5" H -800 200 50  0001 C CNN "MFN"
+F 4 "PAT1220-C-2DB-T5" H -800 200 50  0001 C CNN "MFN"
 	1    10400 5200
 	1    0    0    -1  
 $EndComp
@@ -1735,4 +1653,28 @@ F 4 "ADF4158CCPZ-RL7" H 700 150 50  0001 C CNN "MFN"
 	1    2200 6300
 	1    0    0    -1  
 $EndComp
+$Comp
+L fmcw:PS2012GT2-R50 U14
+U 1 1 5F5CD072
+P 9400 6000
+F 0 "U14" H 9400 6425 50  0000 C CNN
+F 1 "PS2012GT2-R50" H 9400 6334 50  0000 C CNN
+F 2 "fmcw_v5:Susumu_PS2012GT2-R50" H 9250 5550 50  0001 C CNN
+F 3 "https://www.susumu.co.jp/common/pdf/n_catalog_partition31_en.pdf" H 9350 5650 50  0001 C CNN
+	1    9400 6000
+	1    0    0    -1  
+$EndComp
+Connection ~ 10150 7150
+Wire Wire Line
+	9200 6450 9200 6400
+Wire Wire Line
+	4400 7450 9300 7450
+Wire Wire Line
+	10150 5800 9800 5800
+Wire Wire Line
+	10150 5800 10150 7150
+Wire Wire Line
+	9950 6200 9800 6200
+Wire Wire Line
+	9950 5100 9950 6200
 $EndSCHEMATC
