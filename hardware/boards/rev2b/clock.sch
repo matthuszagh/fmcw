@@ -183,11 +183,11 @@ Text Label 5700 2050 0    60   ~ 0
 3V6
 Text HLabel 5600 2050 0    50   Input Italic 0
 3V6
-Text HLabel 10100 4650 2    50   Output Italic 0
-FPGA_REF
 Text HLabel 10100 4150 2    50   Output Italic 0
-ADF_REF
+FPGA_REF
 Text HLabel 10100 4400 2    50   Output Italic 0
+ADF_REF
+Text HLabel 10100 4650 2    50   Output Italic 0
 ADC_REF
 $Comp
 L power:PWR_FLAG #FLG0101

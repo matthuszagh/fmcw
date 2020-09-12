@@ -1,5 +1,6 @@
-(module uwm_0.38_0.17_90 (layer F.Cu) (tedit 5EA38DBA)
+(module uwm_0.38_0.17_90 (layer F.Cu) (tedit 5F5C38C4)
   (solder_mask_margin 0.2)
+  (clearance 0.6)
   (attr virtual)
   (fp_text reference uwM*** (at -0.19 1.475) (layer F.SilkS) hide
     (effects (font (size 0.5 0.6) (thickness 0.125)))

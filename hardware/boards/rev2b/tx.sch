@@ -332,8 +332,6 @@ Wire Wire Line
 Wire Wire Line
 	9300 7450 9300 7550
 Wire Wire Line
-	9300 7450 10150 7450
-Wire Wire Line
 	9450 3550 9450 2900
 Wire Wire Line
 	9450 3800 9450 3550
@@ -358,7 +356,7 @@ Wire Wire Line
 Wire Wire Line
 	9950 5100 10000 5100
 Wire Wire Line
-	10150 7150 10150 7450
+	9850 7150 9850 7450
 Wire Wire Line
 	10050 4100 10050 4300
 Wire Wire Line
@@ -497,7 +495,7 @@ Text Notes 8850 7450 0    50   ~ 0
 -4 dBm
 Text Notes 9000 4000 0    50   ~ 0
 2.85V
-Text Notes 9600 5400 0    50   ~ 0
+Text Notes 9600 5200 0    50   ~ 0
 -4 dBm
 Text Notes 9900 2050 0    50   ~ 0
 800 (300) mA
@@ -1168,12 +1166,12 @@ $EndComp
 $Comp
 L fmcw:uwave T2
 U 1 1 5EB0CF7E
-P 10300 7150
-F 0 "T2" V 10255 7278 50  0000 L CNN
-F 1 "uwave" V 10345 7278 50  0000 L CNN
-F 2 "fmcw_v5:uwm_0.38_0.17_90" H 10300 7150 50  0001 C CNN
-F 3 "" H 10300 7150 50  0001 C CNN
-	1    10300 7150
+P 10000 7150
+F 0 "T2" V 9955 7278 50  0000 L CNN
+F 1 "uwave" V 10045 7278 50  0000 L CNN
+F 2 "fmcw_v5:uwm_0.38_0.17_90" H 10000 7150 50  0001 C CNN
+F 3 "" H 10000 7150 50  0001 C CNN
+	1    10000 7150
 	0    1    1    0   
 $EndComp
 $Comp
@@ -1664,17 +1662,50 @@ F 3 "https://www.susumu.co.jp/common/pdf/n_catalog_partition31_en.pdf" H 9350 56
 	1    9400 6000
 	1    0    0    -1  
 $EndComp
-Connection ~ 10150 7150
+Connection ~ 9850 7150
 Wire Wire Line
 	9200 6450 9200 6400
 Wire Wire Line
-	4400 7450 9300 7450
+	9850 5800 9800 5800
 Wire Wire Line
-	10150 5800 9800 5800
-Wire Wire Line
-	10150 5800 10150 7150
+	9850 5800 9850 7150
 Wire Wire Line
 	9950 6200 9800 6200
 Wire Wire Line
-	9950 5100 9950 6200
+	9950 5100 9950 5800
+Connection ~ 9000 7450
+Wire Wire Line
+	9000 7450 9300 7450
+Wire Wire Line
+	9300 7450 9850 7450
+Wire Wire Line
+	4400 7450 9300 7450
+$Comp
+L fmcw:uwave T16
+U 1 1 5F968A43
+P 10100 6100
+F 0 "T16" V 10055 6228 50  0000 L CNN
+F 1 "uwave" V 10145 6228 50  0000 L CNN
+F 2 "fmcw_v5:uwm_0.38_0.17_90" H 10100 6100 50  0001 C CNN
+F 3 "" H 10100 6100 50  0001 C CNN
+	1    10100 6100
+	0    1    1    0   
+$EndComp
+Connection ~ 9950 6100
+Wire Wire Line
+	9950 6100 9950 6200
+$Comp
+L fmcw:uwave T15
+U 1 1 5F968E22
+P 10100 5800
+F 0 "T15" V 10055 5928 50  0000 L CNN
+F 1 "uwave" V 10145 5928 50  0000 L CNN
+F 2 "fmcw_v5:uwm_0.38_0.17_90" H 10100 5800 50  0001 C CNN
+F 3 "" H 10100 5800 50  0001 C CNN
+	1    10100 5800
+	0    1    1    0   
+$EndComp
+Connection ~ 9950 5800
+Wire Wire Line
+	9950 5800 9950 6100
 $EndSCHEMATC
