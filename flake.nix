@@ -53,6 +53,7 @@
             asymptote
             imagemagick
             clang
+            pkg-config
 
             # pcb cad
             kicad
