@@ -2,7 +2,7 @@
 
   (general
     (thickness 1.6002)
-    (drawings 86)
+    (drawings 87)
     (tracks 6130)
     (zones 0)
     (modules 445)
@@ -20,7 +20,7 @@
     (34 B.Paste user hide)
     (35 F.Paste user hide)
     (36 B.SilkS user hide)
-    (37 F.SilkS user hide)
+    (37 F.SilkS user)
     (38 B.Mask user hide)
     (39 F.Mask user hide)
     (40 Dwgs.User user)
@@ -17989,6 +17989,9 @@
     )
   )
 
+  (gr_text "FMCW (rev2b)\n@matthuszagh" (at 179.35 67.55) (layer F.SilkS)
+    (effects (font (size 1 1) (thickness 0.15)))
+  )
   (gr_line (start 180.965 79.195262) (end 182.38552 79.195262) (layer F.Mask) (width 0.78) (tstamp 3F4))
   (gr_line (start 162.875 83.320001) (end 162.875 79.659999) (layer F.Mask) (width 0.78) (tstamp 3D2))
   (gr_line (start 158.355 83.795) (end 162.305 83.795) (layer F.Mask) (width 0.78) (tstamp 3D2))
